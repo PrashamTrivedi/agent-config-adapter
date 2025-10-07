@@ -1,0 +1,25 @@
+{
+  // Copy this file to wrangler.jsonc and fill in the binding identifiers
+  "name": "agent-config-adapter",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "agent-config-adapter",
+      "database_id": "xxxx-xxxx"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG_CACHE",
+      "id": "xxxx-xxxx"
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  }
+}
