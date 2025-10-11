@@ -12,8 +12,10 @@ This app stores Claude Code slash commands, agent definitions, and MCP (Model Co
 - **Platform**: Cloudflare Workers
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare KV (for quick config lookups)
+- **AI**: Cloudflare Workers AI (Llama 3.1 8B Instruct)
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript throughout
+- **TOML Parser**: smol-toml (Cloudflare Workers compatible)
 
 ## Architecture Approach
 
@@ -91,9 +93,11 @@ We use domain-driven design. Core domains:
 - Environment variables in `wrangler.toml`
 
 ## Business Rules
-- This project has 3 main entities: Slash Commands, Agents and MCP configurations.
-- Agent configuration is not available in Codex and Claude Code
-- User right now mostly inputs claude code configs which is a default value.
+- This project has 3 main entities: Slash Commands, Agent Definitions, and MCP configurations.
+- Agent definitions are not available in Codex and Claude Code (passthrough only)
+- Slash commands use AI-enhanced conversion with rule-based fallback
+- MCP configs use rule-based conversion only (no AI) for accurate structured data transformation
+- User right now mostly inputs Claude Code configs which is the default format
 - Cache is automatically invalidated on config updates
 - Manual cache invalidation available via UI and API for forcing conversion re-processing
 

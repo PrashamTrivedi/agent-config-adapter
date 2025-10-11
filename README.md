@@ -107,9 +107,9 @@ All UI interactions use HTMX for seamless updates without full page reloads.
 
 ## Configuration Types
 
-- **slash_command**: Slash commands for AI agents
-- **agent_definition**: Agent configuration definitions
-- **mcp_config**: Model Context Protocol configurations
+- **slash_command**: Slash commands for AI agents (fully implemented with AI-enhanced conversion)
+- **agent_definition**: Agent configuration definitions (passthrough only - MVP)
+- **mcp_config**: Model Context Protocol configurations (fully implemented with rule-based conversion)
 
 ## Supported Formats
 
@@ -119,9 +119,11 @@ All UI interactions use HTMX for seamless updates without full page reloads.
 
 ## Format Conversion Examples
 
-All format conversions are powered by AI (Cloudflare Workers AI with Llama 3.1 model) with automatic fallback to rule-based conversion if needed.
+### Slash Command Conversion
 
-### Claude Code to Codex
+Slash command conversions are powered by AI (Cloudflare Workers AI with Llama 3.1 model) with automatic fallback to rule-based conversion if needed.
+
+#### Claude Code to Codex
 
 **Input (Claude Code):**
 ```markdown
@@ -162,6 +164,106 @@ description = "Review code for quality issues"
 prompt = """
 Review the code and provide feedback
 """
+```
+
+### MCP Config Conversion
+
+MCP config conversions use rule-based conversion (no AI) to ensure accurate transformation of structured data between JSON and TOML formats.
+
+#### Claude Code to Codex
+
+**Input (Claude Code JSON):**
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+      "env": {
+        "ALLOWED_DIRS": "/workspace"
+      }
+    }
+  }
+}
+```
+
+**Output (Codex TOML):**
+```toml
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem"]
+startup_timeout_ms = 20000
+
+[mcp_servers.filesystem.env]
+ALLOWED_DIRS = "/workspace"
+```
+
+#### Claude Code to Gemini
+
+**Input (Claude Code JSON):**
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "gh-mcp",
+      "args": [],
+      "env": {
+        "GITHUB_TOKEN": "ghp_xxx"
+      }
+    }
+  }
+}
+```
+
+**Output (Gemini JSON):**
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "gh-mcp",
+      "args": [],
+      "env": {
+        "GITHUB_TOKEN": "ghp_xxx"
+      }
+    }
+  }
+}
+```
+
+#### HTTP/SSE MCP Servers
+
+MCP configs also support HTTP and SSE server types:
+
+**Claude Code format:**
+```json
+{
+  "mcpServers": {
+    "remote-api": {
+      "type": "http",
+      "url": "https://api.example.com/mcp"
+    }
+  }
+}
+```
+
+**Gemini format (uses httpUrl):**
+```json
+{
+  "mcpServers": {
+    "remote-api": {
+      "httpUrl": "https://api.example.com/mcp"
+    }
+  }
+}
+```
+
+**Codex format:**
+```toml
+[mcp_servers.remote-api]
+url = "https://api.example.com/mcp"
+startup_timeout_ms = 20000
 ```
 
 ## Development
@@ -239,6 +341,7 @@ Before deploying (first time setup):
 - **AI**: Cloudflare Workers AI (Llama 3.1 8B Instruct)
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript
+- **TOML Parser**: smol-toml (Cloudflare Workers compatible)
 
 ## Architecture
 
@@ -252,7 +355,9 @@ The project follows domain-driven design principles:
 
 ### AI-Powered Conversion
 
-The system uses a hybrid approach for format conversion:
+The system uses different strategies based on configuration type:
+
+#### Slash Commands (AI-Enhanced)
 
 1. **Primary**: AI-powered conversion using Cloudflare Workers AI (Llama 3.1 8B Instruct model)
    - Provides intelligent, context-aware format conversion
@@ -263,6 +368,13 @@ The system uses a hybrid approach for format conversion:
    - Automatically used if AI conversion fails
    - Ensures reliable conversion in all scenarios
    - Transparent to the user
+
+#### MCP Configs (Rule-Based Only)
+
+- Uses rule-based conversion exclusively (no AI)
+- Ensures accurate transformation of structured data (JSON ↔ TOML)
+- Handles field mapping between formats (type field, httpUrl vs url, startup_timeout_ms)
+- Supports both stdio and HTTP/SSE server types
 
 The UI displays which conversion method was used, providing transparency while maintaining reliability.
 
@@ -276,22 +388,20 @@ Adding a new agent format is straightforward:
 
 ## Current Limitations (MVP)
 
-- Agent definitions and MCP configs use passthrough adapters (no format conversion yet)
+- Agent definitions use passthrough adapter (no format conversion yet)
 - No authentication/authorization
-- TOML parsing for Gemini format is basic (doesn't handle all TOML features)
 - No search or filter functionality in UI
 - No batch operations for multiple configs
 
 ## Next Steps
 
 - [ ] Implement agent definition adapters
-- [ ] Implement MCP config adapters
 - [ ] Add authentication
 - [ ] API documentation (OpenAPI/Swagger)
 - [ ] Export/import functionality
 - [ ] Version history for configs
-- [ ] Improve TOML parsing for Gemini format
 - [ ] Add unit tests for AI conversion service
+- [ ] Support for HTTP/SSE MCP servers in UI
 - [ ] Upgrade to GPT-5 when available in Cloudflare Workers AI
 - [ ] Batch operations for multiple configs
 - [ ] Search and filter functionality in UI

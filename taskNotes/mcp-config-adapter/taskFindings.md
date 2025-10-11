@@ -123,9 +123,9 @@ case 'mcp_config':
 ### 3. Add TOML Parsing Library
 Add dependency for TOML parsing:
 ```bash
-npm install @iarna/toml
-npm install -D @types/iarna__toml
+npm install smol-toml
 ```
+Note: Originally planned to use @iarna/toml but replaced with smol-toml for Cloudflare Workers compatibility.
 
 ### 4. Update Domain Types (`src/domain/types.ts`)
 Add MCP-specific types:

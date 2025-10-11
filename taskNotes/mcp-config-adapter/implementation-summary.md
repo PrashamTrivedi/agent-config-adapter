@@ -39,7 +39,7 @@ Added 3 MCP configuration examples:
 - Codex format (TOML with startup_timeout_ms)
 
 ### 5. Dependencies Added
-- `smol-toml` - TOML parsing library (Workers-compatible, replaced @iarna/toml)
+- `smol-toml` - TOML parsing library (Cloudflare Workers compatible, replaced @iarna/toml)
 
 ## Format Specifications Implemented
 
@@ -84,11 +84,11 @@ KEY = "value"
 ## Key Features
 
 ### 1. Intelligent Field Mapping
-- **Claude Code → Codex**: Strips `type` field, adds `startup_timeout_ms` (default: 20000)
-- **Codex → Claude Code**: Adds `type: "stdio"` field, strips `startup_timeout_ms`
-- **Claude Code → Gemini**: Strips `type` field
-- **Gemini → Claude Code**: Adds `type: "stdio"` field
-- **httpUrl detection**: Automatically sets `type: "http"` when httpUrl is present
+- **Claude Code → Codex**: Strips `type` field, adds `startup_timeout_ms` (default: 20000), converts url to url
+- **Codex → Claude Code**: Adds `type: "stdio"` field (or "http" for url-based), strips `startup_timeout_ms`
+- **Claude Code → Gemini**: Strips `type` field, converts url to httpUrl for HTTP servers
+- **Gemini → Claude Code**: Adds `type: "stdio"` field (or "http" for httpUrl), converts httpUrl to url
+- **httpUrl/url detection**: Automatically determines server type (stdio vs http) based on fields present
 
 ### 2. Edge Case Handling
 - ✅ Servers with no args (empty array)
@@ -97,7 +97,13 @@ KEY = "value"
 - ✅ Env variables with special characters (URLs, paths)
 - ✅ Same-format passthrough (no conversion needed)
 
-### 3. Error Handling
+### 3. HTTP/SSE Server Support
+- ✅ Stdio servers (command/args based)
+- ✅ HTTP servers (url based for Claude/Codex, httpUrl for Gemini)
+- ✅ SSE servers (same as HTTP)
+- ✅ Proper type field detection and conversion
+
+### 4. Error Handling
 - Validates JSON/TOML structure
 - Throws clear errors for:
   - Malformed JSON/TOML
@@ -114,8 +120,8 @@ case 'mcp_config':
 ```
 
 ### AI-Enhanced Conversion
-- Works seamlessly with existing AI fallback infrastructure
-- AI conversion attempted first, rule-based used as fallback
+- MCP configs skip AI conversion (rule-based only)
+- Ensures accurate structured data transformation (JSON ↔ TOML)
 - Conversion results cached in KV for performance
 
 ## Commits Made

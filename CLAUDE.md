@@ -97,10 +97,22 @@ Same routes work for UI at `/configs` (returns HTML instead of JSON). The PUT en
 - Agent definitions are NOT available in Codex and Claude Code formats
 - Default input format is Claude Code
 - All conversions maintain semantic meaning
-- Config types: `slash_command` (fully implemented), `agent_definition` (passthrough), `mcp_config` (passthrough)
+- Config types:
+  - `slash_command` (fully implemented with AI-enhanced conversion)
+  - `agent_definition` (passthrough only - MVP)
+  - `mcp_config` (fully implemented with rule-based conversion, no AI)
 
 ## MVP Limitations
 
-- Agent definitions and MCP configs use passthrough (no conversion yet)
+- Agent definitions use passthrough (no conversion yet)
 - No authentication/authorization
-- Basic TOML parsing for Gemini format
+
+## MCP Config Adapter
+
+MCP configs are fully implemented with rule-based conversion:
+- Supports stdio and HTTP/SSE server types
+- Converts between Claude Code JSON (with type field), Gemini JSON (uses httpUrl), and Codex TOML (uses startup_timeout_ms)
+- Handles field mapping: type field (Claude only), httpUrl vs url, startup_timeout_ms (Codex only)
+- Uses smol-toml library (Cloudflare Workers compatible)
+- Skips AI conversion to ensure accurate structured data transformation
+- 24 passing tests covering all format combinations and edge cases

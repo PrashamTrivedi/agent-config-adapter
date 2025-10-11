@@ -4,9 +4,9 @@ Core types and business rules.
 
 ## Config Types
 
-- `slash_command`: Slash commands (fully implemented with conversion)
+- `slash_command`: Slash commands (fully implemented with AI-enhanced conversion)
 - `agent_definition`: Agent configs (passthrough only - MVP)
-- `mcp_config`: MCP configurations (passthrough only - MVP)
+- `mcp_config`: MCP configurations (fully implemented with rule-based conversion)
 
 ## Agent Formats
 
