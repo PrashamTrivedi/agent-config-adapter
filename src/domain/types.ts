@@ -1,7 +1,7 @@
 // Domain types for agent configurations
 
 export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config';
-export type AgentFormat = 'claude_code' | 'codex' | 'jules';
+export type AgentFormat = 'claude_code' | 'codex' | 'gemini';
 
 export interface Config {
   id: string;
@@ -47,4 +47,10 @@ export interface MCPConfig {
     args?: string[];
     env?: Record<string, string>;
   }>;
+}
+
+export interface GeminiSlashCommand {
+  description: string;
+  prompt: string;
+  args?: string[];
 }

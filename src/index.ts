@@ -5,6 +5,7 @@ import { layout } from './views/layout';
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  AI: Ai;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

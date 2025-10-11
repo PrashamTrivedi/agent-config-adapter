@@ -8,6 +8,7 @@ import { configListView, configDetailView, configCreateView } from '../views/con
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  AI: Ai;
 };
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
@@ -59,7 +60,7 @@ configsRouter.get('/:id/format/:format', async (c) => {
   // Try cache first
   const cached = await cache.get(id, targetFormat);
   if (cached) {
-    return c.json({ content: cached, cached: true });
+    return c.json({ content: cached, cached: true, usedAI: true, fallbackUsed: false });
   }
 
   const repo = new ConfigRepository(c.env.DB);
@@ -69,18 +70,45 @@ configsRouter.get('/:id/format/:format', async (c) => {
     return c.json({ error: 'Config not found' }, 404);
   }
 
-  const adapter = getAdapter(config.type);
-  const converted = adapter.convert(
-    config.content,
-    config.original_format,
-    targetFormat,
-    config.type
-  );
+  // Use AI-enhanced adapter
+  const adapter = getAdapter(config.type, c.env.AI);
 
-  // Cache the result
-  await cache.set(id, converted, targetFormat);
+  // Check if adapter supports AI conversion
+  if ('convertWithMetadata' in adapter) {
+    const result = await adapter.convertWithMetadata(
+      config.content,
+      config.original_format,
+      targetFormat,
+      config.type
+    );
 
-  return c.json({ content: converted, cached: false });
+    // Cache the result
+    await cache.set(id, result.content, targetFormat);
+
+    return c.json({
+      content: result.content,
+      cached: false,
+      usedAI: result.usedAI,
+      fallbackUsed: result.fallbackUsed
+    });
+  } else {
+    // Fallback to regular conversion (should not happen if AI binding exists)
+    const converted = adapter.convert(
+      config.content,
+      config.original_format,
+      targetFormat,
+      config.type
+    );
+
+    await cache.set(id, converted, targetFormat);
+
+    return c.json({
+      content: converted,
+      cached: false,
+      usedAI: false,
+      fallbackUsed: false
+    });
+  }
 });
 
 // Create new config

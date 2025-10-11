@@ -12,9 +12,8 @@ export class SlashCommandAdapter implements FormatAdapter {
       parsed = this.parseClaudeCode(content);
     } else if (sourceFormat === 'codex') {
       parsed = this.parseCodex(content);
-    } else if (sourceFormat === 'jules') {
-      // Jules uses similar format to Codex for now
-      parsed = this.parseCodex(content);
+    } else if (sourceFormat === 'gemini') {
+      parsed = this.parseGemini(content);
     } else {
       throw new Error(`Unsupported source format: ${sourceFormat}`);
     }
@@ -24,9 +23,8 @@ export class SlashCommandAdapter implements FormatAdapter {
       return this.toClaudeCode(parsed);
     } else if (targetFormat === 'codex') {
       return this.toCodex(parsed);
-    } else if (targetFormat === 'jules') {
-      // Jules uses similar format to Codex for now
-      return this.toCodex(parsed);
+    } else if (targetFormat === 'gemini') {
+      return this.toGemini(parsed);
     } else {
       throw new Error(`Unsupported target format: ${targetFormat}`);
     }
@@ -38,8 +36,8 @@ export class SlashCommandAdapter implements FormatAdapter {
         this.parseClaudeCode(content);
       } else if (format === 'codex') {
         this.parseCodex(content);
-      } else if (format === 'jules') {
-        this.parseCodex(content); // Jules uses similar format
+      } else if (format === 'gemini') {
+        this.parseGemini(content);
       }
       return true;
     } catch {
@@ -125,6 +123,47 @@ export class SlashCommandAdapter implements FormatAdapter {
       result += `${parsed.description}\n\n`;
     }
     result += `## Prompt\n\n${parsed.prompt}`;
+    return result;
+  }
+
+  private parseGemini(content: string): ClaudeCodeSlashCommand {
+    // Gemini format uses TOML
+    const lines = content.trim().split('\n');
+    let description = '';
+    let prompt = '';
+    let name = '';
+    let inPrompt = false;
+
+    for (const line of lines) {
+      if (line.startsWith('description = "')) {
+        description = line.substring(15, line.lastIndexOf('"'));
+      } else if (line.startsWith('description = \'')) {
+        description = line.substring(15, line.lastIndexOf('\''));
+      } else if (line.startsWith('prompt = """')) {
+        inPrompt = true;
+        const promptStart = line.substring(12);
+        if (promptStart && !promptStart.startsWith('"""')) {
+          prompt = promptStart;
+        }
+      } else if (line.trim() === '"""' && inPrompt) {
+        inPrompt = false;
+      } else if (inPrompt) {
+        prompt += (prompt ? '\n' : '') + line;
+      }
+    }
+
+    // Use description as name if no name provided (Gemini doesn't have name in TOML)
+    name = description.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 30);
+
+    return { name, description, prompt: prompt.trim() };
+  }
+
+  private toGemini(parsed: ClaudeCodeSlashCommand): string {
+    let result = '';
+    if (parsed.description) {
+      result += `description = "${parsed.description}"\n`;
+    }
+    result += `prompt = """\n${parsed.prompt}\n"""`;
     return result;
   }
 }
