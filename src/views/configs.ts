@@ -51,7 +51,23 @@ export function configDetailView(config: Config): string {
 
     <div id="converted"></div>
 
+    <h3>Actions</h3>
+    <div style="margin-bottom: 20px;">
+      <button
+        class="btn"
+        hx-post="/api/configs/${config.id}/invalidate"
+        hx-target="#cache-status"
+        hx-swap="innerHTML">
+        Refresh Conversions
+      </button>
+      <span style="font-size: 0.875em; color: var(--text-secondary); margin-left: 10px;">
+        (Clears cached conversions and forces re-processing)
+      </span>
+    </div>
+    <div id="cache-status"></div>
+
     <div style="margin-top: 30px;">
+      <a href="/configs/${config.id}/edit" class="btn">Edit</a>
       <a href="/configs" class="btn btn-secondary">Back to List</a>
       <button
         class="btn btn-danger"
@@ -144,6 +160,45 @@ export function configCreateView(): string {
     </script>
   `;
   return layout('Add Config', content);
+}
+
+export function configEditView(config: Config): string {
+  const content = `
+    <h2>Edit Configuration</h2>
+    <form hx-put="/api/configs/${config.id}" hx-target="body" hx-swap="outerHTML">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" value="${escapeHtml(config.name)}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" name="type" required>
+          <option value="slash_command" ${config.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
+          <option value="agent_definition" ${config.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
+          <option value="mcp_config" ${config.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="original_format">Original Format</label>
+        <select id="original_format" name="original_format" required>
+          <option value="claude_code" ${config.original_format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+          <option value="codex" ${config.original_format === 'codex' ? 'selected' : ''}>Codex</option>
+          <option value="gemini" ${config.original_format === 'gemini' ? 'selected' : ''}>Gemini</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="content">Content</label>
+        <textarea id="content" name="content" required>${escapeHtml(config.content)}</textarea>
+      </div>
+
+      <button type="submit" class="btn">Update Config</button>
+      <a href="/configs/${config.id}" class="btn btn-secondary">Cancel</a>
+    </form>
+  `;
+  return layout('Edit Config', content);
 }
 
 function escapeHtml(text: string): string {

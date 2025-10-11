@@ -3,7 +3,7 @@ import { ConfigRepository } from '../infrastructure/database';
 import { CacheService } from '../infrastructure/cache';
 import { getAdapter } from '../adapters';
 import { AgentFormat, CreateConfigInput } from '../domain/types';
-import { configListView, configDetailView, configCreateView } from '../views/configs';
+import { configListView, configDetailView, configCreateView, configEditView } from '../views/configs';
 
 type Bindings = {
   DB: D1Database;
@@ -30,6 +30,19 @@ configsRouter.get('/', async (c) => {
 // Route for creating new config (form) - MUST be before /:id route
 configsRouter.get('/new', async (c) => {
   return c.html(configCreateView());
+});
+
+// Route for editing config (form) - MUST be before /:id route
+configsRouter.get('/:id/edit', async (c) => {
+  const id = c.req.param('id');
+  const repo = new ConfigRepository(c.env.DB);
+  const config = await repo.findById(id);
+
+  if (!config) {
+    return c.json({ error: 'Config not found' }, 404);
+  }
+
+  return c.html(configEditView(config));
 });
 
 // Get single config
@@ -144,7 +157,22 @@ configsRouter.post('/', async (c) => {
 // Update config
 configsRouter.put('/:id', async (c) => {
   const id = c.req.param('id');
-  const body = await c.req.json();
+  let body;
+
+  // Handle both JSON and form data
+  const contentType = c.req.header('Content-Type') || '';
+  if (contentType.includes('application/json')) {
+    body = await c.req.json();
+  } else {
+    // Parse form data
+    const formData = await c.req.parseBody();
+    body = {
+      name: formData.name as string,
+      type: formData.type as any,
+      original_format: formData.original_format as any,
+      content: formData.content as string,
+    };
+  }
 
   const repo = new ConfigRepository(c.env.DB);
   const config = await repo.update(id, body);
@@ -157,7 +185,28 @@ configsRouter.put('/:id', async (c) => {
   const cache = new CacheService(c.env.CONFIG_CACHE);
   await cache.invalidate(id);
 
-  return c.json({ config });
+  const accept = c.req.header('Accept') || '';
+  if (accept.includes('application/json')) {
+    return c.json({ config });
+  }
+
+  // Redirect to detail view after edit
+  return c.redirect(`/configs/${id}`);
+});
+
+// Manual cache invalidation
+configsRouter.post('/:id/invalidate', async (c) => {
+  const id = c.req.param('id');
+  const cache = new CacheService(c.env.CONFIG_CACHE);
+  await cache.invalidate(id);
+
+  const accept = c.req.header('Accept') || '';
+  if (accept.includes('application/json')) {
+    return c.json({ success: true, message: 'Cache invalidated' });
+  }
+
+  // For HTMX: return success message
+  return c.html('<p style="color: #4caf50; font-size: 0.875em;">✓ Cache invalidated successfully. Conversions will be re-processed.</p>');
 });
 
 // Delete config
