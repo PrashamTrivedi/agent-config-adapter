@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "@iarna/toml": "^2.2.5",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
     "acorn-walk": "^8.3.4",
@@ -244,6 +243,7 @@
     "siginfo": "^2.0.0",
     "signal-exit": "^4.1.0",
     "simple-swizzle": "^0.2.4",
+    "smol-toml": "^1.4.2",
     "source-map-js": "^1.2.1",
     "stable-hash-x": "^0.2.0",
     "stackback": "^0.0.2",
@@ -306,8 +306,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251011.0",
-    "@types/iarna__toml": "^2.0.5"
+    "@cloudflare/workers-types": "^4.20251011.0"
   },
   "scripts": {
     "dev": "wrangler dev",

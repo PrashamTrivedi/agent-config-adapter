@@ -251,7 +251,8 @@ startup_timeout_ms = 20000
       );
 
       expect(result).toContain('[mcp_servers.no-env-server]');
-      expect(result).toMatch(/env = \{\s*\}/); // Empty env object
+      // smol-toml creates separate env section or inline empty object
+      expect(result).toMatch(/(\[mcp_servers\.no-env-server\.env\]|env = \{\s*\})/);
     });
 
     it('should handle env variables with special characters', () => {

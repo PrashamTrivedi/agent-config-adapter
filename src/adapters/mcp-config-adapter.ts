@@ -1,6 +1,6 @@
 import { AgentFormat, MCPConfig, MCPServerConfig } from '../domain/types';
 import { FormatAdapter } from './types';
-import * as TOML from '@iarna/toml';
+import { parse as parseTOML, stringify as stringifyTOML } from 'smol-toml';
 
 export class MCPConfigAdapter implements FormatAdapter {
   convert(content: string, sourceFormat: AgentFormat, targetFormat: AgentFormat): string {
@@ -52,7 +52,7 @@ export class MCPConfigAdapter implements FormatAdapter {
   }
 
   private parseTOML(content: string): MCPConfig {
-    const data = TOML.parse(content) as any;
+    const data = parseTOML(content) as any;
 
     if (!data.mcp_servers || typeof data.mcp_servers !== 'object') {
       throw new Error('Invalid TOML MCP config: missing mcp_servers section');
@@ -125,6 +125,6 @@ export class MCPConfigAdapter implements FormatAdapter {
       };
     }
 
-    return TOML.stringify(tomlData);
+    return stringifyTOML(tomlData);
   }
 }
