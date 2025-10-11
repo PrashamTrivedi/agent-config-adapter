@@ -72,9 +72,12 @@ GET    /api/configs/:id/format/:format Convert to format (claude_code|codex|gemi
 POST   /api/configs                    Create config
 PUT    /api/configs/:id                Update config
 DELETE /api/configs/:id                Delete config
+POST   /api/configs/:id/invalidate     Invalidate cached conversions
+
+GET    /configs/:id/edit               Edit config form (UI)
 ```
 
-Same routes work for UI at `/configs` (returns HTML instead of JSON).
+Same routes work for UI at `/configs` (returns HTML instead of JSON). The PUT endpoint supports both JSON and form data.
 
 ## Testing
 

@@ -7,8 +7,8 @@ Universal adapter for AI coding agent configurations. Store Claude Code commands
 - 🔄 **Format Conversion**: Convert slash commands between Claude Code, Codex, and Gemini formats
 - 🤖 **AI-Powered Conversion**: Uses Cloudflare Workers AI (Llama 3.1) for intelligent format conversion
 - 💾 **Persistent Storage**: D1 database for reliable config storage
-- ⚡ **Fast Caching**: KV namespace for quick config retrieval
-- 🎨 **Web UI**: HTMX-powered interface for managing configurations
+- ⚡ **Fast Caching**: KV namespace for quick config retrieval with manual invalidation
+- 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit and conversion refresh capabilities
 - 🔌 **REST API**: Full CRUD API for programmatic access
 
 ## Quick Start
@@ -61,6 +61,7 @@ The app will be available at `http://localhost:8787` (or another port shown in c
 - `POST /api/configs` - Create new config
 - `PUT /api/configs/:id` - Update config
 - `DELETE /api/configs/:id` - Delete config
+- `POST /api/configs/:id/invalidate` - Invalidate cached conversions for a config
 
 ### Example: Create a Config
 
@@ -81,6 +82,28 @@ curl -X POST http://localhost:8787/api/configs \
 # Get Claude Code format config as Codex format
 curl http://localhost:8787/api/configs/{id}/format/codex
 ```
+
+### Example: Invalidate Cache
+
+```bash
+# Force re-processing of conversions by invalidating cache
+curl -X POST http://localhost:8787/api/configs/{id}/invalidate
+```
+
+## Web UI Features
+
+The web interface provides a user-friendly way to manage configurations:
+
+- **List View** (`/configs`): Browse all configurations with type and format badges
+- **Detail View** (`/configs/:id`): View configuration details and convert to different formats
+- **Create Form** (`/configs/new`): Add new configurations through a web form
+- **Edit Form** (`/configs/:id/edit`): Update existing configurations
+- **Conversion Buttons**: One-click conversion to Claude Code, Codex, or Gemini formats
+- **Cache Refresh**: "Refresh Conversions" button to invalidate cached conversions and force re-processing
+- **AI Status**: Visual indicators showing whether AI or fallback conversion was used
+- **Delete Confirmation**: Safe deletion with confirmation prompt
+
+All UI interactions use HTMX for seamless updates without full page reloads.
 
 ## Configuration Types
 
@@ -255,21 +278,23 @@ Adding a new agent format is straightforward:
 
 - Agent definitions and MCP configs use passthrough adapters (no format conversion yet)
 - No authentication/authorization
-- Basic UI (can be enhanced)
 - TOML parsing for Gemini format is basic (doesn't handle all TOML features)
+- No search or filter functionality in UI
+- No batch operations for multiple configs
 
 ## Next Steps
 
 - [ ] Implement agent definition adapters
 - [ ] Implement MCP config adapters
 - [ ] Add authentication
-- [ ] Enhanced UI with better UX
 - [ ] API documentation (OpenAPI/Swagger)
 - [ ] Export/import functionality
 - [ ] Version history for configs
 - [ ] Improve TOML parsing for Gemini format
 - [ ] Add unit tests for AI conversion service
 - [ ] Upgrade to GPT-5 when available in Cloudflare Workers AI
+- [ ] Batch operations for multiple configs
+- [ ] Search and filter functionality in UI
 
 ## Contributing
 

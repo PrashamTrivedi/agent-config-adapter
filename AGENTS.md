@@ -94,3 +94,12 @@ We use domain-driven design. Core domains:
 - This project has 3 main entities: Slash Commands, Agents and MCP configurations.
 - Agent configuration is not available in Codex and Claude Code
 - User right now mostly inputs claude code configs which is a default value.
+- Cache is automatically invalidated on config updates
+- Manual cache invalidation available via UI and API for forcing conversion re-processing
+
+## UI Features
+- Full CRUD operations through web interface
+- Edit functionality with form validation
+- Manual cache refresh button for re-processing conversions
+- AI conversion status indicators (AI-powered vs fallback)
+- HTMX for seamless page updates without full reloads
