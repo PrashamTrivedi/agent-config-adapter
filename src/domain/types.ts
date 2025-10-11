@@ -41,16 +41,22 @@ export interface CodexAgentDefinition {
   prompt?: string;
 }
 
-export interface MCPConfig {
-  mcpServers: Record<string, {
-    command: string;
-    args?: string[];
-    env?: Record<string, string>;
-  }>;
-}
-
 export interface GeminiSlashCommand {
   description: string;
   prompt: string;
   args?: string[];
+}
+
+// MCP Configuration types
+export interface MCPServerConfig {
+  type?: 'stdio' | 'http';  // Claude Code only
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  httpUrl?: string;  // Gemini remote servers
+  startup_timeout_ms?: number;  // Codex only
+}
+
+export interface MCPConfig {
+  mcpServers: Record<string, MCPServerConfig>;
 }

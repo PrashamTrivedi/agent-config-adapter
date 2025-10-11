@@ -1,6 +1,7 @@
 import { AgentFormat, ConfigType } from '../domain/types';
 import { FormatAdapter } from './types';
 import { SlashCommandAdapter } from './slash-command-adapter';
+import { MCPConfigAdapter } from './mcp-config-adapter';
 import { AIConverterService, AIConversionResult } from '../infrastructure/ai-converter';
 
 // AI-enhanced adapter that wraps rule-based adapters with AI conversion
@@ -81,8 +82,7 @@ function getBaseAdapter(type: ConfigType): FormatAdapter {
       // For MVP, we'll use a simple passthrough
       return new PassthroughAdapter();
     case 'mcp_config':
-      // For MVP, we'll use a simple passthrough
-      return new PassthroughAdapter();
+      return new MCPConfigAdapter();
     default:
       throw new Error(`Unsupported config type: ${type}`);
   }
@@ -101,4 +101,5 @@ class PassthroughAdapter implements FormatAdapter {
 
 export { FormatAdapter } from './types';
 export { SlashCommandAdapter } from './slash-command-adapter';
+export { MCPConfigAdapter } from './mcp-config-adapter';
 export { AIConversionResult } from '../infrastructure/ai-converter';
