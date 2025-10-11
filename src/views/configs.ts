@@ -44,8 +44,8 @@ export function configDetailView(config: Config): string {
       <button class="btn" hx-get="/api/configs/${config.id}/format/codex" hx-target="#converted">
         Codex
       </button>
-      <button class="btn" hx-get="/api/configs/${config.id}/format/jules" hx-target="#converted">
-        Jules
+      <button class="btn" hx-get="/api/configs/${config.id}/format/gemini" hx-target="#converted">
+        Gemini
       </button>
     </div>
 
@@ -68,9 +68,21 @@ export function configDetailView(config: Config): string {
       document.body.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'converted') {
           const data = JSON.parse(evt.detail.xhr.responseText);
+
+          // Determine AI status indicator
+          let aiIndicator = '';
+          if (data.usedAI) {
+            if (data.fallbackUsed) {
+              aiIndicator = '<p style="color: #ff9800; font-size: 0.875em;">⚠ Fallback conversion used</p>';
+            } else {
+              aiIndicator = '<p style="color: #4caf50; font-size: 0.875em;">✓ AI-powered conversion</p>';
+            }
+          }
+
           evt.detail.target.innerHTML = \`
             <h3>Converted Content</h3>
             <pre>\${data.content}</pre>
+            \${aiIndicator}
             \${data.cached ? '<p style="color: var(--text-secondary); font-size: 0.875em;">From cache</p>' : ''}
           \`;
         }
@@ -103,7 +115,7 @@ export function configCreateView(): string {
         <select id="original_format" name="original_format" required>
           <option value="claude_code">Claude Code</option>
           <option value="codex">Codex</option>
-          <option value="jules">Jules</option>
+          <option value="gemini">Gemini</option>
         </select>
       </div>
 
