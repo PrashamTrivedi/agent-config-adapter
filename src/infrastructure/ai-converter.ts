@@ -23,7 +23,9 @@ export class AIConverterService {
     );
 
     try {
-      const response = await this.ai.run('@cf/openai/gpt-5', {
+      // Use Meta's Llama model as GPT-5 may not be available yet in Cloudflare Workers AI
+      // Using type assertion as the model is valid but may not be in types yet
+      const response = await this.ai.run('@cf/meta/llama-3.1-8b-instruct' as any, {
         messages: [
           {
             role: 'user',
