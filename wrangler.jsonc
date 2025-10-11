@@ -1,0 +1,25 @@
+{
+  // Production configuration for agent-config-adapter
+  "name": "agent-config-adapter",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "agent-config-adapter",
+      "database_id": "c3265e5e-c691-4d95-9888-748de81941ee"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG_CACHE",
+      "id": "ede83b375aeb47e69d514c7ef0529da8"
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  }
+}
