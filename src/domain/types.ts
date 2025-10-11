@@ -49,11 +49,12 @@ export interface GeminiSlashCommand {
 
 // MCP Configuration types
 export interface MCPServerConfig {
-  type?: 'stdio' | 'http';  // Claude Code only
-  command?: string;
-  args?: string[];
+  type?: 'stdio' | 'http' | 'sse';  // Claude Code, can be stdio, http, or sse
+  command?: string;  // For stdio servers
+  args?: string[];  // For stdio servers
   env?: Record<string, string>;
-  httpUrl?: string;  // Gemini remote servers
+  url?: string;  // For http/sse servers (Claude Code uses this)
+  httpUrl?: string;  // Alternative field name (Gemini uses this)
   startup_timeout_ms?: number;  // Codex only
 }
 

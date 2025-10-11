@@ -17,7 +17,23 @@ class AIEnhancedAdapter implements FormatAdapter {
     targetFormat: AgentFormat,
     type: ConfigType
   ): Promise<AIConversionResult> {
-    // Try AI conversion first
+    // For mcp_config, skip AI and use rule-based directly
+    // MCP configs are structured data (JSON/TOML) that doesn't benefit from AI
+    if (type === 'mcp_config') {
+      const result = this.baseAdapter.convert(
+        content,
+        sourceFormat,
+        targetFormat,
+        type
+      );
+      return {
+        content: result,
+        usedAI: false,
+        fallbackUsed: false,
+      };
+    }
+
+    // Try AI conversion first for other types (slash_command, agent_definition)
     try {
       const aiResult = await this.aiService.convert(
         content,
