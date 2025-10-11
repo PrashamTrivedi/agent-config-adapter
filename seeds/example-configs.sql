@@ -63,3 +63,45 @@ Generate unit tests for the provided code with:
   datetime('now'),
   datetime('now')
 );
+
+-- Example MCP config in Claude Code format (JSON with type)
+INSERT INTO configs (id, name, type, original_format, content, created_at, updated_at) VALUES
+(
+  'example-mcp-claude',
+  'filesystem-mcp-claude',
+  'mcp_config',
+  'claude_code',
+  '{"mcpServers":{"filesystem":{"type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-filesystem","/home/user/projects"],"env":{"READ_ONLY":"true"}}}}',
+  datetime('now'),
+  datetime('now')
+);
+
+-- Example MCP config in Gemini format (JSON without type)
+INSERT INTO configs (id, name, type, original_format, content, created_at, updated_at) VALUES
+(
+  'example-mcp-gemini',
+  'github-mcp-gemini',
+  'mcp_config',
+  'gemini',
+  '{"mcpServers":{"github":{"command":"npx","args":["-y","@modelcontextprotocol/server-github"],"env":{"GITHUB_TOKEN":"ghp_xxxxxxxxxxxx"}}}}',
+  datetime('now'),
+  datetime('now')
+);
+
+-- Example MCP config in Codex format (TOML)
+INSERT INTO configs (id, name, type, original_format, content, created_at, updated_at) VALUES
+(
+  'example-mcp-codex',
+  'postgres-mcp-codex',
+  'mcp_config',
+  'codex',
+  '[mcp_servers.postgres]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres"]
+startup_timeout_ms = 30000
+
+[mcp_servers.postgres.env]
+DATABASE_URL = "postgresql://user:pass@localhost:5432/mydb"',
+  datetime('now'),
+  datetime('now')
+);
