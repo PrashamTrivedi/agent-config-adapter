@@ -69,8 +69,9 @@ export class MCPConfigAdapter implements FormatAdapter {
       };
 
       // Check if it's an HTTP server or stdio server
-      if (config.httpUrl || config.url) {
-        serverDef.httpUrl = config.httpUrl || config.url;
+      // Codex uses 'url' field for HTTP servers
+      if (config.url) {
+        serverDef.url = config.url;
       } else {
         serverDef.command = config.command;
         serverDef.args = config.args;
@@ -147,8 +148,8 @@ export class MCPConfigAdapter implements FormatAdapter {
       // Codex uses different fields for http vs stdio servers
       const url = serverConfig.url || serverConfig.httpUrl;
       if (url) {
-        // HTTP/SSE server - Codex uses httpUrl
-        config.httpUrl = url;
+        // HTTP/SSE server - Codex uses 'url' field
+        config.url = url;
       } else {
         // stdio server
         config.command = serverConfig.command;

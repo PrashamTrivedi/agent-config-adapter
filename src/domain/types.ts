@@ -53,7 +53,7 @@ export interface MCPServerConfig {
   command?: string;  // For stdio servers
   args?: string[];  // For stdio servers
   env?: Record<string, string>;
-  url?: string;  // For http/sse servers (Claude Code uses this)
+  url?: string;  // For http/sse servers (Claude Code and Codex use this)
   httpUrl?: string;  // Alternative field name (Gemini uses this)
   startup_timeout_ms?: number;  // Codex only
 }
