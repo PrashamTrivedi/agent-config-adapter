@@ -16,7 +16,7 @@ app.get('/', (c) => {
     <h2>Welcome to Agent Config Adapter</h2>
     <p>
       Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once,
-      deploy across Codex, Jules, and other agents.
+      deploy across Codex, Gemini, and other agents.
     </p>
 
     <h3>Features</h3>

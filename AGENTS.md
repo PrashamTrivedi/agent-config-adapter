@@ -1,10 +1,10 @@
 # agent-config-adapter
 
-Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once, deploy across Codex, Jules, and other agents.
+Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once, deploy across Codex, Gemini, and other agents.
 
 ## Project Overview
 
-This app stores Claude Code slash commands, agent definitions, and MCP (Model Context Protocol) configs online, then converts them for different coding agents (Codex, Jules, etc.). Think of it as a universal translator for AI agent configurations.
+This app stores Claude Code slash commands, agent definitions, and MCP (Model Context Protocol) configs online, then converts them for different coding agents (Codex, Gemini, etc.). Think of it as a universal translator for AI agent configurations.
 
 ## Tech Stack
 
@@ -19,7 +19,8 @@ This app stores Claude Code slash commands, agent definitions, and MCP (Model Co
 
 We use domain-driven design. Core domains:
 - **Config Storage**: Persist agent configurations (slash commands, MCP configs, agent definitions)
-- **Format Adapter**: Convert between different agent formats (Claude Code ↔ Codex ↔ Jules)
+- **Format Adapter**: Convert between different agent formats (Claude Code ↔ Codex ↔ Gemini)
+- **AI Conversion**: Intelligent format conversion using Cloudflare Workers AI with automatic fallback
 - **Config Retrieval**: Fast lookup and serving of converted configs
 
 ## Dev Environment
@@ -43,8 +44,8 @@ We use domain-driven design. Core domains:
 ```
 /src
   /domain          # Domain models and business logic
-  /infrastructure  # DB, KV, external services
-  /adapters        # Format converters (Claude ↔ Codex ↔ Jules)
+  /infrastructure  # DB, KV, AI converter, external services
+  /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
   /routes          # Hono route handlers
   /views           # HTMX templates
   index.ts         # Entry point

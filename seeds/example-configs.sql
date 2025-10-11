@@ -44,3 +44,22 @@ Design a RESTful API with the following considerations:
   datetime('now'),
   datetime('now')
 );
+
+-- Example in Gemini format
+INSERT INTO configs (id, name, type, original_format, content, created_at, updated_at) VALUES
+(
+  'example-3',
+  'test-generator',
+  'slash_command',
+  'gemini',
+  'description = "Generate comprehensive unit tests for the code"
+prompt = """
+Generate unit tests for the provided code with:
+- Test coverage for all major functions
+- Edge cases and error scenarios
+- Clear test descriptions
+- Mock external dependencies where needed
+"""',
+  datetime('now'),
+  datetime('now')
+);

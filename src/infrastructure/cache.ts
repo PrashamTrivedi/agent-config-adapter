@@ -19,7 +19,7 @@ export class CacheService {
 
   async delete(id: string): Promise<void> {
     // Delete all format variations
-    const formats = ['claude_code', 'codex', 'jules'];
+    const formats = ['claude_code', 'codex', 'gemini'];
     await Promise.all([
       this.kv.delete(this.getKey(id)),
       ...formats.map(format => this.kv.delete(this.getKey(id, format)))
