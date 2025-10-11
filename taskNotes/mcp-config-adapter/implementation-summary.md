@@ -39,8 +39,7 @@ Added 3 MCP configuration examples:
 - Codex format (TOML with startup_timeout_ms)
 
 ### 5. Dependencies Added
-- `@iarna/toml` - TOML parsing library
-- `@types/iarna__toml` - TypeScript type definitions
+- `smol-toml` - TOML parsing library (Workers-compatible, replaced @iarna/toml)
 
 ## Format Specifications Implemented
 
@@ -133,6 +132,13 @@ case 'mcp_config':
 3. **5ecbe26** - 📝 docs: Add MCP config examples to seed data
    - 3 example configs (Claude, Gemini, Codex formats)
 
+4. **49aae60** - 📝 docs: Add implementation summary for MCP adapter
+   - Comprehensive implementation documentation
+
+5. **20c15c1** - 🐛 fix: Replace @iarna/toml with smol-toml for Workers compatibility
+   - Fixed build error caused by Node.js-specific dependencies
+   - Updated tests to match smol-toml output format
+
 ## Files Changed
 - `package.json` - Added TOML dependencies
 - `package-lock.json` - Updated lock file
@@ -168,10 +174,11 @@ npm test -- --run
 
 ## Performance Characteristics
 
-- **TOML Parsing**: Fast, uses `@iarna/toml` library
+- **TOML Parsing**: Fast, uses `smol-toml` library (Cloudflare Workers compatible)
 - **JSON Parsing**: Native `JSON.parse()`
 - **Caching**: Converted configs cached in KV
 - **Memory**: Minimal overhead, no large data structures
+- **Build Size**: 108.33 KiB total / 25.82 KiB gzipped
 
 ## What's Next
 
