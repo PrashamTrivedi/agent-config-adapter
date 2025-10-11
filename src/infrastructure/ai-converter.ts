@@ -57,7 +57,7 @@ IMPORTANT RULES:
 3. Follow the target format's syntax precisely
 4. Output ONLY the converted configuration - no explanations, no markdown code blocks, no preamble
 5. If the source has parameters/arguments, preserve them in the target format's convention
-6. Follow these convention for memory files, Claude Code has CLAUDE.md, Gemini CLI has GEMINI.md and Codex has AGENTS.md. So when you encounter one in the source file, replace it for Destination. 
+6. Follow these convention for memory files, Claude Code has CLAUDE.md, Gemini  has GEMINI.md and Codex has AGENTS.md. So when you encounter one in the source file, replace it for Destination. 
     - e.g. If you encounter CLAUDE.md and are converting it to Gemini, Replace CLAUDE.md with GEMINI.md
 
 ${this.getFormatSpec(sourceFormat, 'SOURCE')}
