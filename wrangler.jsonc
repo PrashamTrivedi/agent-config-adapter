@@ -18,8 +18,8 @@
     }
   ],
   "vars": {
-    "ACCOUNT_ID": "your-account-id",
-    "GATEWAY_ID": "your-gateway-id"
+    "ACCOUNT_ID": "b286748abb233ddf7bf942f876f11eac",
+    "GATEWAY_ID": "agent-config-adapter"
   },
   "observability": {
     "logs": {
