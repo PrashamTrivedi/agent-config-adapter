@@ -17,8 +17,9 @@
       "id": "ede83b375aeb47e69d514c7ef0529da8"
     }
   ],
-  "ai": {
-    "binding": "AI"
+  "vars": {
+    "ACCOUNT_ID": "your-account-id",
+    "GATEWAY_ID": "your-gateway-id"
   },
   "observability": {
     "logs": {

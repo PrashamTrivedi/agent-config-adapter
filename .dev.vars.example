@@ -1,0 +1,8 @@
+# OpenAI API Key for AI Gateway
+OPENAI_API_KEY=sk-...
+
+# Cloudflare Account ID (find in your Cloudflare dashboard)
+ACCOUNT_ID=your-account-id
+
+# AI Gateway ID (created in Cloudflare AI Gateway dashboard)
+GATEWAY_ID=your-gateway-id

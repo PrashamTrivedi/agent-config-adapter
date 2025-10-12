@@ -5,7 +5,9 @@ import { layout } from './views/layout';
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
-  AI: Ai;
+  OPENAI_API_KEY: string;
+  ACCOUNT_ID: string;
+  GATEWAY_ID: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

@@ -79,11 +79,18 @@ class AIEnhancedAdapter implements FormatAdapter {
 }
 
 // Factory to get appropriate adapter based on config type
-export function getAdapter(type: ConfigType, ai?: Ai): FormatAdapter | AIEnhancedAdapter {
+export function getAdapter(
+  type: ConfigType,
+  env?: { OPENAI_API_KEY?: string; ACCOUNT_ID?: string; GATEWAY_ID?: string }
+): FormatAdapter | AIEnhancedAdapter {
   const baseAdapter = getBaseAdapter(type);
 
-  if (ai) {
-    const aiService = new AIConverterService(ai);
+  if (env?.OPENAI_API_KEY && env?.ACCOUNT_ID && env?.GATEWAY_ID) {
+    const aiService = new AIConverterService(
+      env.OPENAI_API_KEY,
+      env.ACCOUNT_ID,
+      env.GATEWAY_ID
+    );
     return new AIEnhancedAdapter(baseAdapter, aiService);
   }
 

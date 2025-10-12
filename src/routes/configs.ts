@@ -8,7 +8,9 @@ import { configListView, configDetailView, configCreateView, configEditView } fr
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
-  AI: Ai;
+  OPENAI_API_KEY: string;
+  ACCOUNT_ID: string;
+  GATEWAY_ID: string;
 };
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
@@ -84,7 +86,11 @@ configsRouter.get('/:id/format/:format', async (c) => {
   }
 
   // Use AI-enhanced adapter
-  const adapter = getAdapter(config.type, c.env.AI);
+  const adapter = getAdapter(config.type, {
+    OPENAI_API_KEY: c.env.OPENAI_API_KEY,
+    ACCOUNT_ID: c.env.ACCOUNT_ID,
+    GATEWAY_ID: c.env.GATEWAY_ID
+  });
 
   // Check if adapter supports AI conversion
   if ('convertWithMetadata' in adapter) {

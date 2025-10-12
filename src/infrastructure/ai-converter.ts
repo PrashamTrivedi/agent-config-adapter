@@ -1,3 +1,4 @@
+import OpenAI from 'openai'
 import {AgentFormat, ConfigType} from '../domain/types'
 
 export interface AIConversionResult {
@@ -7,7 +8,14 @@ export interface AIConversionResult {
 }
 
 export class AIConverterService {
-  constructor(private ai: Ai) { }
+  private openai: OpenAI
+
+  constructor(apiKey: string, accountId: string, gatewayId: string) {
+    this.openai = new OpenAI({
+      apiKey,
+      baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`
+    })
+  }
 
   async convert(
     sourceContent: string,
@@ -23,20 +31,19 @@ export class AIConverterService {
     )
 
     try {
-      // Use Meta's Llama model as GPT-5 may not be available yet in Cloudflare Workers AI
-      // Using type assertion as the model is valid but may not be in types yet
-      const response = await this.ai.run('@cf/meta/llama-3.1-8b-instruct' as any, {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-5-mini',
         messages: [
           {
             role: 'user',
             content: prompt,
           },
         ],
+        max_tokens: 2000,
       })
 
-      // Extract the converted content from the AI response
-      const result = this.extractContent(response)
-      return result
+      const result = response.choices[0].message.content || ''
+      return result.trim()
     } catch (error) {
       console.error('AI conversion failed:', error)
       throw new Error('AI conversion failed')
@@ -121,31 +128,4 @@ If there are no parameters, omit the args field entirely.`
     }
   }
 
-  private extractContent(response: any): string {
-    // Handle different possible response structures from Cloudflare AI
-    if (typeof response === 'string') {
-      return response.trim()
-    }
-
-    if (response.response) {
-      return response.response.trim()
-    }
-
-    if (response.result && response.result.response) {
-      return response.result.response.trim()
-    }
-
-    if (response.choices && response.choices.length > 0) {
-      const choice = response.choices[0]
-      if (choice.message && choice.message.content) {
-        return choice.message.content.trim()
-      }
-      if (choice.text) {
-        return choice.text.trim()
-      }
-    }
-
-    // If we can't extract content, throw error for fallback
-    throw new Error('Could not extract content from AI response')
-  }
 }
