@@ -5,7 +5,7 @@ Universal adapter for AI coding agent configurations. Store Claude Code commands
 ## Features
 
 - 🔄 **Format Conversion**: Convert slash commands between Claude Code, Codex, and Gemini formats
-- 🤖 **AI-Powered Conversion**: Uses Cloudflare Workers AI (Llama 3.1) for intelligent format conversion
+- 🤖 **AI-Powered Conversion**: Uses OpenAI GPT-5-mini via Cloudflare AI Gateway for intelligent format conversion
 - 💾 **Persistent Storage**: D1 database for reliable config storage
 - ⚡ **Fast Caching**: KV namespace for quick config retrieval with manual invalidation
 - 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit and conversion refresh capabilities
@@ -30,6 +30,10 @@ npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0002_ad
 
 # Load sample data (optional)
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
+
+# Setup environment variables for local development
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your OpenAI API key, Account ID, and Gateway ID
 
 # Start development server
 npm run dev
@@ -121,7 +125,7 @@ All UI interactions use HTMX for seamless updates without full page reloads.
 
 ### Slash Command Conversion
 
-Slash command conversions are powered by AI (Cloudflare Workers AI with Llama 3.1 model) with automatic fallback to rule-based conversion if needed.
+Slash command conversions are powered by AI (OpenAI GPT-5-mini via Cloudflare AI Gateway) with automatic fallback to rule-based conversion if needed.
 
 #### Claude Code to Codex
 
@@ -327,7 +331,14 @@ Before deploying (first time setup):
 
 3. Update [wrangler.jsonc](wrangler.jsonc) with production IDs
 
-4. Apply migrations to production:
+4. Set OpenAI API key secret:
+   ```bash
+   npx wrangler secret put OPENAI_API_KEY
+   ```
+
+5. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars section
+
+6. Apply migrations to production:
    ```bash
    npx wrangler d1 migrations apply agent-config-adapter --remote
    ```
@@ -338,7 +349,7 @@ Before deploying (first time setup):
 - **Platform**: Cloudflare Workers
 - **Database**: Cloudflare D1 (SQLite)
 - **Cache**: Cloudflare KV
-- **AI**: Cloudflare Workers AI (Llama 3.1 8B Instruct)
+- **AI**: OpenAI GPT-5-mini via Cloudflare AI Gateway
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
@@ -359,10 +370,11 @@ The system uses different strategies based on configuration type:
 
 #### Slash Commands (AI-Enhanced)
 
-1. **Primary**: AI-powered conversion using Cloudflare Workers AI (Llama 3.1 8B Instruct model)
+1. **Primary**: AI-powered conversion using OpenAI GPT-5-mini via Cloudflare AI Gateway
    - Provides intelligent, context-aware format conversion
    - Preserves semantic meaning across different agent formats
    - Handles edge cases better than rule-based conversion
+   - Superior conversion quality compared to previous Llama 3.1 implementation
 
 2. **Fallback**: Rule-based conversion using format-specific adapters
    - Automatically used if AI conversion fails
@@ -400,9 +412,9 @@ Adding a new agent format is straightforward:
 - [ ] API documentation (OpenAPI/Swagger)
 - [ ] Export/import functionality
 - [ ] Version history for configs
+- [x] Upgrade to GPT-5 via Cloudflare AI Gateway (completed)
 - [ ] Add unit tests for AI conversion service
 - [ ] Support for HTTP/SSE MCP servers in UI
-- [ ] Upgrade to GPT-5 when available in Cloudflare Workers AI
 - [ ] Batch operations for multiple configs
 - [ ] Search and filter functionality in UI
 

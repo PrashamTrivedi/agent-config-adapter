@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Agent Config Adapter - Universal configuration adapter for AI coding agents. Stores configurations (slash commands, agent definitions, MCP configs) and converts between Claude Code, Codex, and Gemini formats.
 
-**Tech Stack**: Cloudflare Workers, Hono, D1 (SQLite), KV cache, Workers AI (Llama 3.1)
+**Tech Stack**: Cloudflare Workers, Hono, D1 (SQLite), KV cache, AI Gateway (OpenAI GPT-5-mini)
 
 ## Development Commands
 
@@ -21,6 +21,10 @@ npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_re
 
 # Load sample data
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
+
+# Setup environment variables for local development
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your OpenAI API key, Account ID, and Gateway ID
 ```
 
 ### Development
@@ -48,6 +52,10 @@ npm run deploy
 npx wrangler d1 create agent-config-adapter
 npx wrangler kv:namespace create CONFIG_CACHE
 # Update IDs in wrangler.jsonc
+
+# Set production secrets
+npx wrangler secret put OPENAI_API_KEY
+# Update ACCOUNT_ID and GATEWAY_ID in wrangler.jsonc vars section
 ```
 
 ## Architecture
@@ -61,7 +69,7 @@ npx wrangler kv:namespace create CONFIG_CACHE
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used.
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `AI` (Workers AI)
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `OPENAI_API_KEY` (secret), `ACCOUNT_ID` (var), `GATEWAY_ID` (var)
 
 ## API Endpoints
 
@@ -90,7 +98,9 @@ Same routes work for UI at `/configs` (returns HTML instead of JSON). The PUT en
 
 **wrangler.jsonc**: Uses JSONC format (comments allowed)
 - Update production database and KV IDs after creating resources
-- `nodejs_compat` flag required for nanoid and other Node.js modules
+- `nodejs_compat` flag required for nanoid, OpenAI SDK, and other Node.js modules
+- Set `ACCOUNT_ID` and `GATEWAY_ID` in vars section
+- Set `OPENAI_API_KEY` as a secret using wrangler CLI
 
 ## Business Rules
 
