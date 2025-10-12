@@ -8,7 +8,7 @@ import { configListView, configDetailView, configCreateView, configEditView } fr
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
-  OPENAI_API_KEY: string;
+  OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
 };

@@ -12,7 +12,7 @@ export class AIConverterService {
 
   constructor(apiKey: string, accountId: string, gatewayId: string) {
     this.openai = new OpenAI({
-      apiKey,
+      apiKey: apiKey || 'dummy-key-byok-configured',
       baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`
     })
   }

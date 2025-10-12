@@ -85,9 +85,9 @@ export function getAdapter(
 ): FormatAdapter | AIEnhancedAdapter {
   const baseAdapter = getBaseAdapter(type);
 
-  if (env?.OPENAI_API_KEY && env?.ACCOUNT_ID && env?.GATEWAY_ID) {
+  if (env?.ACCOUNT_ID && env?.GATEWAY_ID) {
     const aiService = new AIConverterService(
-      env.OPENAI_API_KEY,
+      env.OPENAI_API_KEY || '',
       env.ACCOUNT_ID,
       env.GATEWAY_ID
     );
