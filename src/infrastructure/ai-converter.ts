@@ -47,7 +47,6 @@ export class AIConverterService {
             content: prompt,
           },
         ],
-        max_tokens: 2000,
       })
 
       const result = response.choices[0].message.content || ''
