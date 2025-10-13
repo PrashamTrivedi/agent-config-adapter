@@ -18,8 +18,11 @@ Database, caching, and external service integrations.
 
 ## AI Converter
 
-- **Model**: Llama 3.1 8B Instruct (`@cf/meta/llama-3.1-8b-instruct`)
+- **Model**: OpenAI GPT-5-mini via Cloudflare AI Gateway
+- **Authentication**: Requires OpenAI API key (BYOK - Bring Your Own Key)
 - Build detailed prompts with source and target format specs
-- Extract content from various response structures (handle different AI response formats)
-- Throw error if extraction fails to trigger fallback
+- Uses OpenAI SDK with `chat.completions.create()` method
+- Gateway URL: `https://gateway.ai.cloudflare.com/v1/{ACCOUNT_ID}/{GATEWAY_ID}/openai`
+- Optional AI Gateway token authentication via `cf-aig-authorization` header
+- Throw error if conversion fails to trigger fallback
 - Never add explanations or code blocks to converted output

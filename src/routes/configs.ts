@@ -113,7 +113,7 @@ configsRouter.get('/:id/format/:format', async (c) => {
       fallbackUsed: result.fallbackUsed
     });
   } else {
-    // Fallback to regular conversion (should not happen if AI binding exists)
+    // Fallback to regular conversion (used when OpenAI API key is not configured)
     const converted = adapter.convert(
       config.content,
       config.original_format,

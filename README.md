@@ -27,6 +27,7 @@ npm install
 # Initialize local D1 database
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0001_create_configs_table.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0002_add_updated_at.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_replace_jules_with_gemini.sql
 
 # Load sample data (optional)
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql

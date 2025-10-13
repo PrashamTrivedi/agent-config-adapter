@@ -12,7 +12,7 @@ This app stores Claude Code slash commands, agent definitions, and MCP (Model Co
 - **Platform**: Cloudflare Workers
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare KV (for quick config lookups)
-- **AI**: Cloudflare Workers AI (Llama 3.1 8B Instruct)
+- **AI**: OpenAI GPT-5-mini via Cloudflare AI Gateway
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript throughout
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
@@ -22,7 +22,7 @@ This app stores Claude Code slash commands, agent definitions, and MCP (Model Co
 We use domain-driven design. Core domains:
 - **Config Storage**: Persist agent configurations (slash commands, MCP configs, agent definitions)
 - **Format Adapter**: Convert between different agent formats (Claude Code ↔ Codex ↔ Gemini)
-- **AI Conversion**: Intelligent format conversion using Cloudflare Workers AI with automatic fallback
+- **AI Conversion**: Intelligent format conversion using OpenAI GPT-5-mini via Cloudflare AI Gateway with automatic fallback
 - **Config Retrieval**: Fast lookup and serving of converted configs
 
 ## Dev Environment
