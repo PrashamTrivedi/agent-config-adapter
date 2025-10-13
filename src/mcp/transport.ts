@@ -13,7 +13,8 @@ export async function handleMCPStreamable(
   env: MCPContext
 ): Promise<Response> {
   try {
-    // Create stateless transport (recommended for serverless)
+    // Create a new transport for each request (stateless mode)
+    // This prevents request ID collisions when different clients use same IDs
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined, // Stateless mode
       enableJsonResponse: true
@@ -25,10 +26,44 @@ export async function handleMCPStreamable(
     // Connect server to transport
     await server.connect(transport);
 
-    // Handle the HTTP request
-    const response = await transport.handlePostMessage(request);
+    // Parse request body
+    const body = await request.json();
 
-    return response;
+    // Create a minimal Response object for the transport
+    // The transport will handle the actual response generation
+    let responseInit: ResponseInit = {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+
+    let responseBody = '';
+    const mockRes = {
+      status: (code: number) => {
+        responseInit.status = code;
+        return mockRes;
+      },
+      setHeader: (name: string, value: string) => {
+        if (!responseInit.headers) responseInit.headers = {};
+        (responseInit.headers as Record<string, string>)[name] = value;
+        return mockRes;
+      },
+      write: (chunk: any) => {
+        responseBody += chunk.toString();
+        return mockRes;
+      },
+      end: (data?: any) => {
+        if (data) responseBody += data.toString();
+        return mockRes;
+      },
+      on: () => mockRes
+    };
+
+    // Handle the request using the transport
+    await transport.handleRequest(request as any, mockRes as any, body);
+
+    return new Response(responseBody, responseInit);
   } catch (error: any) {
     console.error('MCP transport error:', error);
 
