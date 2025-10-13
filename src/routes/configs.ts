@@ -11,6 +11,7 @@ type Bindings = {
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
+  AI_GATEWAY_TOKEN?: string;
 };
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
@@ -89,7 +90,8 @@ configsRouter.get('/:id/format/:format', async (c) => {
   const adapter = getAdapter(config.type, {
     OPENAI_API_KEY: c.env.OPENAI_API_KEY,
     ACCOUNT_ID: c.env.ACCOUNT_ID,
-    GATEWAY_ID: c.env.GATEWAY_ID
+    GATEWAY_ID: c.env.GATEWAY_ID,
+    AI_GATEWAY_TOKEN: c.env.AI_GATEWAY_TOKEN
   });
 
   // Check if adapter supports AI conversion

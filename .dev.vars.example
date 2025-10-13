@@ -10,3 +10,10 @@ ACCOUNT_ID=b286748abb233ddf7bf942f876f11eac
 
 # AI Gateway ID (created in Cloudflare AI Gateway dashboard)
 GATEWAY_ID=ai-agent-adapter
+
+# AI Gateway Authentication Token - OPTIONAL for authenticated gateways
+# Create token in: Cloudflare Dashboard > AI Gateway > [Your Gateway] > Authentication
+# This is required if you enabled "Authenticated Gateway" in the AI Gateway settings
+# Leave empty if using an unauthenticated gateway
+# Format: token value (without "Bearer " prefix - added automatically)
+AI_GATEWAY_TOKEN=

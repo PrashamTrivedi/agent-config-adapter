@@ -8,6 +8,7 @@ type Bindings = {
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
+  AI_GATEWAY_TOKEN?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

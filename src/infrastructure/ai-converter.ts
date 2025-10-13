@@ -10,11 +10,19 @@ export interface AIConversionResult {
 export class AIConverterService {
   private openai: OpenAI
 
-  constructor(apiKey: string, accountId: string, gatewayId: string) {
-    this.openai = new OpenAI({
+  constructor(apiKey: string, accountId: string, gatewayId: string, gatewayToken?: string) {
+    const config: any = {
       apiKey: apiKey || 'dummy-key-byok-configured',
       baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`
-    })
+    }
+
+    if (gatewayToken) {
+      config.defaultHeaders = {
+        'cf-aig-authorization': `Bearer ${gatewayToken}`
+      }
+    }
+
+    this.openai = new OpenAI(config)
   }
 
   async convert(
