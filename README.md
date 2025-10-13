@@ -10,6 +10,7 @@ Universal adapter for AI coding agent configurations. Store Claude Code commands
 - ⚡ **Fast Caching**: KV namespace for quick config retrieval with manual invalidation
 - 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit and conversion refresh capabilities
 - 🔌 **REST API**: Full CRUD API for programmatic access
+- 🌐 **MCP Server**: Model Context Protocol server for AI agent integration with tools, resources, and prompts
 
 ## Quick Start
 
@@ -67,7 +68,9 @@ The app will be available at `http://localhost:8787` (or another port shown in c
   /domain          # Domain models and business logic
   /infrastructure  # DB, KV, AI converter, external services
   /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
-  /routes          # Hono route handlers
+  /services        # Business logic layer (config, conversion services)
+  /routes          # Hono REST route handlers
+  /mcp             # MCP server implementation (server, transport, types)
   /views           # HTMX templates
   index.ts         # Entry point
 /migrations        # D1 migrations
@@ -112,6 +115,138 @@ curl http://localhost:8787/api/configs/{id}/format/codex
 # Force re-processing of conversions by invalidating cache
 curl -X POST http://localhost:8787/api/configs/{id}/invalidate
 ```
+
+## MCP Server
+
+The Agent Config Adapter includes a full Model Context Protocol (MCP) server implementation, allowing AI agents to interact with configurations programmatically. The MCP server provides a standardized interface for reading, writing, and converting agent configurations.
+
+### MCP Endpoints
+
+- `POST /mcp` - MCP JSON-RPC endpoint (Streamable HTTP transport)
+- `GET /mcp/info` - Server information and capabilities (HTML/JSON)
+
+### MCP Capabilities
+
+The MCP server exposes three types of capabilities:
+
+#### 1. Tools (Write Operations)
+
+Tools perform operations with side effects:
+
+- **create_config** - Create a new agent configuration
+  - Arguments: `name`, `type` (slash_command|mcp_config|agent_definition), `original_format` (claude_code|codex|gemini), `content`
+  - Returns: Created config with ID
+
+- **update_config** - Update an existing configuration
+  - Arguments: `configId`, optional: `name`, `type`, `original_format`, `content`
+  - Returns: Updated config or error if not found
+
+- **delete_config** - Delete a configuration
+  - Arguments: `configId`
+  - Returns: Success status
+
+- **get_config** - Get a single configuration by ID
+  - Arguments: `configId`
+  - Returns: Config object or error if not found
+
+- **convert_config** - Convert config to a different format (on-demand, with caching)
+  - Arguments: `configId`, `targetFormat` (claude_code|codex|gemini)
+  - Returns: Converted content with metadata (cached, usedAI, fallbackUsed)
+  - Note: This is the operation that triggers conversion and caching
+
+- **invalidate_cache** - Invalidate all cached conversions for a config
+  - Arguments: `configId`
+  - Returns: Success status
+
+#### 2. Resources (Read Operations)
+
+Resources provide context to AI agents (pure reads, no processing):
+
+- **config://list** - List all agent configurations
+  - Returns: Array of all configs with metadata
+  - MimeType: application/json
+
+#### 3. Prompts (Workflow Automation)
+
+Prompts provide guided workflows for complex multi-step operations:
+
+- **migrate_config_format** - Migrate a configuration from one agent format to another
+  - Arguments: `sourceConfigId`, `targetFormat` (claude_code|codex|gemini), optional: `newName`
+  - Workflow: Reads source config, converts to target format, creates new config
+  - Returns: Step-by-step instructions for the AI agent to follow
+
+- **batch_convert** - Bulk convert multiple configs to a specific format
+  - Arguments: `targetFormat` (claude_code|codex|gemini), optional: `configTypes` (comma-separated)
+  - Workflow: Lists all configs, filters by type, converts each to target format
+  - Returns: Batch conversion instructions with summary reporting
+  - Note: Skips agent_definition types (not convertible)
+
+- **sync_config_versions** - Synchronize cached format conversions for a config
+  - Arguments: `configId`
+  - Workflow: Reads config, invalidates cache, regenerates all format conversions
+  - Returns: Sync workflow instructions with status reporting
+
+### Connecting MCP Clients
+
+Add the following configuration to your MCP client:
+
+```json
+{
+  "mcpServers": {
+    "agent-config-adapter": {
+      "type": "http",
+      "url": "http://localhost:8787/mcp"
+    }
+  }
+}
+```
+
+For production deployments, replace `localhost:8787` with your deployed Worker URL.
+
+### MCP Client Examples
+
+#### Using Claude Code
+
+Claude Code can connect to the MCP server automatically if configured in your MCP settings. Once connected, Claude can:
+
+- Create new configurations: "Create a new slash command called 'code-review' that reviews code quality"
+- Convert formats: "Convert config abc123 to Codex format"
+- Batch operations: "Convert all slash_command configs to Gemini format"
+- Migrate configs: "Migrate my Claude Code config xyz789 to Codex format and save it as a new config"
+
+#### Using Python MCP SDK
+
+```python
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async with stdio_client(StdioServerParameters(
+    command="curl",
+    args=["-X", "POST", "http://localhost:8787/mcp"]
+)) as (read, write):
+    async with ClientSession(read, write) as session:
+        # List all resources
+        resources = await session.list_resources()
+
+        # Call a tool
+        result = await session.call_tool("create_config", {
+            "name": "my-command",
+            "type": "slash_command",
+            "original_format": "claude_code",
+            "content": "---\nname: my-command\n---\n\nDo something"
+        })
+```
+
+### MCP Architecture
+
+The MCP implementation uses a services layer to share business logic between REST and MCP interfaces:
+
+- **ConfigService** - Handles CRUD operations for configurations
+- **ConversionService** - Handles format conversion with caching and metadata
+- **MCP Server** - Exposes tools, resources, and prompts via MCP protocol
+- **Transport Layer** - Streamable HTTP transport for Cloudflare Workers compatibility
+
+The transport layer uses `fetch-to-node` to bridge between Cloudflare Workers' Web Fetch API and the Node.js HTTP interfaces required by the MCP SDK.
 
 ## Web UI Features
 
@@ -369,19 +504,25 @@ Before deploying (first time setup):
 - **Database**: Cloudflare D1 (SQLite)
 - **Cache**: Cloudflare KV
 - **AI**: OpenAI GPT-5-mini via Cloudflare AI Gateway
+- **MCP**: @modelcontextprotocol/sdk (Model Context Protocol server)
+- **Transport Bridge**: fetch-to-node (Web Fetch to Node.js HTTP adapter)
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
 
 ## Architecture
 
-The project follows domain-driven design principles:
+The project follows domain-driven design principles with a services layer for shared business logic:
 
-- **Domain Layer**: Core business logic and types
+- **Domain Layer**: Core business logic and types (no infrastructure dependencies)
 - **Infrastructure Layer**: Database, cache, and AI conversion service implementations
+- **Services Layer**: Business logic orchestration (ConfigService, ConversionService)
+  - Used by both REST API routes and MCP server tools
+  - Provides consistent behavior across different interfaces
 - **Adapter Layer**: Format conversion logic with AI enhancement (extensible for new formats)
-- **Routes Layer**: HTTP request handlers
-- **Views Layer**: HTML template generation
+- **Routes Layer**: REST HTTP request handlers (Hono)
+- **MCP Layer**: Model Context Protocol server with tools, resources, and prompts
+- **Views Layer**: HTML template generation (HTMX)
 
 ### AI-Powered Conversion
 
@@ -420,22 +561,24 @@ Adding a new agent format is straightforward:
 ## Current Limitations (MVP)
 
 - Agent definitions use passthrough adapter (no format conversion yet)
-- No authentication/authorization
+- No authentication/authorization (both REST and MCP)
 - No search or filter functionality in UI
-- No batch operations for multiple configs
+- Batch operations available via MCP prompts only (not in UI yet)
 
 ## Next Steps
 
 - [ ] Implement agent definition adapters
-- [ ] Add authentication
-- [ ] API documentation (OpenAPI/Swagger)
+- [ ] Add authentication (both REST and MCP)
+- [ ] API documentation (OpenAPI/Swagger for REST API)
 - [ ] Export/import functionality
 - [ ] Version history for configs
 - [x] Upgrade to GPT-5 via Cloudflare AI Gateway (completed)
+- [x] MCP server implementation with tools, resources, and prompts (completed)
+- [x] Services layer for shared business logic (completed)
 - [ ] Add unit tests for AI conversion service
 - [ ] Support for HTTP/SSE MCP servers in UI
-- [ ] Batch operations for multiple configs
 - [ ] Search and filter functionality in UI
+- [ ] MCP client examples and integration tests
 
 ## Contributing
 

@@ -65,8 +65,14 @@ npx wrangler secret put OPENAI_API_KEY
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
 - `src/infrastructure/` - D1, KV, AI services
+- `src/services/` - Business logic layer (ConfigService, ConversionService)
+  - Shared between REST API routes and MCP server tools
+  - Ensures consistent behavior across interfaces
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono HTTP handlers
+- `src/routes/` - Hono REST HTTP handlers
+- `src/mcp/` - MCP server implementation (server, transport, types)
+  - Exposes 6 tools, 1 resource, 3 prompts
+  - Uses Streamable HTTP transport for Cloudflare Workers
 - `src/views/` - HTMX server-rendered templates
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used.
@@ -77,6 +83,7 @@ npx wrangler secret put OPENAI_API_KEY
 
 ## API Endpoints
 
+### REST API
 ```
 GET    /api/configs                    List all configs
 GET    /api/configs/:id                Get specific config
@@ -91,12 +98,41 @@ GET    /configs/:id/edit               Edit config form (UI)
 
 Same routes work for UI at `/configs` (returns HTML instead of JSON). The PUT endpoint supports both JSON and form data.
 
+### MCP Server
+```
+POST   /mcp                            MCP JSON-RPC endpoint (Streamable HTTP transport)
+GET    /mcp/info                       Server info and capabilities (HTML/JSON)
+```
+
+**MCP Capabilities**:
+- **6 Tools**: create_config, update_config, delete_config, get_config, convert_config, invalidate_cache
+- **1 Resource**: config://list (lists all configs)
+- **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+
+**MCP Client Config**:
+```json
+{
+  "mcpServers": {
+    "agent-config-adapter": {
+      "type": "http",
+      "url": "http://localhost:8787/mcp"
+    }
+  }
+}
+```
+
 ## Testing
 
 - Use Vitest for all tests
 - Test adapter conversion logic (critical)
 - Test D1 and KV operations
+- Test services layer (ConfigService, ConversionService)
 - All tests must pass before committing
+
+### MCP Testing
+- Test MCP tools via `/mcp` endpoint
+- Use `GET /mcp/info` to verify server capabilities
+- Test workflows using prompts (migrate_config_format, batch_convert, sync_config_versions)
 
 ## Configuration
 

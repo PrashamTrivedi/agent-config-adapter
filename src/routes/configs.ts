@@ -1,7 +1,5 @@
 import { Hono } from 'hono';
-import { ConfigRepository } from '../infrastructure/database';
-import { CacheService } from '../infrastructure/cache';
-import { getAdapter } from '../adapters';
+import { ConfigService, ConversionService } from '../services';
 import { AgentFormat, CreateConfigInput } from '../domain/types';
 import { configListView, configDetailView, configCreateView, configEditView } from '../views/configs';
 
@@ -18,8 +16,8 @@ export const configsRouter = new Hono<{ Bindings: Bindings }>();
 
 // List all configs
 configsRouter.get('/', async (c) => {
-  const repo = new ConfigRepository(c.env.DB);
-  const configs = await repo.findAll();
+  const service = new ConfigService(c.env);
+  const configs = await service.listConfigs();
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -38,8 +36,8 @@ configsRouter.get('/new', async (c) => {
 // Route for editing config (form) - MUST be before /:id route
 configsRouter.get('/:id/edit', async (c) => {
   const id = c.req.param('id');
-  const repo = new ConfigRepository(c.env.DB);
-  const config = await repo.findById(id);
+  const service = new ConfigService(c.env);
+  const config = await service.getConfig(id);
 
   if (!config) {
     return c.json({ error: 'Config not found' }, 404);
@@ -51,8 +49,8 @@ configsRouter.get('/:id/edit', async (c) => {
 // Get single config
 configsRouter.get('/:id', async (c) => {
   const id = c.req.param('id');
-  const repo = new ConfigRepository(c.env.DB);
-  const config = await repo.findById(id);
+  const service = new ConfigService(c.env);
+  const config = await service.getConfig(id);
 
   if (!config) {
     return c.json({ error: 'Config not found' }, 404);
@@ -71,64 +69,22 @@ configsRouter.get('/:id/format/:format', async (c) => {
   const id = c.req.param('id');
   const targetFormat = c.req.param('format') as AgentFormat;
 
-  const cache = new CacheService(c.env.CONFIG_CACHE);
+  const service = new ConversionService(c.env);
 
-  // Try cache first
-  const cached = await cache.get(id, targetFormat);
-  if (cached) {
-    return c.json({ content: cached, cached: true, usedAI: true, fallbackUsed: false });
-  }
-
-  const repo = new ConfigRepository(c.env.DB);
-  const config = await repo.findById(id);
-
-  if (!config) {
-    return c.json({ error: 'Config not found' }, 404);
-  }
-
-  // Use AI-enhanced adapter
-  const adapter = getAdapter(config.type, {
-    OPENAI_API_KEY: c.env.OPENAI_API_KEY,
-    ACCOUNT_ID: c.env.ACCOUNT_ID,
-    GATEWAY_ID: c.env.GATEWAY_ID,
-    AI_GATEWAY_TOKEN: c.env.AI_GATEWAY_TOKEN
-  });
-
-  // Check if adapter supports AI conversion
-  if ('convertWithMetadata' in adapter) {
-    const result = await adapter.convertWithMetadata(
-      config.content,
-      config.original_format,
-      targetFormat,
-      config.type
-    );
-
-    // Cache the result
-    await cache.set(id, result.content, targetFormat);
+  try {
+    const result = await service.convertWithMetadata(id, targetFormat);
 
     return c.json({
       content: result.content,
-      cached: false,
+      cached: result.cached,
       usedAI: result.usedAI,
       fallbackUsed: result.fallbackUsed
     });
-  } else {
-    // Fallback to regular conversion (used when OpenAI API key is not configured)
-    const converted = adapter.convert(
-      config.content,
-      config.original_format,
-      targetFormat,
-      config.type
-    );
-
-    await cache.set(id, converted, targetFormat);
-
-    return c.json({
-      content: converted,
-      cached: false,
-      usedAI: false,
-      fallbackUsed: false
-    });
+  } catch (error: any) {
+    if (error.message.includes('not found')) {
+      return c.json({ error: 'Config not found' }, 404);
+    }
+    throw error;
   }
 });
 
@@ -151,15 +107,14 @@ configsRouter.post('/', async (c) => {
     };
   }
 
-  // Validate input
-  if (!body.name || !body.type || !body.original_format || !body.content) {
-    return c.json({ error: 'Missing required fields' }, 400);
+  const service = new ConfigService(c.env);
+
+  try {
+    const config = await service.createConfig(body);
+    return c.json({ config }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 400);
   }
-
-  const repo = new ConfigRepository(c.env.DB);
-  const config = await repo.create(body);
-
-  return c.json({ config }, 201);
 });
 
 // Update config
@@ -182,16 +137,12 @@ configsRouter.put('/:id', async (c) => {
     };
   }
 
-  const repo = new ConfigRepository(c.env.DB);
-  const config = await repo.update(id, body);
+  const service = new ConfigService(c.env);
+  const config = await service.updateConfig(id, body);
 
   if (!config) {
     return c.json({ error: 'Config not found' }, 404);
   }
-
-  // Invalidate cache
-  const cache = new CacheService(c.env.CONFIG_CACHE);
-  await cache.invalidate(id);
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -205,8 +156,8 @@ configsRouter.put('/:id', async (c) => {
 // Manual cache invalidation
 configsRouter.post('/:id/invalidate', async (c) => {
   const id = c.req.param('id');
-  const cache = new CacheService(c.env.CONFIG_CACHE);
-  await cache.invalidate(id);
+  const service = new ConfigService(c.env);
+  await service.invalidateCache(id);
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -221,16 +172,12 @@ configsRouter.post('/:id/invalidate', async (c) => {
 configsRouter.delete('/:id', async (c) => {
   const id = c.req.param('id');
 
-  const repo = new ConfigRepository(c.env.DB);
-  const success = await repo.delete(id);
+  const service = new ConfigService(c.env);
+  const success = await service.deleteConfig(id);
 
   if (!success) {
     return c.json({ error: 'Config not found' }, 404);
   }
-
-  // Invalidate cache
-  const cache = new CacheService(c.env.CONFIG_CACHE);
-  await cache.invalidate(id);
 
   return c.json({ success: true });
 });

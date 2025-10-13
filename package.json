@@ -1,9 +1,10 @@
 {
   "name": "agent-config-adapter",
   "version": "1.0.0",
-  "description": "",
+  "description": "Universal configuration adapter for AI coding agents with REST API and MCP server support",
   "main": "index.js",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
     "acorn-walk": "^8.3.4",
@@ -86,6 +87,7 @@
     "fast-json-stable-stringify": "^2.1.0",
     "fast-levenshtein": "^2.0.6",
     "fastq": "^1.19.1",
+    "fetch-to-node": "^2.1.0",
     "file-entry-cache": "^6.0.1",
     "fill-range": "^7.1.1",
     "find-up": "^5.0.0",

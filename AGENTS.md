@@ -13,17 +13,26 @@ This app stores Claude Code slash commands, agent definitions, and MCP (Model Co
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare KV (for quick config lookups)
 - **AI**: OpenAI GPT-5-mini via Cloudflare AI Gateway
+- **MCP**: @modelcontextprotocol/sdk (Model Context Protocol server)
+- **Transport Bridge**: fetch-to-node (Web Fetch to Node.js HTTP adapter)
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript throughout
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
 
 ## Architecture Approach
 
-We use domain-driven design. Core domains:
+We use domain-driven design with a services layer for shared business logic. Core domains:
 - **Config Storage**: Persist agent configurations (slash commands, MCP configs, agent definitions)
 - **Format Adapter**: Convert between different agent formats (Claude Code ↔ Codex ↔ Gemini)
 - **AI Conversion**: Intelligent format conversion using OpenAI GPT-5-mini via Cloudflare AI Gateway with automatic fallback
 - **Config Retrieval**: Fast lookup and serving of converted configs
+- **Services Layer**: Business logic orchestration (ConfigService, ConversionService)
+  - Shared between REST API routes and MCP server tools
+  - Ensures consistent behavior across interfaces
+- **MCP Server**: Model Context Protocol integration with tools, resources, and prompts
+  - 6 tools for CRUD and conversion operations
+  - 1 resource for listing configs
+  - 3 prompts for guided workflows
 
 ## Dev Environment
 
@@ -47,10 +56,12 @@ We use domain-driven design. Core domains:
 /src
   /domain          # Domain models and business logic
   /infrastructure  # DB, KV, AI converter, external services
+  /services        # Business logic layer (ConfigService, ConversionService)
   /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
-  /routes          # Hono route handlers
+  /routes          # Hono REST route handlers
+  /mcp             # MCP server implementation (server, transport, types)
   /views           # HTMX templates
-  index.ts         # Entry point
+  index.ts         # Entry point (mounts REST and MCP endpoints)
 /migrations        # D1 migrations
 /seeds             # Seed data
 ```
@@ -61,6 +72,8 @@ We use domain-driven design. Core domains:
 - Run `npm run test:watch` for watch mode
 - Write tests for all adapter logic (critical for format conversion accuracy)
 - Test both D1 and KV operations
+- Test services layer (ConfigService, ConversionService)
+- Test MCP tools via `/mcp` endpoint
 - All tests must pass before committing
 
 ## Database
@@ -99,7 +112,9 @@ We use domain-driven design. Core domains:
 - MCP configs use rule-based conversion only (no AI) for accurate structured data transformation
 - User right now mostly inputs Claude Code configs which is the default format
 - Cache is automatically invalidated on config updates
-- Manual cache invalidation available via UI and API for forcing conversion re-processing
+- Manual cache invalidation available via UI, REST API, and MCP tools for forcing conversion re-processing
+- Services layer ensures consistent behavior between REST API and MCP server
+- MCP server provides tools (write operations), resources (read operations), and prompts (workflows)
 
 ## UI Features
 - Full CRUD operations through web interface
