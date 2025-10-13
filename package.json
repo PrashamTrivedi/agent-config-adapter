@@ -87,6 +87,7 @@
     "fast-json-stable-stringify": "^2.1.0",
     "fast-levenshtein": "^2.0.6",
     "fastq": "^1.19.1",
+    "fetch-to-node": "^2.1.0",
     "file-entry-cache": "^6.0.1",
     "fill-range": "^7.1.1",
     "find-up": "^5.0.0",
