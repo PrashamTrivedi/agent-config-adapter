@@ -1,7 +1,7 @@
 {
   "name": "agent-config-adapter",
   "version": "1.0.0",
-  "description": "",
+  "description": "Universal configuration adapter for AI coding agents with REST API and MCP server support",
   "main": "index.js",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
