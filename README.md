@@ -33,11 +33,29 @@ npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-conf
 
 # Setup environment variables for local development
 cp .dev.vars.example .dev.vars
-# Edit .dev.vars with your OpenAI API key, Account ID, and Gateway ID
+# REQUIRED: Get OpenAI API key from https://platform.openai.com/api-keys
+# IMPORTANT: AI Gateway does NOT store provider keys - you must provide your own
+# Edit .dev.vars: Set OPENAI_API_KEY, ACCOUNT_ID, and GATEWAY_ID
 
 # Start development server
 npm run dev
 ```
+
+### OpenAI API Key Setup
+
+**IMPORTANT**: Cloudflare AI Gateway proxies requests to OpenAI but **does NOT store** your OpenAI API key. You must provide your own API key:
+
+1. Get an API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Add it to `.dev.vars`:
+   ```bash
+   OPENAI_API_KEY=sk-proj-your-key-here
+   ```
+3. For production, use Wrangler secrets:
+   ```bash
+   npx wrangler secret put OPENAI_API_KEY
+   ```
+
+**Without a valid OpenAI API key**, the system will fall back to rule-based conversions only (no AI-powered conversion).
 
 The app will be available at `http://localhost:8787` (or another port shown in console).
 

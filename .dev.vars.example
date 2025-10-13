@@ -1,5 +1,8 @@
-# OpenAI API Key - OPTIONAL if using AI Gateway BYOK
-# Leave empty or omit if you configured OpenAI key in AI Gateway dashboard
+# OpenAI API Key - REQUIRED for AI-powered conversions
+# Get your API key from: https://platform.openai.com/api-keys
+# IMPORTANT: AI Gateway does NOT store provider API keys - you must provide your own
+# If omitted or invalid, the system falls back to rule-based conversions only
+# Example: OPENAI_API_KEY=sk-proj-...
 OPENAI_API_KEY=
 
 # Cloudflare Account ID (find in your Cloudflare dashboard)

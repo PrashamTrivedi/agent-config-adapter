@@ -24,7 +24,9 @@ npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-conf
 
 # Setup environment variables for local development
 cp .dev.vars.example .dev.vars
-# Edit .dev.vars with your OpenAI API key, Account ID, and Gateway ID
+# REQUIRED: Add your OpenAI API key from https://platform.openai.com/api-keys
+# AI Gateway does NOT store provider keys - you must provide your own
+# Edit .dev.vars: Set OPENAI_API_KEY, ACCOUNT_ID, and GATEWAY_ID
 ```
 
 ### Development
@@ -68,6 +70,8 @@ npx wrangler secret put OPENAI_API_KEY
 - `src/views/` - HTMX server-rendered templates
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used.
+
+**AI Gateway Authentication**: Requires a valid OpenAI API key. AI Gateway proxies requests to OpenAI but does NOT store provider API keys. You must provide your own OpenAI API key via the `OPENAI_API_KEY` environment variable/secret. Without a valid key, the system falls back to rule-based conversions only.
 
 **Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `OPENAI_API_KEY` (secret), `ACCOUNT_ID` (var), `GATEWAY_ID` (var)
 
