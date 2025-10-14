@@ -34,6 +34,23 @@ export class MarketplaceService {
   }
 
   /**
+   * Get all marketplaces with their extensions and configs
+   */
+  async listMarketplacesWithExtensions(): Promise<MarketplaceWithExtensions[]> {
+    const marketplaces = await this.repo.findAll();
+    const marketplacesWithExtensions: MarketplaceWithExtensions[] = [];
+
+    for (const mkt of marketplaces) {
+      const marketplace = await this.repo.findByIdWithExtensions(mkt.id);
+      if (marketplace) {
+        marketplacesWithExtensions.push(marketplace);
+      }
+    }
+
+    return marketplacesWithExtensions;
+  }
+
+  /**
    * Get single marketplace by ID
    */
   async getMarketplace(id: string): Promise<Marketplace | null> {

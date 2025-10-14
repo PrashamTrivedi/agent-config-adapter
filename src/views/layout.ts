@@ -208,7 +208,8 @@ export function layout(title: string, content: string): string {
           <nav>
             <a href="/">Home</a>
             <a href="/configs">Configs</a>
-            <a href="/configs/new">Add Config</a>
+            <a href="/extensions">Extensions</a>
+            <a href="/marketplaces">Marketplaces</a>
           </nav>
         </header>
         <main>

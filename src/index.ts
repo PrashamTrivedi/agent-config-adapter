@@ -39,8 +39,8 @@ app.get('/', (c) => {
     <div style="margin-top: 30px;">
       <a href="/configs" class="btn">View All Configs</a>
       <a href="/configs/new" class="btn">Add New Config</a>
-      <a href="/api/extensions" class="btn">Browse Extensions</a>
-      <a href="/api/marketplaces" class="btn">Browse Marketplaces</a>
+      <a href="/extensions" class="btn">Browse Extensions</a>
+      <a href="/marketplaces" class="btn">Browse Marketplaces</a>
       <a href="/mcp/info" class="btn" style="background: #4f46e5;">MCP Server Info</a>
     </div>
   `;

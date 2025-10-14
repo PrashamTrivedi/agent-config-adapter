@@ -1,6 +1,12 @@
 import { Hono } from 'hono';
-import { ExtensionService, ManifestService } from '../services';
+import { ExtensionService, ManifestService, ConfigService } from '../services';
 import { CreateExtensionInput, UpdateExtensionInput } from '../domain/types';
+import {
+  extensionListView,
+  extensionDetailView,
+  extensionCreateView,
+  extensionEditView,
+} from '../views/extensions';
 
 type Bindings = {
   DB: D1Database;
@@ -13,18 +19,44 @@ type Bindings = {
 
 export const extensionsRouter = new Hono<{ Bindings: Bindings }>();
 
+// Show create extension form
+extensionsRouter.get('/new', async (c) => {
+  const configService = new ConfigService(c.env);
+  const availableConfigs = await configService.listConfigs();
+  const view = extensionCreateView(availableConfigs);
+  return c.html(view);
+});
+
+// Show edit extension form
+extensionsRouter.get('/:id/edit', async (c) => {
+  const id = c.req.param('id');
+  const extensionService = new ExtensionService(c.env);
+  const configService = new ConfigService(c.env);
+
+  const extension = await extensionService.getExtensionWithConfigs(id);
+  if (!extension) {
+    return c.json({ error: 'Extension not found' }, 404);
+  }
+
+  const availableConfigs = await configService.listConfigs();
+  const view = extensionEditView(extension, availableConfigs);
+  return c.html(view);
+});
+
 // List all extensions
 extensionsRouter.get('/', async (c) => {
   const service = new ExtensionService(c.env);
-  const extensions = await service.listExtensions();
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
+    const extensions = await service.listExtensions();
     return c.json({ extensions });
   }
 
-  // TODO: Return HTML view for browser requests
-  return c.json({ extensions });
+  // For HTML views, get extensions with configs
+  const extensions = await service.listExtensionsWithConfigs();
+  const view = extensionListView(extensions);
+  return c.html(view);
 });
 
 // Get single extension
@@ -42,8 +74,8 @@ extensionsRouter.get('/:id', async (c) => {
     return c.json({ extension });
   }
 
-  // TODO: Return HTML view for browser requests
-  return c.json({ extension });
+  const view = extensionDetailView(extension);
+  return c.html(view);
 });
 
 // Get extension manifest in specific format
@@ -150,6 +182,14 @@ extensionsRouter.delete('/:id', async (c) => {
     return c.json({ error: 'Extension not found' }, 404);
   }
 
+  // Check if request expects HTML redirect
+  const accept = c.req.header('Accept') || '';
+  if (accept.includes('text/html')) {
+    const allExtensions = await service.listExtensionsWithConfigs();
+    const view = extensionListView(allExtensions);
+    return c.html(view);
+  }
+
   return c.json({ success: true });
 });
 
@@ -166,7 +206,22 @@ extensionsRouter.get('/:id/configs', async (c) => {
   }
 });
 
-// Add configs to extension
+// Add single config to extension
+extensionsRouter.post('/:id/configs/:configId', async (c) => {
+  const id = c.req.param('id');
+  const configId = c.req.param('configId');
+
+  const service = new ExtensionService(c.env);
+
+  try {
+    await service.addConfigsToExtension(id, [configId]);
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Add multiple configs to extension (batch operation)
 extensionsRouter.post('/:id/configs', async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json<{ config_ids: string[] }>();

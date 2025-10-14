@@ -35,6 +35,24 @@ export class ExtensionService {
   }
 
   /**
+   * Get all extensions with their configs
+   */
+  async listExtensionsWithConfigs(): Promise<ExtensionWithConfigs[]> {
+    const extensions = await this.repo.findAll();
+    const extensionsWithConfigs: ExtensionWithConfigs[] = [];
+
+    for (const ext of extensions) {
+      const configs = await this.repo.getExtensionConfigs(ext.id);
+      extensionsWithConfigs.push({
+        ...ext,
+        configs,
+      });
+    }
+
+    return extensionsWithConfigs;
+  }
+
+  /**
    * Get single extension by ID
    */
   async getExtension(id: string): Promise<Extension | null> {
