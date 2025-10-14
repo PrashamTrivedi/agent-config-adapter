@@ -64,26 +64,30 @@ npx wrangler secret put OPENAI_API_KEY
 
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
-- `src/infrastructure/` - D1, KV, AI services
-- `src/services/` - Business logic layer (ConfigService, ConversionService)
+- `src/infrastructure/` - D1, KV, R2, AI services
+- `src/services/` - Business logic layer
+  - ConfigService, ConversionService (for configs)
+  - ExtensionService, MarketplaceService (for bundling)
+  - ManifestService (platform-specific manifests)
+  - FileGenerationService, ZipGenerationService (plugin files)
   - Shared between REST API routes and MCP server tools
   - Ensures consistent behavior across interfaces
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers
+- `src/routes/` - Hono REST HTTP handlers (configs, extensions, marketplaces, plugins, files)
 - `src/mcp/` - MCP server implementation (server, transport, types)
   - Exposes 6 tools, 1 resource, 3 prompts
   - Uses Streamable HTTP transport for Cloudflare Workers
-- `src/views/` - HTMX server-rendered templates
+- `src/views/` - HTMX server-rendered templates (configs, extensions, marketplaces, plugin browser)
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used.
 
 **AI Gateway Authentication**: Requires a valid OpenAI API key. AI Gateway proxies requests to OpenAI but does NOT store provider API keys. You must provide your own OpenAI API key via the `OPENAI_API_KEY` environment variable/secret. Without a valid key, the system falls back to rule-based conversions only.
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `OPENAI_API_KEY` (secret), `ACCOUNT_ID` (var), `GATEWAY_ID` (var)
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `OPENAI_API_KEY` (secret), `ACCOUNT_ID` (var), `GATEWAY_ID` (var)
 
 ## API Endpoints
 
-### REST API
+### REST API - Configs
 ```
 GET    /api/configs                    List all configs
 GET    /api/configs/:id                Get specific config
@@ -96,7 +100,47 @@ POST   /api/configs/:id/invalidate     Invalidate cached conversions
 GET    /configs/:id/edit               Edit config form (UI)
 ```
 
-Same routes work for UI at `/configs` (returns HTML instead of JSON). The PUT endpoint supports both JSON and form data.
+### REST API - Extensions
+```
+GET    /api/extensions                           List all extensions
+GET    /api/extensions/:id                       Get specific extension with configs
+GET    /api/extensions/:id/manifest/:format      Get extension manifest (gemini|claude_code)
+POST   /api/extensions                           Create new extension
+PUT    /api/extensions/:id                       Update extension
+DELETE /api/extensions/:id                       Delete extension
+GET    /api/extensions/:id/configs               Get configs for extension
+POST   /api/extensions/:id/configs               Add configs to extension (batch)
+POST   /api/extensions/:id/configs/:configId     Add single config to extension
+DELETE /api/extensions/:id/configs/:configId     Remove config from extension
+POST   /api/extensions/:id/invalidate            Invalidate extension cache
+```
+
+### REST API - Marketplaces
+```
+GET    /api/marketplaces                                List all marketplaces
+GET    /api/marketplaces/:id                            Get specific marketplace with extensions
+GET    /api/marketplaces/:id/manifest                   Get marketplace manifest (Claude Code format)
+POST   /api/marketplaces                                Create new marketplace
+PUT    /api/marketplaces/:id                            Update marketplace
+DELETE /api/marketplaces/:id                            Delete marketplace
+POST   /api/marketplaces/:id/extensions                 Add extensions to marketplace (batch)
+POST   /api/marketplaces/:id/extensions/:extensionId    Add single extension to marketplace
+DELETE /api/marketplaces/:id/extensions/:extensionId    Remove extension from marketplace
+POST   /api/marketplaces/:id/invalidate                 Invalidate marketplace cache
+```
+
+### Plugin Downloads
+```
+GET    /plugins/:extensionId/:format                    Browse plugin files (claude_code|gemini)
+GET    /plugins/:extensionId/:format/download           Download complete plugin as ZIP
+GET    /plugins/:extensionId/gemini/definition          Download Gemini JSON definition (recommended)
+GET    /plugins/:extensionId/:format/*                  Serve individual plugin file
+POST   /plugins/:extensionId/:format/invalidate         Invalidate/regenerate plugin files
+GET    /plugins/marketplaces/:marketplaceId/gemini/definition  Download marketplace Gemini JSON collection
+GET    /plugins/marketplaces/:marketplaceId/download?format=   Download all marketplace plugins as ZIP
+```
+
+Same routes work for UI at `/configs`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
 
 ### MCP Server
 ```
@@ -151,11 +195,19 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
   - `slash_command` (fully implemented with AI-enhanced conversion)
   - `agent_definition` (passthrough only - MVP)
   - `mcp_config` (fully implemented with rule-based conversion, no AI)
+- Extensions bundle multiple configs into distributable packages
+- Marketplaces group multiple extensions for discovery
+- Plugin downloads:
+  - Claude Code: Full ZIP with manifest, commands, agents, MCP configs (primary)
+  - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
+- Plugin files are lazily generated and stored in R2
+- File generation is cached until invalidated
 
 ## MVP Limitations
 
 - Agent definitions use passthrough (no conversion yet)
 - No authentication/authorization
+- Extension and marketplace features not yet integrated with MCP tools
 
 ## MCP Config Adapter
 
