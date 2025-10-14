@@ -22,8 +22,25 @@ export const extensionsRouter = new Hono<{ Bindings: Bindings }>();
 // Show create extension form
 extensionsRouter.get('/new', async (c) => {
   const configService = new ConfigService(c.env);
-  const availableConfigs = await configService.listConfigs();
-  const view = extensionCreateView(availableConfigs);
+
+  // Extract filter query parameters
+  const type = c.req.query('type');
+  const format = c.req.query('format');
+  const search = c.req.query('search');
+
+  //Build filters object
+  const filters: {
+    type?: string;
+    originalFormat?: string;
+    searchName?: string;
+  } = {};
+
+  if (type) filters.type = type;
+  if (format) filters.originalFormat = format;
+  if (search) filters.searchName = search;
+
+  const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
+  const view = extensionCreateView(availableConfigs, { type, format, search });
   return c.html(view);
 });
 
@@ -38,8 +55,24 @@ extensionsRouter.get('/:id/edit', async (c) => {
     return c.json({ error: 'Extension not found' }, 404);
   }
 
-  const availableConfigs = await configService.listConfigs();
-  const view = extensionEditView(extension, availableConfigs);
+  // Extract filter query parameters
+  const type = c.req.query('type');
+  const format = c.req.query('format');
+  const search = c.req.query('search');
+
+  // Build filters object
+  const filters: {
+    type?: string;
+    originalFormat?: string;
+    searchName?: string;
+  } = {};
+
+  if (type) filters.type = type;
+  if (format) filters.originalFormat = format;
+  if (search) filters.searchName = search;
+
+  const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
+  const view = extensionEditView(extension, availableConfigs, { type, format, search });
   return c.html(view);
 });
 

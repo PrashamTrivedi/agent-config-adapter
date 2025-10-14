@@ -195,7 +195,13 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
   return layout(extension.name, content);
 }
 
-export function extensionCreateView(availableConfigs: Config[]): string {
+export function extensionCreateView(
+  availableConfigs: Config[],
+  currentFilters?: { type?: string; format?: string; search?: string }
+): string {
+  const activeFilters = currentFilters || {};
+  const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
+
   const content = `
     <h2>Create Extension</h2>
     <form hx-post="/api/extensions" hx-target="body" hx-swap="outerHTML">
@@ -226,7 +232,64 @@ export function extensionCreateView(availableConfigs: Config[]): string {
 
       <div class="form-group">
         <label>Select Configs</label>
-        ${availableConfigs.length === 0 ? '<p style="color: var(--text-secondary);">No configs available. <a href="/configs/new">Create a config first</a>.</p>' : `
+
+        <!-- Filter Controls -->
+        <div class="filter-container" style="margin-bottom: 15px;">
+          <div class="filter-row">
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+              <label for="filter-type">Type:</label>
+              <select
+                id="filter-type"
+                name="type"
+                onchange="applyConfigFilters()">
+                <option value="">All</option>
+                <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
+                <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
+                <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+              </select>
+            </div>
+
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+              <label for="filter-format">Format:</label>
+              <select
+                id="filter-format"
+                name="format"
+                onchange="applyConfigFilters()">
+                <option value="">All</option>
+                <option value="claude_code" ${activeFilters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+                <option value="codex" ${activeFilters.format === 'codex' ? 'selected' : ''}>Codex</option>
+                <option value="gemini" ${activeFilters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
+              </select>
+            </div>
+
+            <div class="filter-group" style="flex: 2; min-width: 200px;">
+              <label for="filter-search">Search:</label>
+              <input
+                type="text"
+                id="filter-search"
+                name="search"
+                placeholder="Search by name..."
+                value="${activeFilters.search || ''}"
+                onkeyup="applyConfigFiltersDebounced()">
+            </div>
+
+            ${hasActiveFilters ? `
+              <div class="filter-group" style="flex: 0; min-width: auto;">
+                <label style="opacity: 0; user-select: none;">.</label>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="clearConfigFilters()">
+                  Clear
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        ${availableConfigs.length === 0 ?
+          `<p style="color: var(--text-secondary);">${hasActiveFilters ? 'No configs match your filters.' : 'No configs available.'} <a href="/configs/new">Create a config first</a>.</p>`
+          : `
           <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; background: var(--bg-secondary);">
             ${availableConfigs.map(c => `
               <label style="display: block; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
@@ -245,6 +308,31 @@ export function extensionCreateView(availableConfigs: Config[]): string {
     </form>
 
     <script>
+      let debounceTimer;
+
+      function applyConfigFilters() {
+        const type = document.getElementById('filter-type').value;
+        const format = document.getElementById('filter-format').value;
+        const search = document.getElementById('filter-search').value;
+
+        const params = new URLSearchParams();
+        if (type) params.set('type', type);
+        if (format) params.set('format', format);
+        if (search) params.set('search', search);
+
+        const newUrl = params.toString() ? '/extensions/new?' + params.toString() : '/extensions/new';
+        window.location.href = newUrl;
+      }
+
+      function applyConfigFiltersDebounced() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyConfigFilters, 500);
+      }
+
+      function clearConfigFilters() {
+        window.location.href = '/extensions/new';
+      }
+
       // Handle form submission
       document.body.addEventListener('htmx:afterSwap', function(evt) {
         const response = evt.detail.xhr.responseText;
@@ -259,7 +347,7 @@ export function extensionCreateView(availableConfigs: Config[]): string {
       });
 
       // Highlight selected checkboxes
-      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      document.querySelectorAll('input[name="config_ids"]').forEach(cb => {
         cb.addEventListener('change', function() {
           this.parentElement.style.background = this.checked ? 'var(--bg-tertiary)' : '';
         });
@@ -269,8 +357,14 @@ export function extensionCreateView(availableConfigs: Config[]): string {
   return layout('Create Extension', content);
 }
 
-export function extensionEditView(extension: ExtensionWithConfigs, availableConfigs: Config[]): string {
+export function extensionEditView(
+  extension: ExtensionWithConfigs,
+  availableConfigs: Config[],
+  currentFilters?: { type?: string; format?: string; search?: string }
+): string {
   const selectedConfigIds = new Set(extension.configs.map(c => c.id));
+  const activeFilters = currentFilters || {};
+  const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
 
   const content = `
     <h2>Edit Extension</h2>
@@ -309,7 +403,63 @@ export function extensionEditView(extension: ExtensionWithConfigs, availableConf
       Add or remove configs from this extension. Changes are applied immediately.
     </p>
 
-    ${availableConfigs.length === 0 ? '<p style="color: var(--text-secondary);">No configs available.</p>' : `
+    <!-- Filter Controls -->
+    <div class="filter-container" style="margin-bottom: 15px;">
+      <div class="filter-row">
+        <div class="filter-group" style="flex: 1; min-width: 150px;">
+          <label for="filter-type">Type:</label>
+          <select
+            id="filter-type"
+            name="type"
+            onchange="applyConfigFilters()">
+            <option value="">All</option>
+            <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
+            <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
+            <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+          </select>
+        </div>
+
+        <div class="filter-group" style="flex: 1; min-width: 150px;">
+          <label for="filter-format">Format:</label>
+          <select
+            id="filter-format"
+            name="format"
+            onchange="applyConfigFilters()">
+            <option value="">All</option>
+            <option value="claude_code" ${activeFilters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+            <option value="codex" ${activeFilters.format === 'codex' ? 'selected' : ''}>Codex</option>
+            <option value="gemini" ${activeFilters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
+          </select>
+        </div>
+
+        <div class="filter-group" style="flex: 2; min-width: 200px;">
+          <label for="filter-search">Search:</label>
+          <input
+            type="text"
+            id="filter-search"
+            name="search"
+            placeholder="Search by name..."
+            value="${activeFilters.search || ''}"
+            onkeyup="applyConfigFiltersDebounced()">
+        </div>
+
+        ${hasActiveFilters ? `
+          <div class="filter-group" style="flex: 0; min-width: auto;">
+            <label style="opacity: 0; user-select: none;">.</label>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="clearConfigFilters()">
+              Clear
+            </button>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+
+    ${availableConfigs.length === 0 ?
+      `<p style="color: var(--text-secondary);">${hasActiveFilters ? 'No configs match your filters.' : 'No configs available.'}</p>`
+      : `
       <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; background: var(--bg-secondary);">
         ${availableConfigs.map(c => {
           const isSelected = selectedConfigIds.has(c.id);
@@ -335,6 +485,31 @@ export function extensionEditView(extension: ExtensionWithConfigs, availableConf
     `}
 
     <script>
+      let debounceTimer;
+
+      function applyConfigFilters() {
+        const type = document.getElementById('filter-type').value;
+        const format = document.getElementById('filter-format').value;
+        const search = document.getElementById('filter-search').value;
+
+        const params = new URLSearchParams();
+        if (type) params.set('type', type);
+        if (format) params.set('format', format);
+        if (search) params.set('search', search);
+
+        const newUrl = params.toString() ? '/extensions/${extension.id}/edit?' + params.toString() : '/extensions/${extension.id}/edit';
+        window.location.href = newUrl;
+      }
+
+      function applyConfigFiltersDebounced() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyConfigFilters, 500);
+      }
+
+      function clearConfigFilters() {
+        window.location.href = '/extensions/${extension.id}/edit';
+      }
+
       // Handle metadata form submission
       document.body.addEventListener('htmx:afterSwap', function(evt) {
         const response = evt.detail.xhr.responseText;
