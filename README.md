@@ -11,6 +11,8 @@ Universal adapter for AI coding agent configurations. Store Claude Code commands
 - 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit and conversion refresh capabilities
 - 🔌 **REST API**: Full CRUD API for programmatic access
 - 🌐 **MCP Server**: Model Context Protocol server for AI agent integration with tools, resources, and prompts
+- 📦 **Extension Marketplace**: Bundle configs into extensions and marketplaces with format-specific downloads
+- 🔽 **Plugin Downloads**: Generate and serve plugins as ZIP files or JSON definitions for both Claude Code and Gemini
 
 ## Quick Start
 
@@ -66,12 +68,12 @@ The app will be available at `http://localhost:8787` (or another port shown in c
 ```
 /src
   /domain          # Domain models and business logic
-  /infrastructure  # DB, KV, AI converter, external services
+  /infrastructure  # DB, KV, R2, AI converter, external services
   /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
-  /services        # Business logic layer (config, conversion services)
-  /routes          # Hono REST route handlers
+  /services        # Business logic layer (config, conversion, extension, marketplace, file generation services)
+  /routes          # Hono REST route handlers (configs, extensions, marketplaces, plugins, files)
   /mcp             # MCP server implementation (server, transport, types)
-  /views           # HTMX templates
+  /views           # HTMX templates (configs, extensions, marketplaces, plugin browser)
   index.ts         # Entry point
 /migrations        # D1 migrations
 /seeds             # Seed data
@@ -88,6 +90,43 @@ The app will be available at `http://localhost:8787` (or another port shown in c
 - `PUT /api/configs/:id` - Update config
 - `DELETE /api/configs/:id` - Delete config
 - `POST /api/configs/:id/invalidate` - Invalidate cached conversions for a config
+
+### Extensions
+
+- `GET /api/extensions` - List all extensions
+- `GET /api/extensions/:id` - Get specific extension with configs
+- `GET /api/extensions/:id/manifest/:format` - Get extension manifest (gemini or claude_code format)
+- `POST /api/extensions` - Create new extension
+- `PUT /api/extensions/:id` - Update extension
+- `DELETE /api/extensions/:id` - Delete extension
+- `GET /api/extensions/:id/configs` - Get configs for an extension
+- `POST /api/extensions/:id/configs` - Add configs to extension (batch)
+- `POST /api/extensions/:id/configs/:configId` - Add single config to extension
+- `DELETE /api/extensions/:id/configs/:configId` - Remove config from extension
+- `POST /api/extensions/:id/invalidate` - Invalidate extension cache
+
+### Marketplaces
+
+- `GET /api/marketplaces` - List all marketplaces
+- `GET /api/marketplaces/:id` - Get specific marketplace with extensions
+- `GET /api/marketplaces/:id/manifest` - Get marketplace manifest (Claude Code format)
+- `POST /api/marketplaces` - Create new marketplace
+- `PUT /api/marketplaces/:id` - Update marketplace
+- `DELETE /api/marketplaces/:id` - Delete marketplace
+- `POST /api/marketplaces/:id/extensions` - Add extensions to marketplace (batch)
+- `POST /api/marketplaces/:id/extensions/:extensionId` - Add single extension to marketplace
+- `DELETE /api/marketplaces/:id/extensions/:extensionId` - Remove extension from marketplace
+- `POST /api/marketplaces/:id/invalidate` - Invalidate marketplace cache
+
+### Plugin Downloads
+
+- `GET /plugins/:extensionId/:format` - Browse plugin files (format: claude_code or gemini)
+- `GET /plugins/:extensionId/:format/download` - Download complete plugin as ZIP
+- `GET /plugins/:extensionId/gemini/definition` - Download Gemini JSON definition file (recommended for Gemini)
+- `GET /plugins/:extensionId/:format/*` - Serve individual plugin file
+- `POST /plugins/:extensionId/:format/invalidate` - Invalidate/regenerate plugin files
+- `GET /plugins/marketplaces/:marketplaceId/gemini/definition` - Download marketplace Gemini JSON collection
+- `GET /plugins/marketplaces/:marketplaceId/download?format=` - Download all marketplace plugins as ZIP (format: claude_code or gemini)
 
 ### Example: Create a Config
 
@@ -248,6 +287,87 @@ The MCP implementation uses a services layer to share business logic between RES
 
 The transport layer uses `fetch-to-node` to bridge between Cloudflare Workers' Web Fetch API and the Node.js HTTP interfaces required by the MCP SDK.
 
+## Extension Marketplace
+
+The extension marketplace feature allows you to bundle configurations into distributable extensions and organize them into marketplaces. Extensions can be downloaded as complete plugins for different agent platforms.
+
+### Creating Extensions
+
+Extensions group related configurations (slash commands, MCP configs, agent definitions) into a single distributable package:
+
+1. Navigate to `/extensions/new` in the web UI
+2. Provide extension metadata (name, description, author, version)
+3. Select configurations to include
+4. Create the extension
+
+Extensions can be viewed at `/extensions/:id` and edited at `/extensions/:id/edit`.
+
+### Creating Marketplaces
+
+Marketplaces are collections of extensions that can be distributed together:
+
+1. Navigate to `/marketplaces/new` in the web UI
+2. Provide marketplace metadata (name, description, owner, version)
+3. Select extensions to include
+4. Create the marketplace
+
+Marketplaces can be viewed at `/marketplaces/:id` and edited at `/marketplaces/:id/edit`.
+
+### Plugin Downloads
+
+Extensions can be downloaded in format-specific ways:
+
+#### Claude Code Format
+- **Full ZIP Plugin**: Complete plugin with manifest, commands, agents, and MCP configs
+  - Browse files: `/plugins/:extensionId/claude_code`
+  - Download ZIP: `/plugins/:extensionId/claude_code/download`
+  - Installation: Add to Claude Code via marketplace URL or manual ZIP install
+
+#### Gemini Format
+- **JSON Definition (Recommended)**: Single JSON file with extension manifest
+  - Download: `/plugins/:extensionId/gemini/definition`
+  - Installation: Use Gemini CLI to install the JSON definition
+- **Full ZIP (Advanced)**: Complete plugin structure
+  - Browse files: `/plugins/:extensionId/gemini`
+  - Download ZIP: `/plugins/:extensionId/gemini/download`
+
+#### Marketplace Downloads
+- **Claude Code**: Marketplace URL for settings.json or ZIP with all plugins
+  - Manifest: `/marketplaces/:id/manifest`
+  - Download all: `/plugins/marketplaces/:id/download?format=claude_code`
+- **Gemini**: JSON collection with all extension definitions
+  - Download: `/plugins/marketplaces/:marketplaceId/gemini/definition`
+
+### Format-Specific Recommendations
+
+The UI provides clear guidance on recommended download methods:
+
+- **Claude Code**: Full ZIP downloads are primary, with browsable file structure
+- **Gemini**: JSON definition downloads are primary (recommended), with ZIP as advanced option
+- Visual indicators (🔵 Claude Code, 🔶 Gemini) help users identify format-specific options
+
+### Installation Examples
+
+**Claude Code Marketplace:**
+```json
+{
+  "extensionMarketplaces": [
+    {
+      "url": "https://your-worker.workers.dev/marketplaces/{id}/manifest"
+    }
+  ]
+}
+```
+
+**Gemini JSON Definition:**
+```bash
+# Install single extension
+gemini install extension-name-gemini.json
+
+# Install marketplace collection
+gemini install marketplace-name-gemini-marketplace.json
+```
+
 ## Web UI Features
 
 The web interface provides a user-friendly way to manage configurations:
@@ -260,6 +380,9 @@ The web interface provides a user-friendly way to manage configurations:
 - **Cache Refresh**: "Refresh Conversions" button to invalidate cached conversions and force re-processing
 - **AI Status**: Visual indicators showing whether AI or fallback conversion was used
 - **Delete Confirmation**: Safe deletion with confirmation prompt
+- **Extension Management** (`/extensions`): Create, edit, and manage extensions
+- **Marketplace Management** (`/marketplaces`): Create, edit, and manage marketplaces
+- **Plugin Browser**: Browse and download plugin files with format-specific options
 
 All UI interactions use HTMX for seamless updates without full page reloads.
 
@@ -483,16 +606,21 @@ Before deploying (first time setup):
    npx wrangler kv:namespace create CONFIG_CACHE
    ```
 
-3. Update [wrangler.jsonc](wrangler.jsonc) with production IDs
+3. Create R2 bucket for plugin files:
+   ```bash
+   npx wrangler r2 bucket create extension-files
+   ```
 
-4. Set OpenAI API key secret:
+4. Update [wrangler.jsonc](wrangler.jsonc) with production IDs
+
+5. Set OpenAI API key secret:
    ```bash
    npx wrangler secret put OPENAI_API_KEY
    ```
 
-5. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars section
+6. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars section
 
-6. Apply migrations to production:
+7. Apply migrations to production:
    ```bash
    npx wrangler d1 migrations apply agent-config-adapter --remote
    ```
@@ -503,26 +631,35 @@ Before deploying (first time setup):
 - **Platform**: Cloudflare Workers
 - **Database**: Cloudflare D1 (SQLite)
 - **Cache**: Cloudflare KV
+- **Storage**: Cloudflare R2 (for plugin files)
 - **AI**: OpenAI GPT-5-mini via Cloudflare AI Gateway
 - **MCP**: @modelcontextprotocol/sdk (Model Context Protocol server)
 - **Transport Bridge**: fetch-to-node (Web Fetch to Node.js HTTP adapter)
 - **Frontend**: HTMX with server-side rendering
 - **Language**: TypeScript
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
+- **ZIP Generation**: fflate (Cloudflare Workers compatible)
 
 ## Architecture
 
 The project follows domain-driven design principles with a services layer for shared business logic:
 
 - **Domain Layer**: Core business logic and types (no infrastructure dependencies)
-- **Infrastructure Layer**: Database, cache, and AI conversion service implementations
-- **Services Layer**: Business logic orchestration (ConfigService, ConversionService)
+- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), and AI conversion service implementations
+- **Services Layer**: Business logic orchestration
+  - ConfigService: Configuration CRUD operations
+  - ConversionService: Format conversion with caching
+  - ExtensionService: Extension management and bundling
+  - MarketplaceService: Marketplace management and manifest generation
+  - ManifestService: Generate platform-specific manifests (Claude Code, Gemini)
+  - FileGenerationService: Generate plugin files and store in R2
+  - ZipGenerationService: Create ZIP archives for plugin downloads
   - Used by both REST API routes and MCP server tools
   - Provides consistent behavior across different interfaces
 - **Adapter Layer**: Format conversion logic with AI enhancement (extensible for new formats)
-- **Routes Layer**: REST HTTP request handlers (Hono)
+- **Routes Layer**: REST HTTP request handlers (Hono) for configs, extensions, marketplaces, and plugins
 - **MCP Layer**: Model Context Protocol server with tools, resources, and prompts
-- **Views Layer**: HTML template generation (HTMX)
+- **Views Layer**: HTML template generation (HTMX) for configs, extensions, marketplaces, and plugin browser
 
 ### AI-Powered Conversion
 
@@ -564,6 +701,7 @@ Adding a new agent format is straightforward:
 - No authentication/authorization (both REST and MCP)
 - No search or filter functionality in UI
 - Batch operations available via MCP prompts only (not in UI yet)
+- Extension and marketplace features do not yet have MCP tool integration
 
 ## Next Steps
 
@@ -575,10 +713,15 @@ Adding a new agent format is straightforward:
 - [x] Upgrade to GPT-5 via Cloudflare AI Gateway (completed)
 - [x] MCP server implementation with tools, resources, and prompts (completed)
 - [x] Services layer for shared business logic (completed)
+- [x] Extension marketplace feature with bundling and downloads (completed)
+- [x] Plugin file generation and storage in R2 (completed)
+- [x] Format-specific download options (ZIP for Claude Code, JSON for Gemini) (completed)
+- [x] Plugin browser with browsable file structure (completed)
 - [ ] Add unit tests for AI conversion service
 - [ ] Support for HTTP/SSE MCP servers in UI
 - [ ] Search and filter functionality in UI
 - [ ] MCP client examples and integration tests
+- [ ] MCP tools for extension and marketplace management
 
 ## Contributing
 

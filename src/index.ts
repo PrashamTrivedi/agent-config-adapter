@@ -1,11 +1,16 @@
 import { Hono } from 'hono';
 import { configsRouter } from './routes/configs';
+import { extensionsRouter } from './routes/extensions';
+import { marketplacesRouter } from './routes/marketplaces';
+import { filesRouter } from './routes/files';
+import { pluginsRouter } from './routes/plugins';
 import { layout } from './views/layout';
 import { handleMCPStreamable } from './mcp/transport';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EXTENSION_FILES: R2Bucket;
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
@@ -29,11 +34,14 @@ app.get('/', (c) => {
       <li>Convert between different agent formats</li>
       <li>Fast retrieval with caching</li>
       <li><strong>NEW:</strong> MCP Server support for AI agent integration</li>
+      <li><strong>NEW:</strong> Extension Marketplace - Bundle and share configs</li>
     </ul>
 
     <div style="margin-top: 30px;">
       <a href="/configs" class="btn">View All Configs</a>
       <a href="/configs/new" class="btn">Add New Config</a>
+      <a href="/extensions" class="btn">Browse Extensions</a>
+      <a href="/marketplaces" class="btn">Browse Marketplaces</a>
       <a href="/mcp/info" class="btn" style="background: #4f46e5;">MCP Server Info</a>
     </div>
   `;
@@ -42,9 +50,17 @@ app.get('/', (c) => {
 
 // Mount API routes
 app.route('/api/configs', configsRouter);
+app.route('/api/extensions', extensionsRouter);
+app.route('/api/marketplaces', marketplacesRouter);
+app.route('/api/files', filesRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
+app.route('/extensions', extensionsRouter);
+app.route('/marketplaces', marketplacesRouter);
+
+// Mount plugins routes (for serving plugin files and downloads)
+app.route('/plugins', pluginsRouter);
 
 // MCP Server endpoints
 app.post('/mcp', async (c) => {
