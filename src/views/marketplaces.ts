@@ -76,25 +76,82 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions): s
       </ul>
     `}
 
-    <h3>Marketplace Manifest Preview</h3>
-    <div style="margin-bottom: 20px;">
-      <button class="btn" hx-get="/api/marketplaces/${marketplace.id}/manifest" hx-target="#manifest-preview">
-        View Claude Code Manifest
-      </button>
+    <h3>📥 Download Marketplace</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+      <!-- Claude Code Marketplace -->
+      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+        <h4 style="margin-top: 0;">🔵 Claude Code Marketplace</h4>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
+          marketplace.json with plugin references
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button onclick="copyMarketplaceUrl()" class="btn btn-primary" style="text-align: center;">
+            📋 Copy Marketplace URL
+          </button>
+          <a href="/api/marketplaces/${marketplace.id}/manifest?format=text" target="_blank" class="btn" style="text-align: center;">
+            📄 View JSON
+          </a>
+          <a href="/plugins/marketplaces/${marketplace.id}/download?format=claude_code" class="btn" style="text-align: center;">
+            📦 Download All Plugins (ZIP)
+          </a>
+        </div>
+      </div>
+
+      <!-- Gemini Marketplace -->
+      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+        <h4 style="margin-top: 0;">🔶 Gemini Marketplace</h4>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
+          Collection of JSON definitions for all extensions
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <a href="/plugins/marketplaces/${marketplace.id}/gemini/definition" class="btn btn-primary" style="text-align: center;">
+            📄 Download JSON Collection
+          </a>
+          <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); user-select: none;">
+              Advanced: Full Plugin Files
+            </summary>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+              <a href="/plugins/marketplaces/${marketplace.id}/download?format=gemini" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
+                📦 Download All Plugins (ZIP)
+              </a>
+            </div>
+          </details>
+        </div>
+      </div>
     </div>
 
-    <div id="manifest-preview"></div>
+    <h3>Installation Instructions</h3>
 
-    <h3>Download Manifest (Copy-Paste)</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 10px;">
-      Open this URL to get formatted marketplace.json that you can copy and paste into Claude Code:
-    </p>
-    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <strong>Claude Code Marketplace Format:</strong><br>
-      <a href="/api/marketplaces/${marketplace.id}/manifest?format=text" target="_blank" style="color: var(--accent-primary); word-break: break-all;">
-        /api/marketplaces/${marketplace.id}/manifest?format=text
-      </a>
-    </div>
+    <details open style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔵 Claude Code Setup</summary>
+      <div style="padding-left: 20px;">
+        <p><strong>Add to Claude Code settings:</strong></p>
+        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 0.875rem;"><code>{
+  "marketplaces": [
+    "https://your-domain.com/api/marketplaces/${marketplace.id}/manifest"
+  ]
+}</code></pre>
+        <p style="margin-top: 10px; font-size: 0.875rem; color: var(--text-secondary);">
+          Claude Code will automatically discover and load all ${marketplace.extensions.length} plugin(s)
+        </p>
+      </div>
+    </details>
+
+    <details style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔶 Gemini CLI Setup</summary>
+      <div style="padding-left: 20px;">
+        <p><strong>Download and install all extensions:</strong></p>
+        <ol style="font-size: 0.875rem;">
+          <li>Click "Download JSON Collection" above</li>
+          <li>Extract JSON files to your extensions directory</li>
+          <li>Run: <code>gemini extension install /path/to/extensions/*.json</code></li>
+        </ol>
+        <p style="margin-top: 15px; font-size: 0.875rem; color: var(--text-secondary);">
+          <strong>Note:</strong> This marketplace contains ${marketplace.extensions.length} extension(s) with ${totalConfigs} total config(s)
+        </p>
+      </div>
+    </details>
 
     <h3>Actions</h3>
     <div style="margin-top: 20px;">
@@ -111,16 +168,14 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions): s
     </div>
 
     <script>
-      // Handle manifest preview display
-      document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'manifest-preview') {
-          const data = JSON.parse(evt.detail.xhr.responseText);
-          evt.detail.target.innerHTML = \`
-            <h4>Manifest Content (marketplace.json)</h4>
-            <pre>\${JSON.stringify(data, null, 2)}</pre>
-          \`;
-        }
-      });
+      function copyMarketplaceUrl() {
+        const url = window.location.origin + '/api/marketplaces/${marketplace.id}/manifest';
+        navigator.clipboard.writeText(url).then(() => {
+          alert('Marketplace URL copied to clipboard!');
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
+      }
     </script>
   `;
   return layout(marketplace.name, content);
