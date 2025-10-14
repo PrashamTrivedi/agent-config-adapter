@@ -73,6 +73,18 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <div id="manifest-preview"></div>
 
+    <h3>Installation Instructions</h3>
+    <div style="background: #1e3a8a; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+      <h4 style="margin-top: 0; color: #60a5fa;">⚠️ Important: Local Installation Required</h4>
+      <p style="color: #bfdbfe; margin-bottom: 10px;">
+        This extension is stored in a database, not a git repository. Claude Code marketplace requires plugins to be in git repositories.
+      </p>
+      <p style="color: #bfdbfe; margin: 0;">
+        <strong>For local installation:</strong> Download the manifest below, create a <code>.claude/plugins/{plugin-name}/</code> directory,
+        save the manifest as <code>plugin.json</code>, and add your command/agent files.
+      </p>
+    </div>
+
     <h3>Download Manifest (Copy-Paste)</h3>
     <p style="color: var(--text-secondary); margin-bottom: 10px;">
       Open these URLs to get formatted JSON that you can copy and paste:
