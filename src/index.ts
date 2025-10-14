@@ -3,6 +3,7 @@ import { configsRouter } from './routes/configs';
 import { extensionsRouter } from './routes/extensions';
 import { marketplacesRouter } from './routes/marketplaces';
 import { filesRouter } from './routes/files';
+import { pluginsRouter } from './routes/plugins';
 import { layout } from './views/layout';
 import { handleMCPStreamable } from './mcp/transport';
 
@@ -57,6 +58,9 @@ app.route('/api/files', filesRouter);
 app.route('/configs', configsRouter);
 app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
+
+// Mount plugins routes (for serving plugin files and downloads)
+app.route('/plugins', pluginsRouter);
 
 // MCP Server endpoints
 app.post('/mcp', async (c) => {

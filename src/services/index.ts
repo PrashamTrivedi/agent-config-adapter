@@ -4,5 +4,7 @@ export { ExtensionService } from './extension-service';
 export { MarketplaceService } from './marketplace-service';
 export { ManifestService } from './manifest-service';
 export { FileStorageService } from './file-storage-service';
+export { FileGenerationService } from './file-generation-service';
+export { ZipGenerationService } from './zip-generation-service';
 export type { ConfigServiceEnv } from './config-service';
 export type { ConversionServiceEnv, ConversionResult } from './conversion-service';

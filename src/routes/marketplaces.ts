@@ -91,7 +91,12 @@ marketplacesRouter.get('/:id/manifest', async (c) => {
   }
 
   try {
-    const manifest = await manifestService.generateClaudeCodeMarketplaceManifest(marketplace);
+    // Get base URL for HTTP plugin sources
+    const baseUrl = new URL(c.req.url).origin;
+    const manifest = await manifestService.generateClaudeCodeMarketplaceManifestWithUrls(
+      marketplace,
+      baseUrl
+    );
 
     // Check if requesting raw/text format for easy copying
     const accept = c.req.header('Accept') || '';

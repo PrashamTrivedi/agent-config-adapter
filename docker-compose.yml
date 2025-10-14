@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  claude-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claude-code-dev
+    volumes:
+      # Mount current project
+      - .:/workspace
+      # Persist node_modules
+      - node_modules:/workspace/node_modules
+      # Persist Claude Code config (optional)
+      - claude-config:/root/.claude
+      # Mount git config from host (optional)
+      # - ~/.gitconfig:/root/.gitconfig:ro
+      # - ~/.ssh:/root/.ssh:ro
+    environment:
+      # Set your Anthropic API key here or in .env file
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Enable Claude Code features
+      - CLAUDE_CODE_ENABLED=true
+    # Use host network mode to access services on host machine
+    # On Linux: use host.docker.internal OR network_mode: host
+    # On Mac/Windows: use host.docker.internal (automatically available)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    networks:
+      - claude-network
+
+volumes:
+  node_modules:
+  claude-config:
+
+networks:
+  claude-network:
+    driver: bridge

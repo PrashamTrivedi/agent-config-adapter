@@ -73,34 +73,60 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <div id="manifest-preview"></div>
 
-    <h3>Installation Instructions</h3>
-    <div style="background: #1e3a8a; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
-      <h4 style="margin-top: 0; color: #60a5fa;">⚠️ Important: Local Installation Required</h4>
-      <p style="color: #bfdbfe; margin-bottom: 10px;">
-        This extension is stored in a database, not a git repository. Claude Code marketplace requires plugins to be in git repositories.
-      </p>
-      <p style="color: #bfdbfe; margin: 0;">
-        <strong>For local installation:</strong> Download the manifest below, create a <code>.claude/plugins/{plugin-name}/</code> directory,
-        save the manifest as <code>plugin.json</code>, and add your command/agent files.
-      </p>
+    <h3>📥 Download Plugin</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+      <!-- Claude Code Plugin -->
+      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+        <h4 style="margin-top: 0;">Claude Code Plugin</h4>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <a href="/plugins/${extension.id}/claude_code" class="btn" style="text-align: center;">
+            📁 Browse Files
+          </a>
+          <a href="/plugins/${extension.id}/claude_code/download" class="btn btn-primary" style="text-align: center;">
+            📥 Download ZIP
+          </a>
+        </div>
+      </div>
+
+      <!-- Gemini CLI Extension -->
+      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+        <h4 style="margin-top: 0;">Gemini CLI Extension</h4>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <a href="/plugins/${extension.id}/gemini" class="btn" style="text-align: center;">
+            📁 Browse Files
+          </a>
+          <a href="/plugins/${extension.id}/gemini/download" class="btn btn-primary" style="text-align: center;">
+            📥 Download ZIP
+          </a>
+        </div>
+      </div>
     </div>
 
-    <h3>Download Manifest (Copy-Paste)</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 10px;">
-      Open these URLs to get formatted JSON that you can copy and paste:
-    </p>
-    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 10px;">
-      <strong>Gemini Format:</strong><br>
-      <a href="/api/extensions/${extension.id}/manifest/gemini?text=true" target="_blank" style="color: var(--accent-primary); word-break: break-all;">
-        /api/extensions/${extension.id}/manifest/gemini?text=true
-      </a>
-    </div>
-    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <strong>Claude Code Format:</strong><br>
-      <a href="/api/extensions/${extension.id}/manifest/claude_code?text=true" target="_blank" style="color: var(--accent-primary); word-break: break-all;">
-        /api/extensions/${extension.id}/manifest/claude_code?text=true
-      </a>
-    </div>
+    <h3>Installation Instructions</h3>
+    <details open style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">Claude Code Installation</summary>
+      <div style="padding-left: 20px;">
+        <p><strong>Option 1: Manual Installation</strong></p>
+        <ol>
+          <li>Click "Download ZIP" above</li>
+          <li>Extract to <code>~/.claude/plugins/${escapeHtml(extension.name)}/</code></li>
+          <li>Restart Claude Code</li>
+        </ol>
+        <p style="margin-top: 15px;"><strong>Option 2: From Marketplace</strong></p>
+        <p>Add this plugin to your marketplace.json (see marketplace section below)</p>
+      </div>
+    </details>
+
+    <details style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">Gemini CLI Installation</summary>
+      <div style="padding-left: 20px;">
+        <ol>
+          <li>Click "Download ZIP" above</li>
+          <li>Extract to your extensions directory</li>
+          <li>Run: <code>gemini extension install /path/to/${escapeHtml(extension.name)}/</code></li>
+        </ol>
+      </div>
+    </details>
 
     <h3>Actions</h3>
     <div style="margin-top: 20px;">

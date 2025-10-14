@@ -96,6 +96,56 @@ export class ManifestService {
   }
 
   /**
+   * Generate Claude Code marketplace manifest with HTTP plugin sources
+   * Format: marketplace.json with plugins collection using URL sources
+   */
+  async generateClaudeCodeMarketplaceManifestWithUrls(
+    marketplace: MarketplaceWithExtensions,
+    baseUrl: string
+  ): Promise<ClaudeCodeMarketplaceManifest> {
+    const manifest: ClaudeCodeMarketplaceManifest = {
+      name: this.toKebabCase(marketplace.name),
+      version: marketplace.version,
+      owner: {
+        name: marketplace.owner_name,
+      },
+      plugins: [],
+    };
+
+    if (marketplace.description) {
+      manifest.description = marketplace.description;
+    }
+
+    if (marketplace.owner_email) {
+      manifest.owner.email = marketplace.owner_email;
+    }
+
+    if (marketplace.homepage) {
+      manifest.homepage = marketplace.homepage;
+    }
+
+    if (marketplace.repository) {
+      manifest.repository = marketplace.repository;
+    }
+
+    // Convert each extension to a plugin manifest with HTTP URL source
+    for (const extension of marketplace.extensions) {
+      const pluginManifest = await this.generateClaudeCodePluginManifest(extension);
+
+      // Use HTTP URL pointing to plugin directory
+      // Claude Code will fetch files from this directory
+      pluginManifest.source = {
+        source: 'url',
+        url: `${baseUrl}/plugins/${extension.id}/claude_code`,
+      } as any; // TypeScript workaround - source can be string or object
+
+      manifest.plugins.push(pluginManifest);
+    }
+
+    return manifest;
+  }
+
+  /**
    * Generate Claude Code marketplace manifest
    * Format: marketplace.json with plugins collection
    */
@@ -131,8 +181,10 @@ export class ManifestService {
     for (const extension of marketplace.extensions) {
       const pluginManifest = await this.generateClaudeCodePluginManifest(extension);
 
-      // Add required source field for marketplace plugins
-      // Source should be the relative path to plugin within marketplace repo
+      // IMPORTANT: source field must point to plugin directory, not file URLs
+      // Claude Code will discover files by browsing the directory structure
+      // This should be set by the caller based on deployment URL
+      // For now, use relative path (suitable for git-based marketplaces)
       pluginManifest.source = `./plugins/${this.toKebabCase(extension.name)}`;
 
       manifest.plugins.push(pluginManifest);
