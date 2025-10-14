@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { ConfigService, ConversionService } from '../services';
 import { AgentFormat, CreateConfigInput } from '../domain/types';
-import { configListView, configDetailView, configCreateView, configEditView } from '../views/configs';
+import { configListView, configListContainerPartial, configDetailView, configCreateView, configEditView } from '../views/configs';
 
 type Bindings = {
   DB: D1Database;
@@ -36,13 +36,21 @@ configsRouter.get('/', async (c) => {
 
   const configs = await service.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
 
+  // Check if this is an HTMX request (partial update)
+  const isHtmxRequest = c.req.header('HX-Request') === 'true';
+  const hasActiveFilters = !!(type || format || search);
+
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
     return c.json({ configs });
   }
 
-  // Return HTML for browser requests (will be used with HTMX)
-  // Pass current filter values to the view
+  // Return partial HTML for HTMX requests
+  if (isHtmxRequest) {
+    return c.html(configListContainerPartial(configs, hasActiveFilters));
+  }
+
+  // Return full HTML page for initial page load
   return c.html(configListView(configs, { type, format, search }));
 });
 

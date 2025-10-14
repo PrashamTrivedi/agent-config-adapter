@@ -1,6 +1,35 @@
 import { Config } from '../domain/types';
 import { layout } from './layout';
 
+// Helper function to render just the config list container (for HTMX partial updates)
+export function configListContainerPartial(
+  configs: Config[],
+  hasActiveFilters: boolean
+): string {
+  return `
+    ${configs.length === 0 ? `
+      <p class="no-results">
+        ${hasActiveFilters ? 'No configurations match your filters. Try adjusting your search criteria.' : 'No configurations yet. Add your first one!'}
+      </p>
+    ` : `
+      <ul class="config-list">
+        ${configs.map(c => `
+          <li>
+            <a href="/configs/${c.id}" style="font-weight: 500;">
+              ${escapeHtml(c.name)}
+            </a>
+            <span class="badge">${c.type}</span>
+            <span class="badge">${c.original_format}</span>
+            <div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
+              Created: ${new Date(c.created_at).toLocaleDateString()}
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+    `}
+  `;
+}
+
 export function configListView(
   configs: Config[],
   currentFilters?: { type?: string; format?: string; search?: string }
@@ -87,26 +116,7 @@ export function configListView(
 
     <!-- Config List Container -->
     <div id="config-list-container">
-      ${configs.length === 0 ? `
-        <p class="no-results">
-          ${hasActiveFilters ? 'No configurations match your filters. Try adjusting your search criteria.' : 'No configurations yet. Add your first one!'}
-        </p>
-      ` : `
-        <ul class="config-list">
-          ${configs.map(c => `
-            <li>
-              <a href="/configs/${c.id}" style="font-weight: 500;">
-                ${escapeHtml(c.name)}
-              </a>
-              <span class="badge">${c.type}</span>
-              <span class="badge">${c.original_format}</span>
-              <div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-                Created: ${new Date(c.created_at).toLocaleDateString()}
-              </div>
-            </li>
-          `).join('')}
-        </ul>
-      `}
+      ${configListContainerPartial(configs, hasActiveFilters)}
     </div>
 
     <script>
