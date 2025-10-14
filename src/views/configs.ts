@@ -1,26 +1,142 @@
 import { Config } from '../domain/types';
 import { layout } from './layout';
 
-export function configListView(configs: Config[]): string {
+export function configListView(
+  configs: Config[],
+  currentFilters?: { type?: string; format?: string; search?: string }
+): string {
+  const activeFilters = currentFilters || {};
+  const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
+
   const content = `
     <h2>All Configurations</h2>
     <a href="/configs/new" class="btn">Add New Config</a>
-    ${configs.length === 0 ? '<p>No configurations yet. Add your first one!</p>' : `
-      <ul class="config-list">
-        ${configs.map(c => `
-          <li>
-            <a href="/configs/${c.id}" style="font-weight: 500;">
-              ${c.name}
-            </a>
-            <span class="badge">${c.type}</span>
-            <span class="badge">${c.original_format}</span>
-            <div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              Created: ${new Date(c.created_at).toLocaleDateString()}
-            </div>
-          </li>
-        `).join('')}
-      </ul>
-    `}
+
+    <!-- Filter Controls -->
+    <div class="filter-container" id="filter-controls">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="filter-type">Type:</label>
+          <select
+            id="filter-type"
+            name="type"
+            hx-get="/api/configs"
+            hx-trigger="change"
+            hx-target="#config-list-container"
+            hx-swap="innerHTML"
+            hx-include="[name='format'], [name='search']">
+            <option value="">All</option>
+            <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
+            <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
+            <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-format">Format:</label>
+          <select
+            id="filter-format"
+            name="format"
+            hx-get="/api/configs"
+            hx-trigger="change"
+            hx-target="#config-list-container"
+            hx-swap="innerHTML"
+            hx-include="[name='type'], [name='search']">
+            <option value="">All</option>
+            <option value="claude_code" ${activeFilters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+            <option value="codex" ${activeFilters.format === 'codex' ? 'selected' : ''}>Codex</option>
+            <option value="gemini" ${activeFilters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-search">Search:</label>
+          <input
+            type="text"
+            id="filter-search"
+            name="search"
+            placeholder="Search by name..."
+            value="${activeFilters.search || ''}"
+            hx-get="/api/configs"
+            hx-trigger="keyup changed delay:500ms"
+            hx-target="#config-list-container"
+            hx-swap="innerHTML"
+            hx-include="[name='type'], [name='format']">
+        </div>
+
+        ${hasActiveFilters ? `
+          <div class="filter-group">
+            <button
+              class="btn btn-secondary"
+              onclick="clearFilters()">
+              Clear Filters
+            </button>
+          </div>
+        ` : ''}
+      </div>
+
+      ${hasActiveFilters ? `
+        <div class="active-filters">
+          <span style="font-weight: 500; margin-right: 10px;">Active Filters:</span>
+          ${activeFilters.type ? `<span class="filter-badge">Type: ${activeFilters.type}</span>` : ''}
+          ${activeFilters.format ? `<span class="filter-badge">Format: ${activeFilters.format}</span>` : ''}
+          ${activeFilters.search ? `<span class="filter-badge">Search: "${activeFilters.search}"</span>` : ''}
+        </div>
+      ` : ''}
+    </div>
+
+    <!-- Config List Container -->
+    <div id="config-list-container">
+      ${configs.length === 0 ? `
+        <p class="no-results">
+          ${hasActiveFilters ? 'No configurations match your filters. Try adjusting your search criteria.' : 'No configurations yet. Add your first one!'}
+        </p>
+      ` : `
+        <ul class="config-list">
+          ${configs.map(c => `
+            <li>
+              <a href="/configs/${c.id}" style="font-weight: 500;">
+                ${escapeHtml(c.name)}
+              </a>
+              <span class="badge">${c.type}</span>
+              <span class="badge">${c.original_format}</span>
+              <div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
+                Created: ${new Date(c.created_at).toLocaleDateString()}
+              </div>
+            </li>
+          `).join('')}
+        </ul>
+      `}
+    </div>
+
+    <script>
+      // Clear filters function
+      function clearFilters() {
+        document.getElementById('filter-type').value = '';
+        document.getElementById('filter-format').value = '';
+        document.getElementById('filter-search').value = '';
+        // Trigger change to reload
+        window.location.href = '/configs';
+      }
+
+      // Handle HTMX response for filter updates
+      document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'config-list-container') {
+          // Update URL with current filter state
+          const type = document.getElementById('filter-type').value;
+          const format = document.getElementById('filter-format').value;
+          const search = document.getElementById('filter-search').value;
+
+          const params = new URLSearchParams();
+          if (type) params.set('type', type);
+          if (format) params.set('format', format);
+          if (search) params.set('search', search);
+
+          const newUrl = params.toString() ? '/configs?' + params.toString() : '/configs';
+          window.history.pushState({}, '', newUrl);
+        }
+      });
+    </script>
   `;
   return layout('Configurations', content);
 }

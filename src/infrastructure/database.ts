@@ -36,9 +36,44 @@ export class ConfigRepository {
     return result || null;
   }
 
-  async findAll(): Promise<Config[]> {
+  async findAll(filters?: {
+    type?: string;
+    originalFormat?: string;
+    searchName?: string;
+  }): Promise<Config[]> {
+    if (!filters || (!filters.type && !filters.originalFormat && !filters.searchName)) {
+      // No filters, return all configs
+      const result = await this.db
+        .prepare('SELECT * FROM configs ORDER BY created_at DESC')
+        .all<Config>();
+      return result.results || [];
+    }
+
+    // Build dynamic WHERE clause
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    if (filters.type) {
+      conditions.push('type = ?');
+      values.push(filters.type);
+    }
+
+    if (filters.originalFormat) {
+      conditions.push('original_format = ?');
+      values.push(filters.originalFormat);
+    }
+
+    if (filters.searchName) {
+      conditions.push('name LIKE ?');
+      values.push(`%${filters.searchName.trim()}%`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const query = `SELECT * FROM configs ${whereClause} ORDER BY created_at DESC`;
+
     const result = await this.db
-      .prepare('SELECT * FROM configs ORDER BY created_at DESC')
+      .prepare(query)
+      .bind(...values)
       .all<Config>();
 
     return result.results || [];

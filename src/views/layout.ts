@@ -200,6 +200,89 @@ export function layout(title: string, content: string): string {
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
           }
+
+          /* Filter Controls Styling */
+          .filter-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+
+          .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+          }
+
+          .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+            flex: 1;
+          }
+
+          .filter-group label {
+            font-size: 0.875em;
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+          }
+
+          .filter-group input,
+          .filter-group select {
+            width: 100%;
+          }
+
+          .filter-group input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+          }
+
+          .active-filters {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .filter-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 12px;
+            font-size: 0.875em;
+            font-weight: 500;
+          }
+
+          .no-results {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-top: 20px;
+          }
+
+          /* Responsive Design */
+          @media (max-width: 768px) {
+            .filter-row {
+              flex-direction: column;
+            }
+
+            .filter-group {
+              width: 100%;
+              min-width: unset;
+            }
+          }
         </style>
       </head>
       <body>

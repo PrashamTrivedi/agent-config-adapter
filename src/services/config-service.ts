@@ -21,10 +21,14 @@ export class ConfigService {
   }
 
   /**
-   * Get all configs from database
+   * Get all configs from database with optional filters
    */
-  async listConfigs(): Promise<Config[]> {
-    return await this.repo.findAll();
+  async listConfigs(filters?: {
+    type?: string;
+    originalFormat?: string;
+    searchName?: string;
+  }): Promise<Config[]> {
+    return await this.repo.findAll(filters);
   }
 
   /**

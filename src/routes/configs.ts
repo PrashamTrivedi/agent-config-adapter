@@ -14,10 +14,27 @@ type Bindings = {
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
 
-// List all configs
+// List all configs with optional filters
 configsRouter.get('/', async (c) => {
   const service = new ConfigService(c.env);
-  const configs = await service.listConfigs();
+
+  // Extract filter query parameters
+  const type = c.req.query('type');
+  const format = c.req.query('format');
+  const search = c.req.query('search');
+
+  // Build filters object
+  const filters: {
+    type?: string;
+    originalFormat?: string;
+    searchName?: string;
+  } = {};
+
+  if (type) filters.type = type;
+  if (format) filters.originalFormat = format;
+  if (search) filters.searchName = search;
+
+  const configs = await service.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -25,7 +42,8 @@ configsRouter.get('/', async (c) => {
   }
 
   // Return HTML for browser requests (will be used with HTMX)
-  return c.html(configListView(configs));
+  // Pass current filter values to the view
+  return c.html(configListView(configs, { type, format, search }));
 });
 
 // Route for creating new config (form) - MUST be before /:id route
