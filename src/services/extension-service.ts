@@ -46,8 +46,7 @@ export class ExtensionService {
    */
   async getExtensionWithConfigs(id: string): Promise<ExtensionWithConfigs | null> {
     // Try cache first
-    const cacheKey = `extension:${id}:with-configs`;
-    const cached = await this.cache.get(id, 'with-configs');
+    const cached = await this.cache.get(`ext:${id}`, 'full');
     if (cached) {
       return JSON.parse(cached);
     }
@@ -56,7 +55,7 @@ export class ExtensionService {
     const extension = await this.repo.findByIdWithConfigs(id);
     if (extension) {
       // Cache the result (no expiration for extensions)
-      await this.cache.set(id, 'with-configs', JSON.stringify(extension));
+      await this.cache.set(`ext:${id}`, JSON.stringify(extension), 'full');
     }
 
     return extension;
@@ -135,10 +134,10 @@ export class ExtensionService {
    */
   async invalidateExtensionCache(id: string): Promise<void> {
     // Invalidate extension cache
-    await this.cache.invalidate(id);
+    await this.cache.invalidate(`ext:${id}`);
 
     // Also invalidate manifest caches
-    await this.cache.delete(`manifest:${id}:gemini`);
-    await this.cache.delete(`manifest:${id}:claude_code`);
+    await this.cache.delete(`ext:${id}:manifest:gemini`);
+    await this.cache.delete(`ext:${id}:manifest:claude_code`);
   }
 }

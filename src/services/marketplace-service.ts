@@ -45,7 +45,7 @@ export class MarketplaceService {
    */
   async getMarketplaceWithExtensions(id: string): Promise<MarketplaceWithExtensions | null> {
     // Try cache first
-    const cached = await this.cache.get(id, 'with-extensions');
+    const cached = await this.cache.get(`mkt:${id}`, 'full');
     if (cached) {
       return JSON.parse(cached);
     }
@@ -54,7 +54,7 @@ export class MarketplaceService {
     const marketplace = await this.repo.findByIdWithExtensions(id);
     if (marketplace) {
       // Cache the result (no expiration for marketplaces)
-      await this.cache.set(id, 'with-extensions', JSON.stringify(marketplace));
+      await this.cache.set(`mkt:${id}`, JSON.stringify(marketplace), 'full');
     }
 
     return marketplace;
@@ -129,9 +129,9 @@ export class MarketplaceService {
    */
   async invalidateMarketplaceCache(id: string): Promise<void> {
     // Invalidate marketplace cache
-    await this.cache.invalidate(id);
+    await this.cache.invalidate(`mkt:${id}`);
 
     // Also invalidate manifest cache
-    await this.cache.delete(`marketplace:${id}:manifest`);
+    await this.cache.delete(`mkt:${id}:manifest`);
   }
 }
