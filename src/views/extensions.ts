@@ -77,7 +77,10 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
       <!-- Claude Code Plugin -->
       <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">Claude Code Plugin</h4>
+        <h4 style="margin-top: 0;">🔵 Claude Code Plugin</h4>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
+          Full plugin with manifest, commands, agents, and MCP configs
+        </p>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <a href="/plugins/${extension.id}/claude_code" class="btn" style="text-align: center;">
             📁 Browse Files
@@ -90,41 +93,75 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
       <!-- Gemini CLI Extension -->
       <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">Gemini CLI Extension</h4>
+        <h4 style="margin-top: 0;">🔶 Gemini CLI Extension</h4>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
+          JSON definition file - recommended for Gemini extensions
+        </p>
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="/plugins/${extension.id}/gemini" class="btn" style="text-align: center;">
-            📁 Browse Files
+          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary" style="text-align: center;">
+            📄 Download JSON Definition
           </a>
-          <a href="/plugins/${extension.id}/gemini/download" class="btn btn-primary" style="text-align: center;">
-            📥 Download ZIP
-          </a>
+          <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); user-select: none;">
+              Advanced: Full Plugin Files
+            </summary>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+              <a href="/plugins/${extension.id}/gemini" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
+                📁 Browse Files
+              </a>
+              <a href="/plugins/${extension.id}/gemini/download" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
+                📥 Download ZIP
+              </a>
+            </div>
+          </details>
         </div>
       </div>
     </div>
 
     <h3>Installation Instructions</h3>
     <details open style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">Claude Code Installation</summary>
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔵 Claude Code Installation</summary>
       <div style="padding-left: 20px;">
-        <p><strong>Option 1: Manual Installation</strong></p>
-        <ol>
+        <p><strong>Option 1: From Marketplace</strong></p>
+        <p style="font-size: 0.875rem; color: var(--text-secondary);">
+          Add this plugin to your marketplace.json for automatic updates
+        </p>
+        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 0.875rem;"><code>{
+  "plugins": [
+    {
+      "source": {
+        "source": "url",
+        "url": "https://your-domain.com/plugins/${extension.id}/claude_code"
+      }
+    }
+  ]
+}</code></pre>
+
+        <p style="margin-top: 15px;"><strong>Option 2: Manual Installation</strong></p>
+        <ol style="font-size: 0.875rem;">
           <li>Click "Download ZIP" above</li>
           <li>Extract to <code>~/.claude/plugins/${escapeHtml(extension.name)}/</code></li>
           <li>Restart Claude Code</li>
         </ol>
-        <p style="margin-top: 15px;"><strong>Option 2: From Marketplace</strong></p>
-        <p>Add this plugin to your marketplace.json (see marketplace section below)</p>
       </div>
     </details>
 
     <details style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">Gemini CLI Installation</summary>
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔶 Gemini CLI Installation</summary>
       <div style="padding-left: 20px;">
-        <ol>
-          <li>Click "Download ZIP" above</li>
-          <li>Extract to your extensions directory</li>
-          <li>Run: <code>gemini extension install /path/to/${escapeHtml(extension.name)}/</code></li>
+        <p><strong>Recommended: JSON Definition</strong></p>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 10px;">
+          Gemini extensions use JSON manifest files that reference command files by path
+        </p>
+        <ol style="font-size: 0.875rem;">
+          <li>Click "Download JSON Definition" above</li>
+          <li>Save to your extensions directory as <code>${escapeHtml(extension.name)}.json</code></li>
+          <li>Run: <code>gemini extension install ${escapeHtml(extension.name)}.json</code></li>
         </ol>
+
+        <p style="margin-top: 15px; font-size: 0.875rem; color: var(--text-secondary);">
+          <strong>Note:</strong> Command files must be accessible at the paths specified in the JSON manifest
+        </p>
       </div>
     </details>
 

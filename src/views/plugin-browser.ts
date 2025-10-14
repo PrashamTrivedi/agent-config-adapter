@@ -46,12 +46,31 @@ export function pluginBrowserView(
       </div>
 
       <div class="actions-bar">
-        <a href="${pluginUrl}/download" class="btn btn-primary">
-          📥 Download ZIP
-        </a>
-        <button onclick="copyToClipboard('${pluginUrl}')" class="btn">
-          📋 Copy Plugin URL
-        </button>
+        ${format === 'claude_code' ? `
+          <a href="${pluginUrl}/download" class="btn btn-primary">
+            📥 Download Complete Plugin (ZIP)
+          </a>
+          <button onclick="copyToClipboard('${pluginUrl}')" class="btn">
+            📋 Copy Plugin URL
+          </button>
+        ` : `
+          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary">
+            📄 Download JSON Definition (Recommended)
+          </a>
+          <details style="display: inline-block; position: relative;">
+            <summary class="btn btn-secondary" style="list-style: none; cursor: pointer;">
+              Advanced Options ▼
+            </summary>
+            <div style="position: absolute; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-top: 5px; z-index: 10; min-width: 200px;">
+              <a href="${pluginUrl}/download" class="btn btn-secondary" style="display: block; margin-bottom: 8px; text-align: center;">
+                📥 Download Full ZIP
+              </a>
+              <button onclick="copyToClipboard('${pluginUrl}')" class="btn btn-secondary" style="display: block; width: 100%;">
+                📋 Copy Plugin URL
+              </button>
+            </div>
+          </details>
+        `}
         <a href="/extensions/${extension.id}" class="btn btn-secondary">
           ← Back to Extension
         </a>
@@ -329,9 +348,24 @@ function renderClaudeCodeInstructions(pluginUrl: string, extension: ExtensionWit
 function renderGeminiInstructions(extension: ExtensionWithConfigs): string {
   return `
     <div class="installation-step">
-      <h4>Installation Steps</h4>
+      <h4>📄 JSON Definition Installation (Recommended)</h4>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px;">
+        Gemini extensions work best with JSON manifest files
+      </p>
       <ol>
-        <li>Download the ZIP file using the button above</li>
+        <li>Download the JSON definition file using the button above</li>
+        <li>Save to your extensions directory</li>
+        <li>Run: <code>gemini extension install /path/to/${escapeHtml(extension.name)}.json</code></li>
+      </ol>
+    </div>
+
+    <div class="installation-step">
+      <h4>📦 Full Plugin Installation (Advanced)</h4>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px;">
+        Only needed if you want to inspect or modify individual files
+      </p>
+      <ol>
+        <li>Download the ZIP file using the button above (under Advanced Options)</li>
         <li>Extract to your Gemini extensions directory</li>
         <li>Run: <code>gemini extension install /path/to/${escapeHtml(extension.name)}/</code></li>
       </ol>
@@ -340,9 +374,9 @@ function renderGeminiInstructions(extension: ExtensionWithConfigs): string {
     <div class="installation-step">
       <h4>What's Included</h4>
       <ul>
-        ${extension.configs.filter((c) => c.type === 'slash_command').length > 0 ? `<li>Commands: ${extension.configs.filter((c) => c.type === 'slash_command').length}</li>` : ''}
-        ${extension.configs.filter((c) => c.type === 'mcp_config').length > 0 ? `<li>MCP Servers: ${extension.configs.filter((c) => c.type === 'mcp_config').length}</li>` : ''}
-        ${extension.description ? `<li>Context file (GEMINI.md)</li>` : ''}
+        <li><strong>JSON Definition:</strong> References ${extension.configs.filter((c) => c.type === 'slash_command').length} command file(s)</li>
+        ${extension.configs.filter((c) => c.type === 'mcp_config').length > 0 ? `<li><strong>MCP Servers:</strong> ${extension.configs.filter((c) => c.type === 'mcp_config').length} server(s) configured</li>` : ''}
+        ${extension.description ? `<li><strong>Context:</strong> GEMINI.md file with extension info</li>` : ''}
       </ul>
     </div>
   `;
