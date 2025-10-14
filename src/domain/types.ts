@@ -191,7 +191,7 @@ export interface ClaudeCodePluginManifest {
   commands?: string[];
   agents?: string[];
   mcpServers?: Record<string, MCPServerConfig>;
-  source?: {
+  source?: string | {
     type: 'git' | 'local';
     url: string;
   };

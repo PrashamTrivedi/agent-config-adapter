@@ -132,13 +132,8 @@ export class ManifestService {
       const pluginManifest = await this.generateClaudeCodePluginManifest(extension);
 
       // Add required source field for marketplace plugins
-      // Claude Code requires specific format - must be a valid git URL
-      pluginManifest.source = {
-        type: 'git',
-        url: marketplace.repository
-          ? `${marketplace.repository}/tree/main/plugins/${this.toKebabCase(extension.name)}`
-          : `https://github.com/marketplace-owner/${this.toKebabCase(marketplace.name)}/tree/main/plugins/${this.toKebabCase(extension.name)}`,
-      };
+      // Source should be the relative path to plugin within marketplace repo
+      pluginManifest.source = `./plugins/${this.toKebabCase(extension.name)}`;
 
       manifest.plugins.push(pluginManifest);
     }
