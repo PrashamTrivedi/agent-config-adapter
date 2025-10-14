@@ -17,6 +17,12 @@
       "id": "ede83b375aeb47e69d514c7ef0529da8"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "EXTENSION_FILES",
+      "bucket_name": "agent-config-extension-files"
+    }
+  ],
   "vars": {
     "ACCOUNT_ID": "b286748abb233ddf7bf942f876f11eac",
     "GATEWAY_ID": "ai-agent-adapter"
