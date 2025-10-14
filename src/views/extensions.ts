@@ -73,6 +73,23 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <div id="manifest-preview"></div>
 
+    <h3>Download Manifest (Copy-Paste)</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 10px;">
+      Open these URLs to get formatted JSON that you can copy and paste:
+    </p>
+    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+      <strong>Gemini Format:</strong><br>
+      <a href="/api/extensions/${extension.id}/manifest/gemini?text=true" target="_blank" style="color: var(--accent-primary); word-break: break-all;">
+        /api/extensions/${extension.id}/manifest/gemini?text=true
+      </a>
+    </div>
+    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <strong>Claude Code Format:</strong><br>
+      <a href="/api/extensions/${extension.id}/manifest/claude_code?text=true" target="_blank" style="color: var(--accent-primary); word-break: break-all;">
+        /api/extensions/${extension.id}/manifest/claude_code?text=true
+      </a>
+    </div>
+
     <h3>Actions</h3>
     <div style="margin-top: 20px;">
       <a href="/extensions/${extension.id}/edit" class="btn">Edit</a>

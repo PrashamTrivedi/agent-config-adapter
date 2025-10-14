@@ -103,6 +103,19 @@ extensionsRouter.get('/:id/manifest/:format', async (c) => {
       manifest = await manifestService.generateClaudeCodePluginManifest(extension);
     }
 
+    // Check if requesting raw/text format for easy copying
+    const accept = c.req.header('Accept') || '';
+    const textFormat = c.req.query('text');
+
+    if (textFormat === 'true' || accept.includes('text/plain')) {
+      // Return as formatted JSON text for easy copy-paste
+      const filename = format === 'gemini' ? 'gemini.json' : 'plugin.json';
+      return c.text(JSON.stringify(manifest, null, 2), 200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Disposition': `inline; filename="${extension.name}-${filename}"`,
+      });
+    }
+
     return c.json(manifest);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);

@@ -92,6 +92,19 @@ marketplacesRouter.get('/:id/manifest', async (c) => {
 
   try {
     const manifest = await manifestService.generateClaudeCodeMarketplaceManifest(marketplace);
+
+    // Check if requesting raw/text format for easy copying
+    const accept = c.req.header('Accept') || '';
+    const format = c.req.query('format');
+
+    if (format === 'text' || accept.includes('text/plain')) {
+      // Return as formatted JSON text for easy copy-paste
+      return c.text(JSON.stringify(manifest, null, 2), 200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Disposition': `inline; filename="${marketplace.name}-marketplace.json"`,
+      });
+    }
+
     return c.json(manifest);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);

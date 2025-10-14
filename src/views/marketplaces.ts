@@ -85,6 +85,17 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions): s
 
     <div id="manifest-preview"></div>
 
+    <h3>Download Manifest (Copy-Paste)</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 10px;">
+      Open this URL to get formatted marketplace.json that you can copy and paste into Claude Code:
+    </p>
+    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+      <strong>Claude Code Marketplace Format:</strong><br>
+      <a href="/api/marketplaces/${marketplace.id}/manifest?format=text" target="_blank" style="color: var(--accent-primary); word-break: break-all;">
+        /api/marketplaces/${marketplace.id}/manifest?format=text
+      </a>
+    </div>
+
     <h3>Actions</h3>
     <div style="margin-top: 20px;">
       <a href="/marketplaces/${marketplace.id}/edit" class="btn">Edit</a>
