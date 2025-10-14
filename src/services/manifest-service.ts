@@ -52,7 +52,7 @@ export class ManifestService {
     extension: ExtensionWithConfigs
   ): Promise<ClaudeCodePluginManifest> {
     const manifest: ClaudeCodePluginManifest = {
-      name: extension.name,
+      name: this.toKebabCase(extension.name),
       version: extension.version,
     };
 
@@ -74,16 +74,22 @@ export class ManifestService {
       manifest.mcpServers = mcpServers;
     }
 
-    // Extract slash commands (stored as files)
+    // Extract slash commands (list specific command files)
     const slashCommands = extension.configs.filter((c) => c.type === 'slash_command');
     if (slashCommands.length > 0) {
-      manifest.commands = ['./commands/'];
+      manifest.commands = slashCommands.map((cmd) => {
+        const cmdName = this.sanitizeCommandName(cmd.name);
+        return `./commands/${cmdName}.md`;
+      });
     }
 
-    // Extract agent definitions (stored as files)
+    // Extract agent definitions (list specific agent files ending with .md)
     const agents = extension.configs.filter((c) => c.type === 'agent_definition');
     if (agents.length > 0) {
-      manifest.agents = ['./agents/'];
+      manifest.agents = agents.map((agent) => {
+        const agentName = this.sanitizeCommandName(agent.name);
+        return `./agents/${agentName}.md`;
+      });
     }
 
     return manifest;
@@ -97,7 +103,7 @@ export class ManifestService {
     marketplace: MarketplaceWithExtensions
   ): Promise<ClaudeCodeMarketplaceManifest> {
     const manifest: ClaudeCodeMarketplaceManifest = {
-      name: marketplace.name,
+      name: this.toKebabCase(marketplace.name),
       version: marketplace.version,
       owner: {
         name: marketplace.owner_name,
@@ -121,9 +127,17 @@ export class ManifestService {
       manifest.repository = marketplace.repository;
     }
 
-    // Convert each extension to a plugin manifest
+    // Convert each extension to a plugin manifest with source
     for (const extension of marketplace.extensions) {
       const pluginManifest = await this.generateClaudeCodePluginManifest(extension);
+
+      // Add required source field for marketplace plugins
+      (pluginManifest as any).source = {
+        type: 'git',
+        url: marketplace.repository || `https://github.com/example/${this.toKebabCase(extension.name)}`,
+        ref: `v${extension.version}`,
+      };
+
       manifest.plugins.push(pluginManifest);
     }
 
@@ -190,6 +204,17 @@ export class ManifestService {
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  /**
+   * Convert string to kebab-case (required by Claude Code)
+   */
+  private toKebabCase(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
   /**
