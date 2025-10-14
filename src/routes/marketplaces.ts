@@ -109,17 +109,25 @@ marketplacesRouter.post('/', async (c) => {
   } else {
     // Parse form data
     const formData = await c.req.parseBody();
+
+    // Handle multiple checkbox values
+    let extensionIds: string[] | undefined;
+    if (formData.extension_ids) {
+      // If multiple checkboxes, parseBody returns an array
+      extensionIds = Array.isArray(formData.extension_ids)
+        ? formData.extension_ids as string[]
+        : [formData.extension_ids as string];
+    }
+
     body = {
       name: formData.name as string,
-      description: formData.description as string,
+      description: (formData.description as string) || undefined,
       owner_name: formData.owner_name as string,
-      owner_email: formData.owner_email as string,
+      owner_email: (formData.owner_email as string) || undefined,
       version: formData.version as string,
-      homepage: formData.homepage as string,
-      repository: formData.repository as string,
-      extension_ids: formData.extension_ids
-        ? JSON.parse(formData.extension_ids as string)
-        : undefined,
+      homepage: (formData.homepage as string) || undefined,
+      repository: (formData.repository as string) || undefined,
+      extension_ids: extensionIds,
     };
   }
 

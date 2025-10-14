@@ -120,13 +120,23 @@ extensionsRouter.post('/', async (c) => {
   } else {
     // Parse form data
     const formData = await c.req.parseBody();
+
+    // Handle multiple checkbox values
+    let configIds: string[] | undefined;
+    if (formData.config_ids) {
+      // If multiple checkboxes, parseBody returns an array
+      configIds = Array.isArray(formData.config_ids)
+        ? formData.config_ids as string[]
+        : [formData.config_ids as string];
+    }
+
     body = {
       name: formData.name as string,
-      description: formData.description as string,
-      author: formData.author as string,
+      description: (formData.description as string) || undefined,
+      author: (formData.author as string) || undefined,
       version: formData.version as string,
-      icon_url: formData.icon_url as string,
-      config_ids: formData.config_ids ? JSON.parse(formData.config_ids as string) : undefined,
+      icon_url: (formData.icon_url as string) || undefined,
+      config_ids: configIds,
     };
   }
 
