@@ -61,6 +61,42 @@ pluginsRouter.get('/:extensionId/:format', async (c) => {
   }
 });
 
+// Download Gemini JSON definition (manifest only)
+pluginsRouter.get('/:extensionId/gemini/definition', async (c) => {
+  const extensionId = c.req.param('extensionId');
+  const extensionService = new ExtensionService(c.env);
+
+  try {
+    const extension = await extensionService.getExtensionWithConfigs(extensionId);
+    if (!extension) {
+      return c.json({ error: 'Extension not found' }, 404);
+    }
+
+    // Generate Gemini manifest using ManifestService
+    const { ManifestService } = await import('../services/manifest-service');
+    const manifestService = new ManifestService();
+    const manifest = await manifestService.generateGeminiManifest(extension);
+
+    // Create filename
+    const sanitizeName = (name: string) =>
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    const filename = `${sanitizeName(extension.name)}-gemini.json`;
+
+    return new Response(JSON.stringify(manifest, null, 2), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Download complete plugin as ZIP
 pluginsRouter.get('/:extensionId/:format/download', async (c) => {
   const extensionId = c.req.param('extensionId');
@@ -168,6 +204,52 @@ pluginsRouter.post('/:extensionId/:format/invalidate', async (c) => {
   try {
     await fileGenService.deleteExtensionFiles(extensionId, format);
     return c.json({ success: true, message: `Plugin files invalidated for ${format} format` });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Download marketplace Gemini JSON collection (all extension definitions)
+pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) => {
+  const marketplaceId = c.req.param('marketplaceId');
+  const marketplaceService = new MarketplaceService(c.env);
+
+  try {
+    const marketplace = await marketplaceService.getMarketplaceWithExtensions(marketplaceId);
+    if (!marketplace) {
+      return c.json({ error: 'Marketplace not found' }, 404);
+    }
+
+    // Generate Gemini manifests for all extensions
+    const { ManifestService } = await import('../services/manifest-service');
+    const manifestService = new ManifestService();
+
+    const geminiMarketplace = {
+      name: marketplace.name,
+      version: marketplace.version,
+      description: marketplace.description,
+      extensions: await Promise.all(
+        marketplace.extensions.map(async (ext) => {
+          return await manifestService.generateGeminiManifest(ext);
+        })
+      ),
+    };
+
+    // Create filename
+    const sanitizeName = (name: string) =>
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    const filename = `${sanitizeName(marketplace.name)}-gemini-marketplace.json`;
+
+    return new Response(JSON.stringify(geminiMarketplace, null, 2), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
