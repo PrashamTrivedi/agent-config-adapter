@@ -121,7 +121,7 @@
     "has-symbols": "^1.1.0",
     "has-tostringtag": "^1.0.2",
     "hasown": "^2.0.2",
-    "hono": "^4.9.10",
+    "hono": "^4.10.2",
     "human-signals": "^5.0.0",
     "ignore": "^5.3.2",
     "import-fresh": "^3.3.1",
