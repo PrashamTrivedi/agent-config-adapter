@@ -1,6 +1,7 @@
 import { zipSync, strToU8 } from 'fflate';
 import { ExtensionWithConfigs } from '../domain/types';
 import { FileGenerationService } from './file-generation-service';
+import { ManifestService } from './manifest-service';
 
 export interface ZipGenerationServiceEnv {
   DB: D1Database;
@@ -14,10 +15,12 @@ export interface ZipGenerationServiceEnv {
 export class ZipGenerationService {
   private fileGenService: FileGenerationService;
   private r2: R2Bucket;
+  private manifestService: ManifestService;
 
   constructor(env: ZipGenerationServiceEnv) {
     this.fileGenService = new FileGenerationService(env);
     this.r2 = env.EXTENSION_FILES;
+    this.manifestService = new ManifestService();
   }
 
   /**
@@ -87,6 +90,14 @@ export class ZipGenerationService {
           fileMap[`plugins/${pluginDirName}/${file.path}`] = strToU8(content);
         }
       }
+    }
+
+    // Add marketplace.json manifest for Claude Code format
+    if (format === 'claude_code') {
+      const manifest = await this.manifestService.generateClaudeCodeMarketplaceManifest(
+        marketplace as any
+      );
+      fileMap['marketplace.json'] = strToU8(JSON.stringify(manifest, null, 2));
     }
 
     // Generate ZIP
