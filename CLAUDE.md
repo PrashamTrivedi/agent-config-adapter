@@ -199,6 +199,8 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 - Marketplaces group multiple extensions for discovery
 - Plugin downloads:
   - Claude Code: Full ZIP with manifest, commands, agents, MCP configs (primary)
+    - Extension ZIPs: Include plugin manifest and all config files
+    - Marketplace ZIPs: Include marketplace.json at root with all plugin directories
   - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
 - Plugin files are lazily generated and stored in R2
 - File generation is cached until invalidated

@@ -335,6 +335,7 @@ Extensions can be downloaded in format-specific ways:
 - **Claude Code**: Marketplace URL for settings.json or ZIP with all plugins
   - Manifest: `/marketplaces/:id/manifest`
   - Download all: `/plugins/marketplaces/:id/download?format=claude_code`
+  - ZIP structure: Includes `marketplace.json` at root with plugin directories
 - **Gemini**: JSON collection with all extension definitions
   - Download: `/plugins/marketplaces/:marketplaceId/gemini/definition`
 
