@@ -63,6 +63,11 @@ export class ConversionService {
       throw new Error(`Config not found: ${configId}`);
     }
 
+    // Skills cannot be converted between formats
+    if (config.type === 'skill') {
+      throw new Error('Skills cannot be converted between formats. Skills are format-specific and must be used in their original format.');
+    }
+
     // If source and target format are the same, return original content
     if (config.original_format === targetFormat) {
       return {

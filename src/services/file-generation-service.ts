@@ -109,6 +109,19 @@ export class FileGenerationService {
       });
     }
 
+    // Generate skill files (Claude Code format only)
+    const skillConfigs = extension.configs.filter(
+      (c) => c.type === 'skill' && c.original_format === 'claude_code'
+    );
+    for (const config of skillConfigs) {
+      const skillName = this.sanitizeFileName(config.name);
+      files.push({
+        path: `skills/${skillName}/SKILL.md`,
+        content: this.generateSkillFile(config),
+        mimeType: 'text/markdown',
+      });
+    }
+
     // Generate consolidated MCP config
     const mcpConfigs = extension.configs.filter((c) => c.type === 'mcp_config');
     if (mcpConfigs.length > 0) {
@@ -148,6 +161,19 @@ export class FileGenerationService {
       files.push({
         path: `commands/${commandName}.md`,
         content: this.generateCommandFile(config, 'gemini'),
+        mimeType: 'text/markdown',
+      });
+    }
+
+    // Generate skill files (Gemini format only)
+    const skillConfigs = extension.configs.filter(
+      (c) => c.type === 'skill' && c.original_format === 'gemini'
+    );
+    for (const config of skillConfigs) {
+      const skillName = this.sanitizeFileName(config.name);
+      files.push({
+        path: `skills/${skillName}/SKILL.md`,
+        content: this.generateSkillFile(config),
         mimeType: 'text/markdown',
       });
     }
@@ -199,6 +225,16 @@ export class FileGenerationService {
   }
 
   /**
+   * Generate skill markdown file from skill config
+   * Skills are NOT converted - content is used as-is in original format
+   */
+  private generateSkillFile(config: Config): string {
+    // Skill content is already in proper format (YAML frontmatter + markdown)
+    // Skills are format-specific and not converted between formats
+    return config.content;
+  }
+
+  /**
    * Generate context file from extension description
    */
   private generateContextFile(extension: ExtensionWithConfigs): string {
@@ -217,6 +253,7 @@ This extension includes:
 
 ${extension.configs.filter((c) => c.type === 'slash_command').length > 0 ? `- **Commands**: ${extension.configs.filter((c) => c.type === 'slash_command').length} slash command(s)` : ''}
 ${extension.configs.filter((c) => c.type === 'agent_definition').length > 0 ? `- **Agents**: ${extension.configs.filter((c) => c.type === 'agent_definition').length} agent(s)` : ''}
+${extension.configs.filter((c) => c.type === 'skill').length > 0 ? `- **Skills**: ${extension.configs.filter((c) => c.type === 'skill').length} skill(s)` : ''}
 ${extension.configs.filter((c) => c.type === 'mcp_config').length > 0 ? `- **MCP Servers**: ${extension.configs.filter((c) => c.type === 'mcp_config').length} MCP server(s)` : ''}
 `;
   }

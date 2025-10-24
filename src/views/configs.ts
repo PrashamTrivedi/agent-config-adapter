@@ -58,6 +58,7 @@ export function configListView(
             <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
             <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
             <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+            <option value="skill" ${activeFilters.type === 'skill' ? 'selected' : ''}>Skill</option>
           </select>
         </div>
 
@@ -249,6 +250,7 @@ export function configCreateView(): string {
           <option value="slash_command">Slash Command</option>
           <option value="agent_definition">Agent Definition</option>
           <option value="mcp_config">MCP Config</option>
+          <option value="skill">Skill</option>
         </select>
       </div>
 
@@ -303,6 +305,7 @@ export function configEditView(config: Config): string {
           <option value="slash_command" ${config.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
           <option value="agent_definition" ${config.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
           <option value="mcp_config" ${config.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+          <option value="skill" ${config.type === 'skill' ? 'selected' : ''}>Skill</option>
         </select>
       </div>
 

@@ -110,6 +110,13 @@ configsRouter.get('/:id/format/:format', async (c) => {
     if (error.message.includes('not found')) {
       return c.json({ error: 'Config not found' }, 404);
     }
+    // Skills cannot be converted between formats
+    if (error.message.includes('Skills cannot be converted')) {
+      return c.json({
+        error: 'Skills cannot be converted between formats',
+        message: 'Skills are format-specific and must be used in their original format'
+      }, 400);
+    }
     throw error;
   }
 });

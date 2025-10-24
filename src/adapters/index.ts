@@ -99,6 +99,11 @@ export function getAdapter(
 }
 
 function getBaseAdapter(type: ConfigType): FormatAdapter {
+  // Skills are not convertible between formats
+  if (type === 'skill') {
+    throw new Error('Skills are not convertible between formats. Skills are format-specific and must be used in their original format.');
+  }
+
   switch (type) {
     case 'slash_command':
       return new SlashCommandAdapter();

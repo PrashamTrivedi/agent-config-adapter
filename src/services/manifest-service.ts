@@ -36,6 +36,14 @@ export class ManifestService {
       manifest.commands = commands;
     }
 
+    // Extract skills
+    const skills = this.extractGeminiSkills(
+      extension.configs.filter((c) => c.type === 'skill' && c.original_format === 'gemini')
+    );
+    if (Object.keys(skills).length > 0) {
+      manifest.skills = skills;
+    }
+
     // Set context file name if description exists
     if (extension.description) {
       manifest.contextFileName = 'GEMINI.md';
@@ -89,6 +97,15 @@ export class ManifestService {
       manifest.agents = agents.map((agent) => {
         const agentName = this.sanitizeCommandName(agent.name);
         return `./agents/${agentName}.md`;
+      });
+    }
+
+    // Extract skills (list specific skill directories)
+    const skills = extension.configs.filter((c) => c.type === 'skill' && c.original_format === 'claude_code');
+    if (skills.length > 0) {
+      manifest.skills = skills.map((skill) => {
+        const skillName = this.sanitizeCommandName(skill.name);
+        return `./skills/${skillName}`;
       });
     }
 
@@ -245,6 +262,20 @@ export class ManifestService {
   }
 
   /**
+   * Extract Gemini skills (skill name -> skill directory path)
+   */
+  private extractGeminiSkills(skillConfigs: Config[]): Record<string, string> {
+    const skills: Record<string, string> = {};
+
+    for (const config of skillConfigs) {
+      const skillName = this.sanitizeCommandName(config.name);
+      skills[skillName] = `skills/${skillName}`;
+    }
+
+    return skills;
+  }
+
+  /**
    * Sanitize command name for file system usage
    */
   private sanitizeCommandName(name: string): string {
@@ -288,6 +319,13 @@ export class ManifestService {
   }
 
   /**
+   * Get skill configs from an extension's configs
+   */
+  getSkillConfigs(configs: Config[]): Config[] {
+    return configs.filter((c) => c.type === 'skill');
+  }
+
+  /**
    * Count configs by type
    */
   getConfigTypeCounts(configs: Config[]): Record<ConfigType, number> {
@@ -295,6 +333,7 @@ export class ManifestService {
       slash_command: 0,
       agent_definition: 0,
       mcp_config: 0,
+      skill: 0,
     };
 
     for (const config of configs) {

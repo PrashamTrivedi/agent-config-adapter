@@ -1,6 +1,6 @@
 // Domain types for agent configurations
 
-export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config';
+export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config' | 'skill';
 export type AgentFormat = 'claude_code' | 'codex' | 'gemini';
 
 export interface Config {
@@ -45,6 +45,33 @@ export interface GeminiSlashCommand {
   description: string;
   prompt: string;
   args?: string[];
+}
+
+// Skill types
+export interface ClaudeSkillMetadata {
+  name: string;
+  description: string;
+  license?: string;
+  allowed_tools?: string[];  // Claude Code only
+  metadata?: Record<string, any>;
+}
+
+export interface ClaudeSkill {
+  metadata: ClaudeSkillMetadata;
+  content: string;  // Markdown body after frontmatter
+  references?: Record<string, string>;  // Additional files (FORMS.md, etc.)
+}
+
+export interface GeminiSkill {
+  name: string;
+  description: string;
+  prompt: string;  // Combined content
+}
+
+export interface CodexSkill {
+  name: string;
+  description: string;
+  instructions: string;  // Combined content
 }
 
 // MCP Configuration types
@@ -178,6 +205,7 @@ export interface GeminiExtensionManifest {
   mcpServers?: Record<string, MCPServerConfig>;
   contextFileName?: string;
   commands?: Record<string, string>;
+  skills?: Record<string, string>;
 }
 
 export interface ClaudeCodePluginManifest {
@@ -190,6 +218,7 @@ export interface ClaudeCodePluginManifest {
   };
   commands?: string[];
   agents?: string[];
+  skills?: string[];
   mcpServers?: Record<string, MCPServerConfig>;
   source?: string | {
     type: 'git' | 'local';
