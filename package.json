@@ -289,7 +289,7 @@
     "unenv": "^2.0.0-rc.21",
     "unrs-resolver": "^1.11.1",
     "uri-js": "^4.4.1",
-    "vite": "^5.4.20",
+    "vite": "^5.4.21",
     "vite-node": "^1.6.1",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^1.6.1",
