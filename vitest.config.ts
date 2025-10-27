@@ -14,12 +14,11 @@ export default defineConfig({
         'tests/',
         '**/*.test.ts',
         'src/index.ts',
-        'src/views/**', // Exclude HTMX views
-        'src/routes/plugins.ts', // Exclude download routes
-        'src/routes/files.ts', // Exclude download routes
-        'src/infrastructure/ai-converter.ts', // Exclude AI Gateway
-        'src/services/file-generation-service.ts', // Exclude file generation
-        'src/services/zip-generation-service.ts', // Exclude ZIP generation
+        'src/routes/plugins.ts', // Exclude download routes (as requested)
+        'src/routes/files.ts', // Exclude download routes (as requested)
+        'src/infrastructure/ai-converter.ts', // Exclude AI Gateway (as requested)
+        'src/services/file-generation-service.ts', // Exclude file generation (as requested)
+        'src/services/zip-generation-service.ts', // Exclude ZIP generation (as requested)
       ],
     },
   },
