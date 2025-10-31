@@ -1,6 +1,8 @@
 # Agent Config Adapter - MVP
 
-[[![Coverage](https://img.shields.io/badge/Coverage-64%25-yellow)](https://github.com/PrashamTrivedi/agent-config-adapter/actions/workflows/test-coverage.yml)
+[![Coverage](https://img.shields.io/badge/Coverage-64%25-yellow)](https://github.com/PrashamTrivedi/agent-config-adapter/actions/workflows/test-coverage.yml)
+
+
 Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once, deploy across Codex, Gemini, and other agents.
 
 ## Features
@@ -14,6 +16,37 @@ Universal adapter for AI coding agent configurations. Store Claude Code commands
 - 🌐 **MCP Server**: Model Context Protocol server for AI agent integration with tools, resources, and prompts
 - 📦 **Extension Marketplace**: Bundle configs into extensions and marketplaces with format-specific downloads
 - 🔽 **Plugin Downloads**: Generate and serve plugins as ZIP files or JSON definitions for both Claude Code and Gemini
+- 🌐 **Claude Code Web Sync**: Automatically download and sync configurations from a ZIP file when running in Claude Code Web
+
+## Claude Code Web Configuration Sync
+
+When using this project in **Claude Code Web** (claude.ai/code), you can automatically sync configurations from a remote ZIP file on session startup.
+
+### Setup
+
+1. Create `.claude/additionalSettings.json` in your project:
+
+```json
+{
+  "ConfigZipLocation": "https://your-domain.com/configs.zip",
+  "rootPath": "optional/path/within/zip"
+}
+```
+
+2. The SessionStart hook will automatically:
+   - Download the ZIP file
+   - Extract configurations
+   - Copy them to `~/.claude/`
+   - Report success or errors (non-blocking)
+
+### Features
+
+- ✅ **Auto-detects environment**: Only runs in Claude Code Web, not Desktop
+- ✅ **Non-blocking**: Errors don't prevent your session from starting
+- ✅ **Configurable**: Extract entire ZIP or specific subdirectory
+- ✅ **Safe**: Preserves existing local configurations (no overwrites)
+
+📖 **Full Documentation**: See [.claude/hooks/README.md](.claude/hooks/README.md) for detailed usage, testing, and troubleshooting.
 
 ## Quick Start
 
