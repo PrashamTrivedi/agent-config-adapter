@@ -1,0 +1,179 @@
+name: Test Coverage
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test-coverage:
+    # Skip if commit message contains [skip ci]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test -- --run --coverage
+
+      - name: Parse coverage summary
+        id: coverage
+        run: |
+          COVERAGE=$(node -e "
+            const fs = require('fs');
+            const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const total = summary.total;
+            console.log(JSON.stringify({
+              statements: { pct: total.statements.pct, covered: total.statements.covered, total: total.statements.total },
+              branches: { pct: total.branches.pct, covered: total.branches.covered, total: total.branches.total },
+              functions: { pct: total.functions.pct, covered: total.functions.covered, total: total.functions.total },
+              lines: { pct: total.lines.pct, covered: total.lines.covered, total: total.lines.total }
+            }));
+          ")
+          echo "coverage_data=$COVERAGE" >> $GITHUB_OUTPUT
+
+          # Extract overall percentage (use statements as overall metric)
+          OVERALL_PCT=$(echo $COVERAGE | node -e "
+            const data = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+            console.log(data.statements.pct);
+          ")
+          echo "overall_pct=$OVERALL_PCT" >> $GITHUB_OUTPUT
+
+          # Determine badge color
+          COLOR="red"
+          if (( $(echo "$OVERALL_PCT >= 80" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$OVERALL_PCT >= 60" | bc -l) )); then
+            COLOR="yellow"
+          elif (( $(echo "$OVERALL_PCT >= 40" | bc -l) )); then
+            COLOR="orange"
+          fi
+          echo "badge_color=$COLOR" >> $GITHUB_OUTPUT
+
+      # PR Comment with coverage report
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverage = JSON.parse('${{ steps.coverage.outputs.coverage_data }}');
+            const overallPct = '${{ steps.coverage.outputs.overall_pct }}';
+
+            // Determine status emoji
+            const statusEmoji = parseFloat(overallPct) >= 80 ? '✅' : '⚠️';
+            const statusText = parseFloat(overallPct) >= 80 ? 'Coverage meets requirements' : 'Coverage below recommended threshold (80%)';
+
+            const body = `## 📊 Test Coverage Report
+
+            | Metric | Coverage | Covered | Total |
+            |--------|----------|---------|-------|
+            | Statements | ${coverage.statements.pct.toFixed(2)}% | ${coverage.statements.covered} | ${coverage.statements.total} |
+            | Branches | ${coverage.branches.pct.toFixed(2)}% | ${coverage.branches.covered} | ${coverage.branches.total} |
+            | Functions | ${coverage.functions.pct.toFixed(2)}% | ${coverage.functions.covered} | ${coverage.functions.total} |
+            | Lines | ${coverage.lines.pct.toFixed(2)}% | ${coverage.lines.covered} | ${coverage.lines.total} |
+
+            **Status:** ${statusEmoji} ${statusText}
+
+            ---
+            *Updated: ${new Date().toISOString().replace('T', ' ').substring(0, 19)} UTC*
+            *Workflow: [View Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+            `;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('📊 Test Coverage Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      # Upload artifacts for all push events
+      - name: Upload coverage artifacts
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+          retention-days: 30
+
+      # Update README badge only on main branch
+      - name: Update README badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          OVERALL_PCT="${{ steps.coverage.outputs.overall_pct }}"
+          BADGE_COLOR="${{ steps.coverage.outputs.badge_color }}"
+
+          # Format percentage for URL (replace . with %2E if needed, but shields.io handles it)
+          PCT_FORMATTED=$(printf "%.0f" $OVERALL_PCT)
+
+          # Create badge URL with link to workflow
+          BADGE_URL="https://img.shields.io/badge/Coverage-${PCT_FORMATTED}%25-${BADGE_COLOR}"
+          WORKFLOW_URL="https://github.com/${{ github.repository }}/actions/workflows/test-coverage.yml"
+          BADGE_MARKDOWN="[![Coverage](${BADGE_URL})](${WORKFLOW_URL})"
+
+          # Check if README has coverage badge
+          if grep -q "!\[Coverage\]" README.md; then
+            # Replace existing badge line
+            sed -i "s|!\[Coverage\].*|${BADGE_MARKDOWN}|" README.md
+          else
+            # Insert badge after title (line 1) and empty line (line 2), so on line 3
+            sed -i "3i ${BADGE_MARKDOWN}" README.md
+          fi
+
+      - name: Commit README changes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "📊 chore: Update coverage badge [skip ci]"
+            git push
+          else
+            echo "No changes to README.md, skipping commit"
+          fi

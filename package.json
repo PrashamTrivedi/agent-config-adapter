@@ -311,7 +311,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251011.0",
-    "@types/js-yaml": "^4.0.9"
+    "@types/js-yaml": "^4.0.9",
+    "@vitest/coverage-v8": "^4.0.3"
   },
   "scripts": {
     "dev": "wrangler dev --port 9090",

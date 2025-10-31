@@ -33,9 +33,12 @@ cp .dev.vars.example .dev.vars
 ```bash
 npm run dev        # Start dev server (http://localhost:8787)
 npm test           # Run all tests
+npm test -- --run --coverage  # Run tests with coverage
 npm run test:watch # Watch mode
 npm run lint       # Lint code
 ```
+
+**CI/CD**: GitHub Actions workflow runs tests with coverage on all pushes and PRs. Coverage reports posted as PR comments, artifacts uploaded for 30 days, README badge auto-updated on main.
 
 ### Database
 ```bash
@@ -177,6 +180,11 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 - Test MCP tools via `/mcp` endpoint
 - Use `GET /mcp/info` to verify server capabilities
 - Test workflows using prompts (migrate_config_format, batch_convert, sync_config_versions)
+
+### CI/CD Testing
+- GitHub Actions workflow (`.github/workflows/test-coverage.yml`) runs on all pushes and PRs
+- Automated coverage reporting with PR comments and artifacts
+- README badge automatically updated on main branch with current coverage percentage
 
 ## Configuration
 

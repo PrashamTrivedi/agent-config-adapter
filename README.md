@@ -554,6 +554,9 @@ startup_timeout_ms = 20000
 # Run tests
 npm test
 
+# Run tests with coverage
+npm test -- --run --coverage
+
 # Run tests in watch mode
 npm run test:watch
 
@@ -563,6 +566,30 @@ npm run lint
 # Apply migrations
 npm run d1:migrations:apply
 ```
+
+### Continuous Integration
+
+The project uses GitHub Actions for automated testing and coverage reporting:
+
+- **Test Coverage Workflow**: Runs automatically on all branch pushes and pull requests
+  - Executes full test suite with coverage metrics
+  - Posts detailed coverage reports as PR comments (statements, branches, functions, lines)
+  - Uploads coverage artifacts (HTML reports, JSON summaries) for 30-day retention
+  - Automatically updates README coverage badge on main branch commits
+  - Skips execution on commits containing `[skip ci]` to prevent infinite loops
+
+- **Coverage Badge**: Located at the top of this README, automatically updated by the workflow
+  - Shows overall statement coverage percentage
+  - Color-coded: green (80%+), yellow (60-79%), orange (40-59%), red (<40%)
+  - Links to the GitHub Actions workflow for detailed reports
+
+- **Viewing Coverage Reports**:
+  - PR comments: Check the pull request conversation tab for coverage summaries
+  - Artifacts: Navigate to Actions tab → Workflow run → Artifacts section
+  - Download `coverage-report` artifact for complete HTML coverage report
+
+- **Coverage Configuration**: Configured in `vitest.config.ts` with v8 provider
+  - Excludes: test files, entry points, download routes, AI Gateway, file generation services
 
 ## Deployment
 
