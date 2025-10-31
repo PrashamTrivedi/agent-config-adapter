@@ -43,6 +43,3 @@ logs/
 # Temporary files
 tmp/
 temp/
-
-# Claude Code configuration (user-specific)
-.claude/additionalSettings.json
