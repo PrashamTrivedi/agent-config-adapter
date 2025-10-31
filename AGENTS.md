@@ -83,12 +83,19 @@ We use domain-driven design with a services layer for shared business logic. Cor
 ## Testing Instructions
 
 - Run `npm test` to execute all tests
+- Run `npm test -- --run --coverage` for coverage reports
 - Run `npm run test:watch` for watch mode
 - Write tests for all adapter logic (critical for format conversion accuracy)
 - Test both D1 and KV operations
 - Test services layer (ConfigService, ConversionService)
 - Test MCP tools via `/mcp` endpoint
 - All tests must pass before committing
+
+### CI/CD
+- GitHub Actions workflow automatically runs tests with coverage on all pushes and PRs
+- Coverage reports posted as PR comments with detailed metrics
+- Coverage artifacts uploaded for 30-day retention (downloadable HTML reports)
+- README badge automatically updated on main branch commits with current coverage percentage
 
 ## Database
 
