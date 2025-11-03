@@ -59,6 +59,9 @@ pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) =>
       headers: {
         'Content-Type': 'application/json',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Max-Age': '86400',
       },
     });
   } catch (error: any) {
@@ -94,6 +97,9 @@ pluginsRouter.get('/marketplaces/:marketplaceId/download', async (c) => {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Max-Age': '86400',
       },
     });
   } catch (error: any) {
@@ -132,6 +138,9 @@ pluginsRouter.get('/:extensionId/gemini/definition', async (c) => {
       headers: {
         'Content-Type': 'application/json',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Max-Age': '86400',
       },
     });
   } catch (error: any) {
@@ -167,6 +176,9 @@ pluginsRouter.get('/:extensionId/:format/download', async (c) => {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Max-Age': '86400',
       },
     });
   } catch (error: any) {
