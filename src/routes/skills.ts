@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
+import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
 
 type Bindings = {
   DB: D1Database;
@@ -19,14 +20,12 @@ skillsRouter.get('/', async (c) => {
     return c.json({ skills });
   }
 
-  // TODO: Return HTML view
-  return c.json({ skills });
+  return c.html(skillsListView(skills));
 });
 
 // Create new skill form (UI)
 skillsRouter.get('/new', async (c) => {
-  // TODO: Return HTML form
-  return c.text('Skill creation form - TODO');
+  return c.html(skillCreateView());
 });
 
 // Edit skill form (UI)
@@ -39,8 +38,7 @@ skillsRouter.get('/:id/edit', async (c) => {
     return c.json({ error: 'Skill not found' }, 404);
   }
 
-  // TODO: Return HTML edit form
-  return c.json({ skill });
+  return c.html(skillEditView(skill));
 });
 
 // Get skill with all files
@@ -58,8 +56,7 @@ skillsRouter.get('/:id', async (c) => {
     return c.json({ skill });
   }
 
-  // TODO: Return HTML detail view
-  return c.json({ skill });
+  return c.html(skillDetailView(skill));
 });
 
 // Create new skill (JSON or form)

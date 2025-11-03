@@ -34,6 +34,7 @@ app.get('/', (c) => {
       <li>Store agent configurations (slash commands, agent definitions, MCP configs)</li>
       <li>Convert between different agent formats</li>
       <li>Fast retrieval with caching</li>
+      <li><strong>NEW:</strong> Multi-file Skills with ZIP upload/download</li>
       <li><strong>NEW:</strong> MCP Server support for AI agent integration</li>
       <li><strong>NEW:</strong> Extension Marketplace - Bundle and share configs</li>
     </ul>
@@ -41,6 +42,7 @@ app.get('/', (c) => {
     <div style="margin-top: 30px;">
       <a href="/configs" class="btn">View All Configs</a>
       <a href="/configs/new" class="btn">Add New Config</a>
+      <a href="/skills" class="btn">Browse Skills</a>
       <a href="/extensions" class="btn">Browse Extensions</a>
       <a href="/marketplaces" class="btn">Browse Marketplaces</a>
       <a href="/mcp/info" class="btn" style="background: #4f46e5;">MCP Server Info</a>
