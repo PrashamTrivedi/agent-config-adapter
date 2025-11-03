@@ -6,6 +6,10 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.ts'],
+    outputFile: {
+      json: './coverage/test-results.json',
+    },
+    reporters: ['default', 'json'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html'],

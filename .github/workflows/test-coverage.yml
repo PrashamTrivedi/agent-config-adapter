@@ -36,6 +36,95 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --run --coverage
 
+      - name: Post test and coverage summary
+        if: always()
+        run: |
+          # Get the current branch name
+          BRANCH_NAME=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+
+          echo "# Test and Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check if test results exist
+          if [ -f ./coverage/test-results.json ]; then
+            echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+
+            # Parse test results
+            TOTAL_TESTS=$(jq '.numTotalTests // 0' ./coverage/test-results.json)
+            PASSED_TESTS=$(jq '.numPassedTests // 0' ./coverage/test-results.json)
+            FAILED_TESTS=$(jq '.numFailedTests // 0' ./coverage/test-results.json)
+
+            # Determine test status emoji
+            if [ "$FAILED_TESTS" -eq 0 ]; then
+              TEST_EMOJI="✅"
+              TEST_STATUS="All tests passed"
+            else
+              TEST_EMOJI="❌"
+              TEST_STATUS="Some tests failed"
+            fi
+
+            echo "$TEST_EMOJI **$TEST_STATUS**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | $TOTAL_TESTS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | $PASSED_TESTS |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | $FAILED_TESTS |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Show failed tests if any
+            if [ "$FAILED_TESTS" -gt 0 ]; then
+              echo "### ❌ Failed Tests" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              jq -r '.testResults[]? | select(.status == "failed") | "- \(.name)"' ./coverage/test-results.json >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ Test results file not found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Coverage Summary
+          if [ -f ./coverage/coverage-summary.json ]; then
+            echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Coverage | Covered/Total |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|---------------|" >> $GITHUB_STEP_SUMMARY
+
+            jq -r '.total |
+              "| Statements | \(.statements.pct)% | \(.statements.covered)/\(.statements.total) |",
+              "| Branches | \(.branches.pct)% | \(.branches.covered)/\(.branches.total) |",
+              "| Functions | \(.functions.pct)% | \(.functions.covered)/\(.functions.total) |",
+              "| Lines | \(.lines.pct)% | \(.lines.covered)/\(.lines.total) |"
+            ' ./coverage/coverage-summary.json >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # File Coverage with GitHub links
+            echo "## File Coverage Details" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| File | Lines | Statements | Functions | Branches |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|-------|------------|-----------|----------|" >> $GITHUB_STEP_SUMMARY
+
+            jq -r --arg repo "$GITHUB_REPOSITORY" --arg branch "$BRANCH_NAME" '
+              to_entries[]
+              | select(.key != "total")
+              | select(.value.lines.total > 0 or .value.statements.total > 0)
+              | .key as $fullPath
+              | .value as $coverage
+              | ($fullPath | split("/") | .[-1]) as $fileName
+              | ($fullPath | gsub("^.*/agent-config-adapter/"; "")) as $relativePath
+              | "| [\($fileName)](\("https://github.com/\($repo)/blob/\($branch)/\($relativePath)")) | \($coverage.lines.pct)% | \($coverage.statements.pct)% | \($coverage.functions.pct)% | \($coverage.branches.pct)% |"
+            ' ./coverage/coverage-summary.json | sort -t'|' -k2 >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Coverage summary file not found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')*" >> $GITHUB_STEP_SUMMARY
+
       - name: Parse coverage summary
         id: coverage
         run: |
