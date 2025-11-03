@@ -242,5 +242,63 @@ if [ -n "$ROOT_PATH" ]; then
 fi
 log_info "  Target directory: ${TARGET_DIR}"
 
+# STEP 15: List synced configurations for Claude's context
+# ---------------------------------------------------------
+# Since SessionStart stdout is added to Claude's context, explicitly list
+# all synced commands, skills, and agents so Claude knows they're available
+
+# List slash commands
+if [ -d "${TARGET_DIR}/commands" ]; then
+    COMMAND_COUNT=$(find "${TARGET_DIR}/commands" -name "*.md" -type f 2>/dev/null | wc -l)
+    if [ "$COMMAND_COUNT" -gt 0 ]; then
+        log_info ""
+        log_info "Available slash commands (${COMMAND_COUNT}):"
+        find "${TARGET_DIR}/commands" -name "*.md" -type f 2>/dev/null | sort | while read cmd_file; do
+            cmd_name=$(basename "$cmd_file" .md)
+            # Handle subdirectories (namespaced commands like /git:sync)
+            cmd_dir=$(dirname "$cmd_file")
+            if [ "$cmd_dir" != "${TARGET_DIR}/commands" ]; then
+                namespace=$(basename "$cmd_dir")
+                log_info "  /${namespace}:${cmd_name}"
+            else
+                log_info "  /${cmd_name}"
+            fi
+        done
+    fi
+fi
+
+# List skills
+if [ -d "${TARGET_DIR}/skills" ]; then
+    SKILL_COUNT=$(find "${TARGET_DIR}/skills" -name "SKILL.md" -type f 2>/dev/null | wc -l)
+    if [ "$SKILL_COUNT" -gt 0 ]; then
+        log_info ""
+        log_info "Available skills (${SKILL_COUNT}):"
+        find "${TARGET_DIR}/skills" -name "SKILL.md" -type f 2>/dev/null | sort | while read skill_file; do
+            skill_dir=$(dirname "$skill_file")
+            skill_name=$(basename "$skill_dir")
+            # Try to extract description from SKILL.md frontmatter
+            skill_desc=$(grep "^description:" "$skill_file" 2>/dev/null | sed 's/^description: *//' | head -1)
+            if [ -n "$skill_desc" ]; then
+                log_info "  - ${skill_name}: ${skill_desc}"
+            else
+                log_info "  - ${skill_name}"
+            fi
+        done
+    fi
+fi
+
+# List agents
+if [ -d "${TARGET_DIR}/agents" ]; then
+    AGENT_COUNT=$(find "${TARGET_DIR}/agents" -maxdepth 2 -name "*.json" -o -name "*.md" -type f 2>/dev/null | wc -l)
+    if [ "$AGENT_COUNT" -gt 0 ]; then
+        log_info ""
+        log_info "Available agents (${AGENT_COUNT} files):"
+        find "${TARGET_DIR}/agents" -maxdepth 1 -type d 2>/dev/null | grep -v "^${TARGET_DIR}/agents$" | sort | while read agent_dir; do
+            agent_name=$(basename "$agent_dir")
+            log_info "  - ${agent_name}"
+        done
+    fi
+fi
+
 # Exit successfully
 exit 0
