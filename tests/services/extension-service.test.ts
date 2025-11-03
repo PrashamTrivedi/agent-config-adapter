@@ -245,6 +245,73 @@ describe('ExtensionService', () => {
 
       expect(mockKV.delete).toHaveBeenCalled();
     });
+
+    // Bug Fix Tests: Extension form now saves ALL selected configs
+    it('should add multiple configs (5+) in one operation', async () => {
+      const configIds = ['config-1', 'config-2', 'config-3', 'config-4', 'config-5'];
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true }),
+          first: vi.fn().mockResolvedValue({ max_order: 0 }),
+        }),
+      });
+
+      await service.addConfigsToExtension('ext-123', configIds);
+
+      // Verify the database prepare was called for inserting multiple configs
+      // The service should batch insert all 5 configs
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockKV.delete).toHaveBeenCalled();
+    });
+
+    it('should handle adding many configs (10+)', async () => {
+      const configIds = Array.from({ length: 15 }, (_, i) => `config-${i + 1}`);
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true }),
+          first: vi.fn().mockResolvedValue({ max_order: 0 }),
+        }),
+      });
+
+      await service.addConfigsToExtension('ext-123', configIds);
+
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockKV.delete).toHaveBeenCalled();
+    });
+
+    it('should handle adding single config (regression test)', async () => {
+      const configIds = ['config-1'];
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true }),
+          first: vi.fn().mockResolvedValue({ max_order: 0 }),
+        }),
+      });
+
+      await service.addConfigsToExtension('ext-123', configIds);
+
+      expect(mockDb.prepare).toHaveBeenCalled();
+      expect(mockKV.delete).toHaveBeenCalled();
+    });
+
+    it('should handle adding zero configs', async () => {
+      const configIds: string[] = [];
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true }),
+          first: vi.fn().mockResolvedValue({ max_order: 0 }),
+        }),
+      });
+
+      await service.addConfigsToExtension('ext-123', configIds);
+
+      // Should still invalidate cache even with empty array
+      expect(mockKV.delete).toHaveBeenCalled();
+    });
   });
 
   describe('removeConfigFromExtension', () => {
