@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { configsRouter } from './routes/configs';
 import { extensionsRouter } from './routes/extensions';
 import { marketplacesRouter } from './routes/marketplaces';
+import { skillsRouter } from './routes/skills';
 import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { layout } from './views/layout';
@@ -52,12 +53,14 @@ app.get('/', (c) => {
 app.route('/api/configs', configsRouter);
 app.route('/api/extensions', extensionsRouter);
 app.route('/api/marketplaces', marketplacesRouter);
+app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
 app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
+app.route('/skills', skillsRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);

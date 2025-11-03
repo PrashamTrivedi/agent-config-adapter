@@ -74,6 +74,46 @@ export interface CodexSkill {
   instructions: string;  // Combined content
 }
 
+// Skill file management types
+export interface SkillFile {
+  id: string;
+  skill_id: string;
+  file_path: string;
+  r2_key: string;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
+}
+
+export interface SkillWithFiles extends Config {
+  type: 'skill';
+  files: SkillFile[];
+}
+
+export interface UploadSkillFileInput {
+  skill_id: string;
+  file_path: string;
+  content: ArrayBuffer | ReadableStream;
+  mime_type?: string;
+}
+
+export interface CreateSkillFileInput {
+  skill_id: string;
+  file_path: string;
+  r2_key: string;
+  file_size?: number;
+  mime_type?: string;
+}
+
+export interface SkillZipStructure {
+  skillContent: string;  // SKILL.md content
+  companionFiles: Array<{
+    path: string;
+    content: ArrayBuffer;
+    mimeType: string;
+  }>;
+}
+
 // MCP Configuration types
 export interface MCPServerConfig {
   type?: 'stdio' | 'http' | 'sse';  // Claude Code, can be stdio, http, or sse
