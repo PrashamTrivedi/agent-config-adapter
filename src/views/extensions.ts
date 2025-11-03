@@ -204,7 +204,7 @@ export function extensionCreateView(
 
   const content = `
     <h2>Create Extension</h2>
-    <form hx-post="/api/extensions" hx-target="body" hx-swap="outerHTML">
+    <form id="create-extension-form">
       <div class="form-group">
         <label for="name">Name *</label>
         <input type="text" id="name" name="name" required>
@@ -334,15 +334,43 @@ export function extensionCreateView(
       }
 
       // Handle form submission
-      document.body.addEventListener('htmx:afterSwap', function(evt) {
-        const response = evt.detail.xhr.responseText;
+      document.getElementById('create-extension-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const configIds = [];
+
+        // Collect all checked checkboxes
+        document.querySelectorAll('input[name="config_ids"]:checked').forEach(cb => {
+          configIds.push(cb.value);
+        });
+
+        const body = {
+          name: formData.get('name'),
+          version: formData.get('version'),
+          author: formData.get('author') || undefined,
+          description: formData.get('description') || undefined,
+          icon_url: formData.get('icon_url') || undefined,
+          config_ids: configIds.length > 0 ? configIds : undefined
+        };
+
         try {
-          const data = JSON.parse(response);
-          if (data.extension) {
+          const response = await fetch('/api/extensions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
             window.location.href = '/extensions/' + data.extension.id;
+          } else {
+            const error = await response.json();
+            alert('Error: ' + (error.error || 'Failed to create extension'));
           }
-        } catch(e) {
-          // Response is HTML, let it render
+        } catch (error) {
+          alert('Failed to create extension. Please try again.');
+          console.error('Extension creation error:', error);
         }
       });
 
