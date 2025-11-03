@@ -1,26 +1,35 @@
 # Agent Config Adapter - MVP
 
-[[[[[[![Coverage](https://img.shields.io/badge/Coverage-64%25-yellow)](https://github.com/PrashamTrivedi/agent-config-adapter/actions/workflows/test-coverage.yml)
+![Coverage](https://img.shields.io/badge/Coverage-64%25-yellow)
 
-
-Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once, deploy across Codex, Gemini, and other agents.
+Universal adapter for AI coding agent configurations. Store Claude Code commands
+and MCP configs once, deploy across Codex, Gemini, and other agents.
 
 ## Features
 
-- 🔄 **Format Conversion**: Convert slash commands between Claude Code, Codex, and Gemini formats
-- 🤖 **AI-Powered Conversion**: Uses OpenAI GPT-5-mini via Cloudflare AI Gateway for intelligent format conversion
+- 🔄 **Format Conversion**: Convert slash commands between Claude Code, Codex,
+  and Gemini formats
+- 🤖 **AI-Powered Conversion**: Uses OpenAI GPT-5-mini via Cloudflare AI Gateway
+  for intelligent format conversion
 - 💾 **Persistent Storage**: D1 database for reliable config storage
-- ⚡ **Fast Caching**: KV namespace for quick config retrieval with manual invalidation
-- 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit and conversion refresh capabilities
+- ⚡ **Fast Caching**: KV namespace for quick config retrieval with manual
+  invalidation
+- 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit
+  and conversion refresh capabilities
 - 🔌 **REST API**: Full CRUD API for programmatic access
-- 🌐 **MCP Server**: Model Context Protocol server for AI agent integration with tools, resources, and prompts
-- 📦 **Extension Marketplace**: Bundle configs into extensions and marketplaces with format-specific downloads
-- 🔽 **Plugin Downloads**: Generate and serve plugins as ZIP files or JSON definitions for both Claude Code and Gemini
-- 🌐 **Claude Code Web Sync**: Automatically download and sync configurations from a ZIP file when running in Claude Code Web
+- 🌐 **MCP Server**: Model Context Protocol server for AI agent integration with
+  tools, resources, and prompts
+- 📦 **Extension Marketplace**: Bundle configs into extensions and marketplaces
+  with format-specific downloads
+- 🔽 **Plugin Downloads**: Generate and serve plugins as ZIP files or JSON
+  definitions for both Claude Code and Gemini
+- 🌐 **Claude Code Web Sync**: Automatically download and sync configurations
+  from a ZIP file when running in Claude Code Web
 
 ## Claude Code Web Configuration Sync
 
-When using this project in **Claude Code Web** (claude.ai/code), you can automatically sync configurations from a remote ZIP file on session startup.
+When using this project in **Claude Code Web** (claude.ai/code), you can
+automatically sync configurations from a remote ZIP file on session startup.
 
 ### Setup
 
@@ -46,7 +55,9 @@ When using this project in **Claude Code Web** (claude.ai/code), you can automat
 - ✅ **Configurable**: Extract entire ZIP or specific subdirectory
 - ✅ **Safe**: Preserves existing local configurations (no overwrites)
 
-📖 **Full Documentation**: See [.claude/hooks/README.md](.claude/hooks/README.md) for detailed usage, testing, and troubleshooting.
+📖 **Full Documentation**: See
+[.claude/hooks/README.md](.claude/hooks/README.md) for detailed usage, testing,
+and troubleshooting.
 
 ## Quick Start
 
@@ -81,7 +92,8 @@ npm run dev
 
 ### OpenAI API Key Setup
 
-**IMPORTANT**: Cloudflare AI Gateway proxies requests to OpenAI but **does NOT store** your OpenAI API key. You must provide your own API key:
+**IMPORTANT**: Cloudflare AI Gateway proxies requests to OpenAI but **does NOT
+store** your OpenAI API key. You must provide your own API key:
 
 1. Get an API key from [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Add it to `.dev.vars`:
@@ -93,9 +105,11 @@ npm run dev
    npx wrangler secret put OPENAI_API_KEY
    ```
 
-**Without a valid OpenAI API key**, the system will fall back to rule-based conversions only (no AI-powered conversion).
+**Without a valid OpenAI API key**, the system will fall back to rule-based
+conversions only (no AI-powered conversion).
 
-The app will be available at `http://localhost:8787` (or another port shown in console).
+The app will be available at `http://localhost:8787` (or another port shown in
+console).
 
 ## Project Structure
 
@@ -119,17 +133,20 @@ The app will be available at `http://localhost:8787` (or another port shown in c
 
 - `GET /api/configs` - List all configs
 - `GET /api/configs/:id` - Get specific config
-- `GET /api/configs/:id/format/:format` - Get config in specific format (claude_code, codex, gemini)
+- `GET /api/configs/:id/format/:format` - Get config in specific format
+  (claude_code, codex, gemini)
 - `POST /api/configs` - Create new config
 - `PUT /api/configs/:id` - Update config
 - `DELETE /api/configs/:id` - Delete config
-- `POST /api/configs/:id/invalidate` - Invalidate cached conversions for a config
+- `POST /api/configs/:id/invalidate` - Invalidate cached conversions for a
+  config
 
 ### Extensions
 
 - `GET /api/extensions` - List all extensions
 - `GET /api/extensions/:id` - Get specific extension with configs
-- `GET /api/extensions/:id/manifest/:format` - Get extension manifest (gemini or claude_code format)
+- `GET /api/extensions/:id/manifest/:format` - Get extension manifest (gemini or
+  claude_code format)
 - `POST /api/extensions` - Create new extension
 - `PUT /api/extensions/:id` - Update extension
 - `DELETE /api/extensions/:id` - Delete extension
@@ -143,24 +160,33 @@ The app will be available at `http://localhost:8787` (or another port shown in c
 
 - `GET /api/marketplaces` - List all marketplaces
 - `GET /api/marketplaces/:id` - Get specific marketplace with extensions
-- `GET /api/marketplaces/:id/manifest` - Get marketplace manifest (Claude Code format)
+- `GET /api/marketplaces/:id/manifest` - Get marketplace manifest (Claude Code
+  format)
 - `POST /api/marketplaces` - Create new marketplace
 - `PUT /api/marketplaces/:id` - Update marketplace
 - `DELETE /api/marketplaces/:id` - Delete marketplace
-- `POST /api/marketplaces/:id/extensions` - Add extensions to marketplace (batch)
-- `POST /api/marketplaces/:id/extensions/:extensionId` - Add single extension to marketplace
-- `DELETE /api/marketplaces/:id/extensions/:extensionId` - Remove extension from marketplace
+- `POST /api/marketplaces/:id/extensions` - Add extensions to marketplace
+  (batch)
+- `POST /api/marketplaces/:id/extensions/:extensionId` - Add single extension to
+  marketplace
+- `DELETE /api/marketplaces/:id/extensions/:extensionId` - Remove extension from
+  marketplace
 - `POST /api/marketplaces/:id/invalidate` - Invalidate marketplace cache
 
 ### Plugin Downloads
 
-- `GET /plugins/:extensionId/:format` - Browse plugin files (format: claude_code or gemini)
+- `GET /plugins/:extensionId/:format` - Browse plugin files (format: claude_code
+  or gemini)
 - `GET /plugins/:extensionId/:format/download` - Download complete plugin as ZIP
-- `GET /plugins/:extensionId/gemini/definition` - Download Gemini JSON definition file (recommended for Gemini)
+- `GET /plugins/:extensionId/gemini/definition` - Download Gemini JSON
+  definition file (recommended for Gemini)
 - `GET /plugins/:extensionId/:format/*` - Serve individual plugin file
-- `POST /plugins/:extensionId/:format/invalidate` - Invalidate/regenerate plugin files
-- `GET /plugins/marketplaces/:marketplaceId/gemini/definition` - Download marketplace Gemini JSON collection
-- `GET /plugins/marketplaces/:marketplaceId/download?format=` - Download all marketplace plugins as ZIP (format: claude_code or gemini)
+- `POST /plugins/:extensionId/:format/invalidate` - Invalidate/regenerate plugin
+  files
+- `GET /plugins/marketplaces/:marketplaceId/gemini/definition` - Download
+  marketplace Gemini JSON collection
+- `GET /plugins/marketplaces/:marketplaceId/download?format=` - Download all
+  marketplace plugins as ZIP (format: claude_code or gemini)
 
 ### Example: Create a Config
 
@@ -191,7 +217,10 @@ curl -X POST http://localhost:8787/api/configs/{id}/invalidate
 
 ## MCP Server
 
-The Agent Config Adapter includes a full Model Context Protocol (MCP) server implementation, allowing AI agents to interact with configurations programmatically. The MCP server provides a standardized interface for reading, writing, and converting agent configurations.
+The Agent Config Adapter includes a full Model Context Protocol (MCP) server
+implementation, allowing AI agents to interact with configurations
+programmatically. The MCP server provides a standardized interface for reading,
+writing, and converting agent configurations.
 
 ### MCP Endpoints
 
@@ -207,11 +236,13 @@ The MCP server exposes three types of capabilities:
 Tools perform operations with side effects:
 
 - **create_config** - Create a new agent configuration
-  - Arguments: `name`, `type` (slash_command|mcp_config|agent_definition), `original_format` (claude_code|codex|gemini), `content`
+  - Arguments: `name`, `type` (slash_command|mcp_config|agent_definition),
+    `original_format` (claude_code|codex|gemini), `content`
   - Returns: Created config with ID
 
 - **update_config** - Update an existing configuration
-  - Arguments: `configId`, optional: `name`, `type`, `original_format`, `content`
+  - Arguments: `configId`, optional: `name`, `type`, `original_format`,
+    `content`
   - Returns: Updated config or error if not found
 
 - **delete_config** - Delete a configuration
@@ -222,7 +253,8 @@ Tools perform operations with side effects:
   - Arguments: `configId`
   - Returns: Config object or error if not found
 
-- **convert_config** - Convert config to a different format (on-demand, with caching)
+- **convert_config** - Convert config to a different format (on-demand, with
+  caching)
   - Arguments: `configId`, `targetFormat` (claude_code|codex|gemini)
   - Returns: Converted content with metadata (cached, usedAI, fallbackUsed)
   - Note: This is the operation that triggers conversion and caching
@@ -243,20 +275,24 @@ Resources provide context to AI agents (pure reads, no processing):
 
 Prompts provide guided workflows for complex multi-step operations:
 
-- **migrate_config_format** - Migrate a configuration from one agent format to another
-  - Arguments: `sourceConfigId`, `targetFormat` (claude_code|codex|gemini), optional: `newName`
+- **migrate_config_format** - Migrate a configuration from one agent format to
+  another
+  - Arguments: `sourceConfigId`, `targetFormat` (claude_code|codex|gemini),
+    optional: `newName`
   - Workflow: Reads source config, converts to target format, creates new config
   - Returns: Step-by-step instructions for the AI agent to follow
 
 - **batch_convert** - Bulk convert multiple configs to a specific format
-  - Arguments: `targetFormat` (claude_code|codex|gemini), optional: `configTypes` (comma-separated)
+  - Arguments: `targetFormat` (claude_code|codex|gemini), optional:
+    `configTypes` (comma-separated)
   - Workflow: Lists all configs, filters by type, converts each to target format
   - Returns: Batch conversion instructions with summary reporting
   - Note: Skips agent_definition types (not convertible)
 
 - **sync_config_versions** - Synchronize cached format conversions for a config
   - Arguments: `configId`
-  - Workflow: Reads config, invalidates cache, regenerates all format conversions
+  - Workflow: Reads config, invalidates cache, regenerates all format
+    conversions
   - Returns: Sync workflow instructions with status reporting
 
 ### Connecting MCP Clients
@@ -274,18 +310,22 @@ Add the following configuration to your MCP client:
 }
 ```
 
-For production deployments, replace `localhost:8787` with your deployed Worker URL.
+For production deployments, replace `localhost:8787` with your deployed Worker
+URL.
 
 ### MCP Client Examples
 
 #### Using Claude Code
 
-Claude Code can connect to the MCP server automatically if configured in your MCP settings. Once connected, Claude can:
+Claude Code can connect to the MCP server automatically if configured in your
+MCP settings. Once connected, Claude can:
 
-- Create new configurations: "Create a new slash command called 'code-review' that reviews code quality"
+- Create new configurations: "Create a new slash command called 'code-review'
+  that reviews code quality"
 - Convert formats: "Convert config abc123 to Codex format"
 - Batch operations: "Convert all slash_command configs to Gemini format"
-- Migrate configs: "Migrate my Claude Code config xyz789 to Codex format and save it as a new config"
+- Migrate configs: "Migrate my Claude Code config xyz789 to Codex format and
+  save it as a new config"
 
 #### Using Python MCP SDK
 
@@ -312,29 +352,36 @@ async with stdio_client(StdioServerParameters(
 
 ### MCP Architecture
 
-The MCP implementation uses a services layer to share business logic between REST and MCP interfaces:
+The MCP implementation uses a services layer to share business logic between
+REST and MCP interfaces:
 
 - **ConfigService** - Handles CRUD operations for configurations
 - **ConversionService** - Handles format conversion with caching and metadata
 - **MCP Server** - Exposes tools, resources, and prompts via MCP protocol
-- **Transport Layer** - Streamable HTTP transport for Cloudflare Workers compatibility
+- **Transport Layer** - Streamable HTTP transport for Cloudflare Workers
+  compatibility
 
-The transport layer uses `fetch-to-node` to bridge between Cloudflare Workers' Web Fetch API and the Node.js HTTP interfaces required by the MCP SDK.
+The transport layer uses `fetch-to-node` to bridge between Cloudflare Workers'
+Web Fetch API and the Node.js HTTP interfaces required by the MCP SDK.
 
 ## Extension Marketplace
 
-The extension marketplace feature allows you to bundle configurations into distributable extensions and organize them into marketplaces. Extensions can be downloaded as complete plugins for different agent platforms.
+The extension marketplace feature allows you to bundle configurations into
+distributable extensions and organize them into marketplaces. Extensions can be
+downloaded as complete plugins for different agent platforms.
 
 ### Creating Extensions
 
-Extensions group related configurations (slash commands, MCP configs, agent definitions) into a single distributable package:
+Extensions group related configurations (slash commands, MCP configs, agent
+definitions) into a single distributable package:
 
 1. Navigate to `/extensions/new` in the web UI
 2. Provide extension metadata (name, description, author, version)
 3. Select configurations to include
 4. Create the extension
 
-Extensions can be viewed at `/extensions/:id` and edited at `/extensions/:id/edit`.
+Extensions can be viewed at `/extensions/:id` and edited at
+`/extensions/:id/edit`.
 
 ### Creating Marketplaces
 
@@ -345,19 +392,23 @@ Marketplaces are collections of extensions that can be distributed together:
 3. Select extensions to include
 4. Create the marketplace
 
-Marketplaces can be viewed at `/marketplaces/:id` and edited at `/marketplaces/:id/edit`.
+Marketplaces can be viewed at `/marketplaces/:id` and edited at
+`/marketplaces/:id/edit`.
 
 ### Plugin Downloads
 
 Extensions can be downloaded in format-specific ways:
 
 #### Claude Code Format
-- **Full ZIP Plugin**: Complete plugin with manifest, commands, agents, and MCP configs
+
+- **Full ZIP Plugin**: Complete plugin with manifest, commands, agents, and MCP
+  configs
   - Browse files: `/plugins/:extensionId/claude_code`
   - Download ZIP: `/plugins/:extensionId/claude_code/download`
   - Installation: Add to Claude Code via marketplace URL or manual ZIP install
 
 #### Gemini Format
+
 - **JSON Definition (Recommended)**: Single JSON file with extension manifest
   - Download: `/plugins/:extensionId/gemini/definition`
   - Installation: Use Gemini CLI to install the JSON definition
@@ -366,6 +417,7 @@ Extensions can be downloaded in format-specific ways:
   - Download ZIP: `/plugins/:extensionId/gemini/download`
 
 #### Marketplace Downloads
+
 - **Claude Code**: Marketplace URL for settings.json or ZIP with all plugins
   - Manifest: `/marketplaces/:id/manifest`
   - Download all: `/plugins/marketplaces/:id/download?format=claude_code`
@@ -378,12 +430,15 @@ Extensions can be downloaded in format-specific ways:
 The UI provides clear guidance on recommended download methods:
 
 - **Claude Code**: Full ZIP downloads are primary, with browsable file structure
-- **Gemini**: JSON definition downloads are primary (recommended), with ZIP as advanced option
-- Visual indicators (🔵 Claude Code, 🔶 Gemini) help users identify format-specific options
+- **Gemini**: JSON definition downloads are primary (recommended), with ZIP as
+  advanced option
+- Visual indicators (🔵 Claude Code, 🔶 Gemini) help users identify
+  format-specific options
 
 ### Installation Examples
 
 **Claude Code Marketplace:**
+
 ```json
 {
   "extensionMarketplaces": [
@@ -395,6 +450,7 @@ The UI provides clear guidance on recommended download methods:
 ```
 
 **Gemini JSON Definition:**
+
 ```bash
 # Install single extension
 gemini install extension-name-gemini.json
@@ -407,25 +463,34 @@ gemini install marketplace-name-gemini-marketplace.json
 
 The web interface provides a user-friendly way to manage configurations:
 
-- **List View** (`/configs`): Browse all configurations with type and format badges
-- **Detail View** (`/configs/:id`): View configuration details and convert to different formats
+- **List View** (`/configs`): Browse all configurations with type and format
+  badges
+- **Detail View** (`/configs/:id`): View configuration details and convert to
+  different formats
 - **Create Form** (`/configs/new`): Add new configurations through a web form
 - **Edit Form** (`/configs/:id/edit`): Update existing configurations
-- **Conversion Buttons**: One-click conversion to Claude Code, Codex, or Gemini formats
-- **Cache Refresh**: "Refresh Conversions" button to invalidate cached conversions and force re-processing
-- **AI Status**: Visual indicators showing whether AI or fallback conversion was used
+- **Conversion Buttons**: One-click conversion to Claude Code, Codex, or Gemini
+  formats
+- **Cache Refresh**: "Refresh Conversions" button to invalidate cached
+  conversions and force re-processing
+- **AI Status**: Visual indicators showing whether AI or fallback conversion was
+  used
 - **Delete Confirmation**: Safe deletion with confirmation prompt
 - **Extension Management** (`/extensions`): Create, edit, and manage extensions
-- **Marketplace Management** (`/marketplaces`): Create, edit, and manage marketplaces
-- **Plugin Browser**: Browse and download plugin files with format-specific options
+- **Marketplace Management** (`/marketplaces`): Create, edit, and manage
+  marketplaces
+- **Plugin Browser**: Browse and download plugin files with format-specific
+  options
 
 All UI interactions use HTMX for seamless updates without full page reloads.
 
 ## Configuration Types
 
-- **slash_command**: Slash commands for AI agents (fully implemented with AI-enhanced conversion)
+- **slash_command**: Slash commands for AI agents (fully implemented with
+  AI-enhanced conversion)
 - **agent_definition**: Agent configuration definitions (passthrough only - MVP)
-- **mcp_config**: Model Context Protocol configurations (fully implemented with rule-based conversion)
+- **mcp_config**: Model Context Protocol configurations (fully implemented with
+  rule-based conversion)
 
 ## Supported Formats
 
@@ -437,11 +502,13 @@ All UI interactions use HTMX for seamless updates without full page reloads.
 
 ### Slash Command Conversion
 
-Slash command conversions are powered by AI (OpenAI GPT-5-mini via Cloudflare AI Gateway) with automatic fallback to rule-based conversion if needed.
+Slash command conversions are powered by AI (OpenAI GPT-5-mini via Cloudflare AI
+Gateway) with automatic fallback to rule-based conversion if needed.
 
 #### Claude Code to Codex
 
 **Input (Claude Code):**
+
 ```markdown
 ---
 name: code-review
@@ -452,6 +519,7 @@ Review the code and provide feedback
 ```
 
 **Output (Codex):**
+
 ```markdown
 # code-review
 
@@ -465,6 +533,7 @@ Review the code and provide feedback
 ### Claude Code to Gemini
 
 **Input (Claude Code):**
+
 ```markdown
 ---
 name: code-review
@@ -475,6 +544,7 @@ Review the code and provide feedback
 ```
 
 **Output (Gemini TOML):**
+
 ```toml
 description = "Review code for quality issues"
 prompt = """
@@ -484,11 +554,13 @@ Review the code and provide feedback
 
 ### MCP Config Conversion
 
-MCP config conversions use rule-based conversion (no AI) to ensure accurate transformation of structured data between JSON and TOML formats.
+MCP config conversions use rule-based conversion (no AI) to ensure accurate
+transformation of structured data between JSON and TOML formats.
 
 #### Claude Code to Codex
 
 **Input (Claude Code JSON):**
+
 ```json
 {
   "mcpServers": {
@@ -505,6 +577,7 @@ MCP config conversions use rule-based conversion (no AI) to ensure accurate tran
 ```
 
 **Output (Codex TOML):**
+
 ```toml
 [mcp_servers.filesystem]
 command = "npx"
@@ -518,6 +591,7 @@ ALLOWED_DIRS = "/workspace"
 #### Claude Code to Gemini
 
 **Input (Claude Code JSON):**
+
 ```json
 {
   "mcpServers": {
@@ -534,6 +608,7 @@ ALLOWED_DIRS = "/workspace"
 ```
 
 **Output (Gemini JSON):**
+
 ```json
 {
   "mcpServers": {
@@ -553,6 +628,7 @@ ALLOWED_DIRS = "/workspace"
 MCP configs also support HTTP and SSE server types:
 
 **Claude Code format:**
+
 ```json
 {
   "mcpServers": {
@@ -565,6 +641,7 @@ MCP configs also support HTTP and SSE server types:
 ```
 
 **Gemini format (uses httpUrl):**
+
 ```json
 {
   "mcpServers": {
@@ -576,6 +653,7 @@ MCP configs also support HTTP and SSE server types:
 ```
 
 **Codex format:**
+
 ```toml
 [mcp_servers.remote-api]
 url = "https://api.example.com/mcp"
@@ -605,14 +683,18 @@ npm run d1:migrations:apply
 
 The project uses GitHub Actions for automated testing and coverage reporting:
 
-- **Test Coverage Workflow**: Runs automatically on all branch pushes and pull requests
+- **Test Coverage Workflow**: Runs automatically on all branch pushes and pull
+  requests
   - Executes full test suite with coverage metrics
-  - Posts detailed coverage reports as PR comments (statements, branches, functions, lines)
-  - Uploads coverage artifacts (HTML reports, JSON summaries) for 30-day retention
+  - Posts detailed coverage reports as PR comments (statements, branches,
+    functions, lines)
+  - Uploads coverage artifacts (HTML reports, JSON summaries) for 30-day
+    retention
   - Automatically updates README coverage badge on main branch commits
   - Skips execution on commits containing `[skip ci]` to prevent infinite loops
 
-- **Coverage Badge**: Located at the top of this README, automatically updated by the workflow
+- **Coverage Badge**: Located at the top of this README, automatically updated
+  by the workflow
   - Shows overall statement coverage percentage
   - Color-coded: green (80%+), yellow (60-79%), orange (40-59%), red (<40%)
   - Links to the GitHub Actions workflow for detailed reports
@@ -623,7 +705,8 @@ The project uses GitHub Actions for automated testing and coverage reporting:
   - Download `coverage-report` artifact for complete HTML coverage report
 
 - **Coverage Configuration**: Configured in `vitest.config.ts` with v8 provider
-  - Excludes: test files, entry points, download routes, AI Gateway, file generation services
+  - Excludes: test files, entry points, download routes, AI Gateway, file
+    generation services
 
 ## Deployment
 
@@ -644,6 +727,7 @@ Use **Cloudflare Workers Builds** for automatic deployment on every push:
 Now every push to your repository will automatically trigger a deployment!
 
 **Benefits:**
+
 - 6,000 free build minutes/month (paid plan)
 - 6 concurrent builds
 - No need to manage GitHub secrets
@@ -680,7 +764,8 @@ Before deploying (first time setup):
    npx wrangler secret put OPENAI_API_KEY
    ```
 
-6. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars section
+6. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars
+   section
 
 7. Apply migrations to production:
    ```bash
@@ -704,10 +789,13 @@ Before deploying (first time setup):
 
 ## Architecture
 
-The project follows domain-driven design principles with a services layer for shared business logic:
+The project follows domain-driven design principles with a services layer for
+shared business logic:
 
-- **Domain Layer**: Core business logic and types (no infrastructure dependencies)
-- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), and AI conversion service implementations
+- **Domain Layer**: Core business logic and types (no infrastructure
+  dependencies)
+- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), and AI
+  conversion service implementations
 - **Services Layer**: Business logic orchestration
   - ConfigService: Configuration CRUD operations
   - ConversionService: Format conversion with caching
@@ -718,10 +806,14 @@ The project follows domain-driven design principles with a services layer for sh
   - ZipGenerationService: Create ZIP archives for plugin downloads
   - Used by both REST API routes and MCP server tools
   - Provides consistent behavior across different interfaces
-- **Adapter Layer**: Format conversion logic with AI enhancement (extensible for new formats)
-- **Routes Layer**: REST HTTP request handlers (Hono) for configs, extensions, marketplaces, and plugins
-- **MCP Layer**: Model Context Protocol server with tools, resources, and prompts
-- **Views Layer**: HTML template generation (HTMX) for configs, extensions, marketplaces, and plugin browser
+- **Adapter Layer**: Format conversion logic with AI enhancement (extensible for
+  new formats)
+- **Routes Layer**: REST HTTP request handlers (Hono) for configs, extensions,
+  marketplaces, and plugins
+- **MCP Layer**: Model Context Protocol server with tools, resources, and
+  prompts
+- **Views Layer**: HTML template generation (HTMX) for configs, extensions,
+  marketplaces, and plugin browser
 
 ### AI-Powered Conversion
 
@@ -729,7 +821,8 @@ The system uses different strategies based on configuration type:
 
 #### Slash Commands (AI-Enhanced)
 
-1. **Primary**: AI-powered conversion using OpenAI GPT-5-mini via Cloudflare AI Gateway
+1. **Primary**: AI-powered conversion using OpenAI GPT-5-mini via Cloudflare AI
+   Gateway
    - Provides intelligent, context-aware format conversion
    - Preserves semantic meaning across different agent formats
    - Handles edge cases better than rule-based conversion
@@ -744,10 +837,12 @@ The system uses different strategies based on configuration type:
 
 - Uses rule-based conversion exclusively (no AI)
 - Ensures accurate transformation of structured data (JSON ↔ TOML)
-- Handles field mapping between formats (type field, httpUrl vs url, startup_timeout_ms)
+- Handles field mapping between formats (type field, httpUrl vs url,
+  startup_timeout_ms)
 - Supports both stdio and HTTP/SSE server types
 
-The UI displays which conversion method was used, providing transparency while maintaining reliability.
+The UI displays which conversion method was used, providing transparency while
+maintaining reliability.
 
 ## Extensibility
 
@@ -777,7 +872,8 @@ Adding a new agent format is straightforward:
 - [x] Services layer for shared business logic (completed)
 - [x] Extension marketplace feature with bundling and downloads (completed)
 - [x] Plugin file generation and storage in R2 (completed)
-- [x] Format-specific download options (ZIP for Claude Code, JSON for Gemini) (completed)
+- [x] Format-specific download options (ZIP for Claude Code, JSON for Gemini)
+      (completed)
 - [x] Plugin browser with browsable file structure (completed)
 - [ ] Add unit tests for AI conversion service
 - [ ] Support for HTTP/SSE MCP servers in UI
