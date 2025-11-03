@@ -36,34 +36,83 @@ export class FileGenerationService {
     extension: ExtensionWithConfigs,
     format: 'claude_code' | 'gemini'
   ): Promise<Map<string, string>> {
+    console.log('[FileGeneration] Starting file generation', {
+      extensionId: extension.id,
+      extensionName: extension.name,
+      format,
+      configCount: extension.configs.length,
+      configTypes: extension.configs.reduce(
+        (acc, c) => {
+          acc[c.type] = (acc[c.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+    });
+
     const files =
       format === 'claude_code'
         ? await this.generateClaudeCodeFiles(extension)
         : await this.generateGeminiFiles(extension);
 
+    console.log('[FileGeneration] Files generated in memory', {
+      extensionId: extension.id,
+      format,
+      fileCount: files.length,
+      filePaths: files.map((f) => f.path),
+    });
+
     const fileMap = new Map<string, string>();
 
     // Upload each file to R2
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const r2Key = `extensions/${extension.id}/${format}/${file.path}`;
 
-      await this.r2.put(r2Key, file.content, {
-        httpMetadata: {
-          contentType: file.mimeType,
-        },
+      console.log(`[FileGeneration] Uploading file ${i + 1}/${files.length} to R2`, {
+        extensionId: extension.id,
+        filePath: file.path,
+        r2Key,
+        sizeBytes: file.content.length,
       });
 
-      // Store metadata in database
-      await this.fileRepo.create({
-        extension_id: extension.id,
-        file_path: `${format}/${file.path}`,
-        r2_key: r2Key,
-        file_size: new Blob([file.content]).size,
-        mime_type: file.mimeType,
-      });
+      try {
+        await this.r2.put(r2Key, file.content, {
+          httpMetadata: {
+            contentType: file.mimeType,
+          },
+        });
 
-      fileMap.set(file.path, r2Key);
+        // Store metadata in database
+        await this.fileRepo.create({
+          extension_id: extension.id,
+          file_path: `${format}/${file.path}`,
+          r2_key: r2Key,
+          file_size: new Blob([file.content]).size,
+          mime_type: file.mimeType,
+        });
+
+        fileMap.set(file.path, r2Key);
+        console.log('[FileGeneration] File uploaded successfully', {
+          filePath: file.path,
+          r2Key,
+        });
+      } catch (error: any) {
+        console.error('[FileGeneration] Failed to upload file', {
+          extensionId: extension.id,
+          filePath: file.path,
+          r2Key,
+          error: error.message,
+        });
+        throw error;
+      }
     }
+
+    console.log('[FileGeneration] All files uploaded successfully', {
+      extensionId: extension.id,
+      format,
+      totalFiles: files.length,
+    });
 
     return fileMap;
   }

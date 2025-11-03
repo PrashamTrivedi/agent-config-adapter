@@ -18,18 +18,53 @@ type Bindings = {
 
 export const pluginsRouter = new Hono<{ Bindings: Bindings }>();
 
+// ===== CORS PREFLIGHT HANDLERS =====
+pluginsRouter.options('*', (c) => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+});
+
 // ===== MARKETPLACE ROUTES (must come before generic extension routes) =====
 
 // Download marketplace Gemini JSON collection (all extension definitions)
 pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) => {
   const marketplaceId = c.req.param('marketplaceId');
+  const startTime = Date.now();
+
+  console.log('[Marketplace Gemini] Starting Gemini definition request', {
+    marketplaceId,
+    timestamp: new Date().toISOString(),
+  });
+
   const marketplaceService = new MarketplaceService(c.env);
 
   try {
     const marketplace = await marketplaceService.getMarketplaceWithExtensions(marketplaceId);
     if (!marketplace) {
-      return c.json({ error: 'Marketplace not found' }, 404);
+      console.error('[Marketplace Gemini] Marketplace not found', { marketplaceId });
+      return c.json(
+        {
+          error: 'Marketplace not found',
+          details: {
+            marketplace_id: marketplaceId,
+            suggestion: 'Verify the marketplace ID exists',
+          },
+        },
+        404
+      );
     }
+
+    console.log('[Marketplace Gemini] Marketplace found, generating manifests', {
+      marketplaceId,
+      extensionCount: marketplace.extensions.length,
+    });
 
     // Generate Gemini manifests for all extensions
     const { ManifestService } = await import('../services/manifest-service');
@@ -41,6 +76,10 @@ pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) =>
       description: marketplace.description,
       extensions: await Promise.all(
         marketplace.extensions.map(async (ext) => {
+          console.log('[Marketplace Gemini] Generating manifest for extension', {
+            extensionId: ext.id,
+            extensionName: ext.name,
+          });
           return await manifestService.generateGeminiManifest(ext);
         })
       ),
@@ -55,6 +94,13 @@ pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) =>
         .replace(/^-|-$/g, '');
     const filename = `${sanitizeName(marketplace.name)}-gemini-marketplace.json`;
 
+    const duration = Date.now() - startTime;
+    console.log('[Marketplace Gemini] Definition generated successfully', {
+      filename,
+      extensionCount: geminiMarketplace.extensions.length,
+      durationMs: duration,
+    });
+
     return new Response(JSON.stringify(geminiMarketplace, null, 2), {
       headers: {
         'Content-Type': 'application/json',
@@ -62,10 +108,30 @@ pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) =>
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Max-Age': '86400',
+        'X-Response-Time': `${duration}ms`,
       },
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    const duration = Date.now() - startTime;
+    console.error('[Marketplace Gemini] Error generating definition', {
+      marketplaceId,
+      error: error.message,
+      stack: error.stack,
+      durationMs: duration,
+    });
+
+    return c.json(
+      {
+        error: 'Failed to generate Gemini marketplace definition',
+        message: error.message,
+        details: {
+          marketplace_id: marketplaceId,
+          timestamp: new Date().toISOString(),
+          duration_ms: duration,
+        },
+      },
+      500
+    );
   }
 });
 
@@ -73,24 +139,75 @@ pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) =>
 pluginsRouter.get('/marketplaces/:marketplaceId/download', async (c) => {
   const marketplaceId = c.req.param('marketplaceId');
   const format = (c.req.query('format') || 'claude_code') as 'claude_code' | 'gemini';
+  const startTime = Date.now();
+
+  console.log('[Marketplace Download] Starting download request', {
+    marketplaceId,
+    format,
+    timestamp: new Date().toISOString(),
+  });
 
   if (format !== 'claude_code' && format !== 'gemini') {
-    return c.json({ error: 'Invalid format. Must be claude_code or gemini' }, 400);
+    console.error('[Marketplace Download] Invalid format requested', { format });
+    return c.json(
+      {
+        error: 'Invalid format. Must be claude_code or gemini',
+        details: {
+          provided_format: format,
+          valid_formats: ['claude_code', 'gemini'],
+        },
+      },
+      400
+    );
   }
 
   const marketplaceService = new MarketplaceService(c.env);
   const zipService = new ZipGenerationService(c.env);
 
   try {
-    // Get marketplace with extensions
+    // Step 1: Get marketplace with extensions
+    console.log('[Marketplace Download] Step 1: Fetching marketplace from database', {
+      marketplaceId,
+    });
     const marketplace = await marketplaceService.getMarketplaceWithExtensions(marketplaceId);
+
     if (!marketplace) {
-      return c.json({ error: 'Marketplace not found' }, 404);
+      console.error('[Marketplace Download] Marketplace not found', { marketplaceId });
+      return c.json(
+        {
+          error: 'Marketplace not found',
+          details: {
+            marketplace_id: marketplaceId,
+            step: 'database_fetch',
+            suggestion: 'Verify the marketplace ID exists in the database',
+          },
+        },
+        404
+      );
     }
 
-    // Generate ZIP containing all plugins
+    console.log('[Marketplace Download] Marketplace fetched successfully', {
+      marketplaceId,
+      name: marketplace.name,
+      extensionCount: marketplace.extensions.length,
+      extensions: marketplace.extensions.map((e) => ({ id: e.id, name: e.name })),
+    });
+
+    // Step 2: Generate ZIP containing all plugins
+    console.log('[Marketplace Download] Step 2: Generating ZIP archive', {
+      format,
+      extensionCount: marketplace.extensions.length,
+    });
+
     const zipData = await zipService.generateMarketplaceZip(marketplace, format);
     const filename = zipService.getZipFilename(marketplace.name, format, 'marketplace');
+
+    const duration = Date.now() - startTime;
+    console.log('[Marketplace Download] ZIP generated successfully', {
+      filename,
+      sizeBytes: zipData.length,
+      durationMs: duration,
+    });
 
     // Return ZIP with proper headers
     return new Response(zipData, {
@@ -100,10 +217,38 @@ pluginsRouter.get('/marketplaces/:marketplaceId/download', async (c) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Max-Age': '86400',
+        'X-Response-Time': `${duration}ms`,
       },
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    const duration = Date.now() - startTime;
+    console.error('[Marketplace Download] Error occurred', {
+      marketplaceId,
+      format,
+      error: error.message,
+      stack: error.stack,
+      durationMs: duration,
+    });
+
+    return c.json(
+      {
+        error: 'Failed to generate marketplace ZIP',
+        message: error.message,
+        details: {
+          marketplace_id: marketplaceId,
+          format,
+          step: 'zip_generation',
+          timestamp: new Date().toISOString(),
+          duration_ms: duration,
+        },
+        troubleshooting: {
+          check_logs: 'Review server logs for detailed error information',
+          verify_extensions: 'Ensure all extensions in marketplace have valid configs',
+          check_r2: 'Verify R2 bucket (EXTENSION_FILES) is accessible',
+        },
+      },
+      500
+    );
   }
 });
 
