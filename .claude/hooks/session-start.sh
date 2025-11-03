@@ -263,7 +263,7 @@ if [ -d "${TARGET_DIR}/commands" ]; then
             else
                 log_info "  /${cmd_name}"
             fi
-        done
+        done || true  # Prevent pipeline failure from exiting script
     fi
 fi
 
@@ -283,7 +283,7 @@ if [ -d "${TARGET_DIR}/skills" ]; then
             else
                 log_info "  - ${skill_name}"
             fi
-        done
+        done || true  # Prevent pipeline failure from exiting script
     fi
 fi
 
@@ -296,7 +296,7 @@ if [ -d "${TARGET_DIR}/agents" ]; then
         find "${TARGET_DIR}/agents" -maxdepth 1 -type d 2>/dev/null | grep -v "^${TARGET_DIR}/agents$" | sort | while read agent_dir; do
             agent_name=$(basename "$agent_dir")
             log_info "  - ${agent_name}"
-        done
+        done || true  # Prevent pipeline failure from exiting script
     fi
 fi
 
