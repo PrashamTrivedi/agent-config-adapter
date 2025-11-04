@@ -5,6 +5,7 @@ import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-
 import { AIConverterService } from '../infrastructure/ai-converter';
 import {
   slashCommandConverterView,
+  slashCommandConverterDropdownPartial,
   slashCommandConverterFormPartial,
   slashCommandConversionResultPartial,
   slashCommandNeedsInputPartial,
@@ -22,14 +23,34 @@ type Bindings = {
 export const slashCommandConverterRouter = new Hono<{ Bindings: Bindings }>();
 
 // GET /slash-commands/convert
-// Main converter UI page
+// Main converter UI page with search support
 slashCommandConverterRouter.get('/convert', async (c) => {
   const configService = new ConfigService(c.env);
 
-  // Get all slash commands
-  const configs = await configService.listConfigs({ type: 'slash_command' });
+  // Get search query
+  const search = c.req.query('search');
 
-  return c.html(slashCommandConverterView(configs));
+  // Build filters
+  const filters: { type: string; searchName?: string } = {
+    type: 'slash_command'
+  };
+
+  if (search) {
+    filters.searchName = search;
+  }
+
+  // Get all slash commands with filters
+  const configs = await configService.listConfigs(filters);
+
+  // Check if this is an HTMX request (partial update)
+  const isHtmxRequest = c.req.header('HX-Request') === 'true';
+
+  if (isHtmxRequest) {
+    // Return just the dropdown options
+    return c.html(slashCommandConverterDropdownPartial(configs, search));
+  }
+
+  return c.html(slashCommandConverterView(configs, search));
 });
 
 // GET /slash-commands/converter-form

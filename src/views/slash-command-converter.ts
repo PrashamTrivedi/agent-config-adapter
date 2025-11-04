@@ -15,8 +15,8 @@ function escapeHtml(text: string): string {
   });
 }
 
-// Main converter page - shows command selection
-export function slashCommandConverterView(commands: Config[]): string {
+// Main converter page - shows command selection with search
+export function slashCommandConverterView(commands: Config[], searchQuery?: string): string {
   const content = `
     <h2>Slash Command Converter</h2>
     <p style="color: var(--text-secondary); margin-bottom: 20px;">
@@ -24,6 +24,38 @@ export function slashCommandConverterView(commands: Config[]): string {
       Select a command below to analyze and convert it.
     </p>
 
+    <div class="form-group">
+      <label for="command-search">Search Commands</label>
+      <input
+        type="text"
+        id="command-search"
+        name="search"
+        placeholder="Search by name..."
+        value="${searchQuery || ''}"
+        hx-get="/slash-commands/convert"
+        hx-trigger="keyup changed delay:500ms"
+        hx-target="#command-select-container"
+        hx-swap="innerHTML"
+        style="margin-bottom: 10px;"
+      />
+    </div>
+
+    <div id="command-select-container">
+      ${slashCommandConverterDropdownPartial(commands, searchQuery)}
+    </div>
+
+    <!-- Dynamic form section (loaded via HTMX when command selected) -->
+    <div id="converter-form-section" style="margin-top: 30px;">
+      <!-- Form will be loaded here based on selected command -->
+    </div>
+  `;
+
+  return layout('Slash Command Converter', content);
+}
+
+// Partial for dropdown options (for HTMX updates)
+export function slashCommandConverterDropdownPartial(commands: Config[], searchQuery?: string): string {
+  return `
     <div class="form-group">
       <label for="command-select">Select Slash Command</label>
       <select
@@ -38,15 +70,17 @@ export function slashCommandConverterView(commands: Config[]): string {
           <option value="${c.id}">${escapeHtml(c.name)}</option>
         `).join('')}
       </select>
-    </div>
-
-    <!-- Dynamic form section (loaded via HTMX when command selected) -->
-    <div id="converter-form-section" style="margin-top: 30px;">
-      <!-- Form will be loaded here based on selected command -->
+      ${commands.length === 0 ? `
+        <small class="help-text" style="color: var(--text-secondary);">
+          ${searchQuery ? `No commands match "${escapeHtml(searchQuery)}"` : 'No slash commands available'}
+        </small>
+      ` : `
+        <small class="help-text" style="color: var(--text-secondary);">
+          ${commands.length} command${commands.length === 1 ? '' : 's'} available
+        </small>
+      `}
     </div>
   `;
-
-  return layout('Slash Command Converter', content);
 }
 
 // Dynamic form loaded when a command is selected
@@ -76,6 +110,20 @@ export function slashCommandConverterFormPartial(config: Config): string {
             <li>No special processing needed - simple command</li>
           ` : ''}
         </ul>
+
+        <button
+          class="btn btn-secondary"
+          hx-post="/api/configs/${config.id}/refresh-analysis"
+          hx-target="#refresh-status"
+          hx-swap="innerHTML"
+          style="margin-top: 10px;">
+          🔄 Refresh Analysis
+        </button>
+        <span style="font-size: 0.875em; color: var(--text-secondary); margin-left: 10px;">
+          (Re-detect arguments and references)
+        </span>
+
+        <div id="refresh-status" style="margin-top: 10px;"></div>
       </div>
 
       <form
@@ -114,6 +162,22 @@ export function slashCommandConverterFormPartial(config: Config): string {
       <div id="result-section" style="margin-top: 2rem">
         <!-- Results will be inserted here via HTMX -->
       </div>
+
+      <script>
+        // Auto-reload form after analysis refresh to show updated metadata
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+          if (evt.detail.target.id === 'refresh-status' && evt.detail.xhr.status === 200) {
+            setTimeout(() => {
+              // Reload the form partial
+              const configId = '${config.id}';
+              htmx.ajax('GET', '/slash-commands/converter-form?configId=' + configId, {
+                target: '#converter-form-section',
+                swap: 'innerHTML'
+              });
+            }, 2000);
+          }
+        });
+      </script>
     </div>
   `;
 }

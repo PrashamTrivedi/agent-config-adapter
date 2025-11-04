@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { ConfigService, ConversionService } from '../services';
 import { AgentFormat, CreateConfigInput } from '../domain/types';
 import { configListView, configListContainerPartial, configDetailView, configCreateView, configEditView } from '../views/configs';
+import { AIConverterService } from '../infrastructure/ai-converter';
+import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
 
 type Bindings = {
   DB: D1Database;
@@ -209,6 +211,74 @@ configsRouter.post('/:id/invalidate', async (c) => {
 
   // For HTMX: return success message
   return c.html('<p style="color: #4caf50; font-size: 0.875em;">✓ Cache invalidated successfully. Conversions will be re-processed.</p>');
+});
+
+// Refresh analysis for slash commands
+configsRouter.post('/:id/refresh-analysis', async (c) => {
+  const id = c.req.param('id');
+
+  // Initialize analyzer
+  const apiKey = c.env.OPENAI_API_KEY || '';
+  const accountId = c.env.ACCOUNT_ID;
+  const gatewayId = c.env.GATEWAY_ID;
+  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+
+  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
+  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const configService = new ConfigService(c.env, analyzer);
+
+  const config = await configService.getConfig(id);
+
+  if (!config) {
+    return c.json({ error: 'Config not found' }, 404);
+  }
+
+  if (config.type !== 'slash_command') {
+    return c.json({ error: 'Config is not a slash command' }, 400);
+  }
+
+  try {
+    // Run analysis
+    const analysis = await analyzer.analyze(config.content);
+
+    // Update config with fresh analysis
+    await configService.updateConfig(id, { content: config.content });
+
+    // Check if request wants HTML (from HTMX) or JSON (from API)
+    const accept = c.req.header('Accept') || '';
+    const wantsHtml = accept.includes('text/html') || c.req.header('HX-Request') === 'true';
+
+    if (wantsHtml) {
+      return c.html(`
+        <p style="color: #4caf50; font-size: 0.875em;">
+          ✓ Analysis refreshed successfully.
+          Detected: ${analysis.hasArguments ? 'Arguments required' : 'No arguments'},
+          ${analysis.agentReferences.length} agent(s),
+          ${analysis.skillReferences.length} skill(s)
+        </p>
+      `);
+    }
+
+    return c.json({
+      success: true,
+      message: 'Analysis refreshed',
+      analysis
+    });
+  } catch (error) {
+    console.error('Analysis refresh failed:', error);
+
+    const accept = c.req.header('Accept') || '';
+    const wantsHtml = accept.includes('text/html') || c.req.header('HX-Request') === 'true';
+
+    if (wantsHtml) {
+      return c.html(
+        '<p style="color: var(--danger);">Analysis refresh failed. Please try again.</p>',
+        500
+      );
+    }
+
+    return c.json({ error: 'Analysis refresh failed' }, 500);
+  }
 });
 
 // Delete config
