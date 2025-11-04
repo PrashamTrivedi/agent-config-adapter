@@ -55,6 +55,9 @@ export function slashCommandConverterView(commands: Config[], searchQuery?: stri
 
 // Partial for dropdown options (for HTMX updates)
 export function slashCommandConverterDropdownPartial(commands: Config[], searchQuery?: string): string {
+  // Auto-select if there's exactly one result from search
+  const autoSelect = searchQuery && commands.length === 1;
+
   return `
     <div class="form-group">
       <label for="command-select">Select Slash Command</label>
@@ -67,7 +70,7 @@ export function slashCommandConverterDropdownPartial(commands: Config[], searchQ
         hx-trigger="change">
         <option value="">-- Select a command to convert --</option>
         ${commands.map(c => `
-          <option value="${c.id}">${escapeHtml(c.name)}</option>
+          <option value="${c.id}" ${autoSelect ? 'selected' : ''}>${escapeHtml(c.name)}</option>
         `).join('')}
       </select>
       ${commands.length === 0 ? `
@@ -80,6 +83,18 @@ export function slashCommandConverterDropdownPartial(commands: Config[], searchQ
         </small>
       `}
     </div>
+
+    ${autoSelect ? `
+      <script>
+        // Auto-trigger form load when single result is auto-selected
+        (function() {
+          const select = document.getElementById('command-select');
+          if (select && select.value) {
+            htmx.trigger(select, 'change');
+          }
+        })();
+      </script>
+    ` : ''}
   `;
 }
 
