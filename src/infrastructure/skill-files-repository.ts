@@ -68,7 +68,7 @@ export class SkillFilesRepository {
       .bind(id)
       .run();
 
-    return result.success;
+    return result.success && (result.meta?.changes ?? 0) > 0;
   }
 
   async deleteBySkillId(skillId: string): Promise<boolean> {
@@ -77,7 +77,7 @@ export class SkillFilesRepository {
       .bind(skillId)
       .run();
 
-    return result.success;
+    return result.success && (result.meta?.changes ?? 0) > 0;
   }
 
   async batchCreate(inputs: CreateSkillFileInput[]): Promise<SkillFile[]> {

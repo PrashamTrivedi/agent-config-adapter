@@ -117,7 +117,7 @@ describe('MarketplaceService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 
@@ -172,7 +172,7 @@ describe('MarketplaceService', () => {
         })
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
-            run: vi.fn().mockResolvedValue({ success: true }),
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
         .mockReturnValueOnce({
@@ -203,7 +203,7 @@ describe('MarketplaceService', () => {
     it('should delete marketplace and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 
@@ -239,7 +239,7 @@ describe('MarketplaceService', () => {
     it('should add extensions and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           first: vi.fn().mockResolvedValue({ max_order: 0 }),
         }),
       });
@@ -254,7 +254,7 @@ describe('MarketplaceService', () => {
     it('should remove extension and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 

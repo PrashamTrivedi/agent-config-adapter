@@ -149,7 +149,7 @@ describe('ConfigService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 
@@ -218,7 +218,7 @@ describe('ConfigService', () => {
         })
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
-            run: vi.fn().mockResolvedValue({ success: true }),
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
         .mockReturnValueOnce({
@@ -262,7 +262,7 @@ describe('ConfigService', () => {
     it('should delete config and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 

@@ -9,11 +9,11 @@ export function createMockD1Database(): D1Database {
   return {
     prepare: vi.fn((query: string) => ({
       bind: vi.fn((...values: any[]) => ({
-        run: vi.fn(async () => ({ success: true, meta: {} })),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
         first: vi.fn(async () => null),
         all: vi.fn(async () => ({ results: [], success: true, meta: {} })),
       })),
-      run: vi.fn(async () => ({ success: true, meta: {} })),
+      run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
       first: vi.fn(async () => null),
       all: vi.fn(async () => ({ results: [], success: true, meta: {} })),
     })),

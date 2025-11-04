@@ -127,7 +127,7 @@ describe('ExtensionService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 
@@ -169,7 +169,7 @@ describe('ExtensionService', () => {
         })
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
-            run: vi.fn().mockResolvedValue({ success: true }),
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
         .mockReturnValueOnce({
@@ -200,7 +200,7 @@ describe('ExtensionService', () => {
     it('should delete extension and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 
@@ -236,7 +236,7 @@ describe('ExtensionService', () => {
     it('should add configs and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           first: vi.fn().mockResolvedValue({ max_order: 0 }),
         }),
       });
@@ -252,7 +252,7 @@ describe('ExtensionService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           first: vi.fn().mockResolvedValue({ max_order: 0 }),
         }),
       });
@@ -270,7 +270,7 @@ describe('ExtensionService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           first: vi.fn().mockResolvedValue({ max_order: 0 }),
         }),
       });
@@ -286,7 +286,7 @@ describe('ExtensionService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           first: vi.fn().mockResolvedValue({ max_order: 0 }),
         }),
       });
@@ -302,7 +302,7 @@ describe('ExtensionService', () => {
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           first: vi.fn().mockResolvedValue({ max_order: 0 }),
         }),
       });
@@ -318,7 +318,7 @@ describe('ExtensionService', () => {
     it('should remove config and invalidate cache', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 
