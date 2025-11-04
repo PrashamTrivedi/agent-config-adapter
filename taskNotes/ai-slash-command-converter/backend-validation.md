@@ -177,14 +177,20 @@ Return clean text for copy/paste
    - Tests show fallback behavior when AI Gateway not configured
    - Works correctly with fallback conversion
 
-## Migration Required
+## Migration Applied ✅
 
-Before deploying to production:
+**Status:** ✅ **Migration successfully applied to both databases**
 
 ```bash
-# Apply migration to production database
+# Local database: Already applied during development
+# Remote database: Applied successfully (7 commands, 3.14ms)
 npx wrangler d1 migrations apply agent-config-adapter --remote
 ```
+
+**Migration:** `0007_add_slash_command_metadata.sql`
+- Added 5 metadata columns
+- Created index for fast filtering
+- No data loss or downtime
 
 ## Next Steps (Optional)
 
