@@ -283,6 +283,94 @@ export function layout(title: string, content: string): string {
               min-width: unset;
             }
           }
+
+          /* Slash Command Converter Styles */
+          .converter-form {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+          }
+
+          .analysis-info {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+          }
+
+          .analysis-info p {
+            color: var(--text-primary);
+            margin-bottom: 5px;
+          }
+
+          .analysis-info ul {
+            color: var(--text-secondary);
+          }
+
+          .analysis-info li {
+            margin: 5px 0;
+          }
+
+          .result-success {
+            border: 2px solid #238636;
+            padding: 20px;
+            border-radius: 6px;
+            background: rgba(35, 134, 54, 0.1);
+            margin-top: 20px;
+          }
+
+          .result-success h3 {
+            color: #3fb950;
+            margin-top: 0;
+          }
+
+          .result-needs-input {
+            border: 2px solid #d29922;
+            padding: 20px;
+            border-radius: 6px;
+            background: rgba(210, 153, 34, 0.1);
+            margin-top: 20px;
+          }
+
+          .result-needs-input .warning {
+            color: #f0b72f;
+            font-weight: 500;
+            margin-bottom: 10px;
+          }
+
+          .converted-content {
+            margin-top: 20px;
+          }
+
+          .output-textarea {
+            font-family: 'Monaco', 'Courier New', monospace;
+            width: 100%;
+            resize: vertical;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9em;
+            line-height: 1.5;
+            cursor: text;
+            min-height: 300px;
+          }
+
+          .output-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+          }
+
+          .help-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.875em;
+            color: var(--text-secondary);
+            font-style: italic;
+          }
         </style>
       </head>
       <body>
@@ -291,6 +379,7 @@ export function layout(title: string, content: string): string {
           <nav>
             <a href="/">Home</a>
             <a href="/configs">Configs</a>
+            <a href="/slash-commands/convert">Converter</a>
             <a href="/extensions">Extensions</a>
             <a href="/marketplaces">Marketplaces</a>
           </nav>

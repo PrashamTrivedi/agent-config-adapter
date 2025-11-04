@@ -11,6 +11,12 @@ export interface Config {
   content: string;
   created_at: string;
   updated_at: string;
+  // Slash command metadata (for conversion)
+  has_arguments?: boolean;
+  argument_hint?: string | null;
+  agent_references?: string;  // JSON array stored as string
+  skill_references?: string;  // JSON array stored as string
+  analysis_version?: string;
 }
 
 export interface CreateConfigInput {
@@ -277,4 +283,23 @@ export interface ClaudeCodeMarketplaceManifest {
   homepage?: string;
   repository?: string;
   plugins: ClaudeCodePluginManifest[];
+}
+
+// Slash command conversion types
+export interface SlashCommandAnalysis {
+  hasArguments: boolean;
+  argumentHint?: string;
+  agentReferences: string[];  // Parsed from JSON
+  skillReferences: string[];  // Parsed from JSON
+}
+
+export interface SlashCommandConversionInput {
+  configId: string;  // Config ID to convert
+  userArguments?: string;  // Optional user-provided arguments
+}
+
+export interface SlashCommandConversionResult {
+  convertedContent: string;  // Final output without frontmatter
+  needsUserInput: boolean;  // True if arguments required but not provided
+  analysis: SlashCommandAnalysis;  // Pre-computed analysis
 }

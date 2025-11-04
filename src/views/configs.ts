@@ -153,12 +153,45 @@ export function configListView(
 }
 
 export function configDetailView(config: Config): string {
+  const isSlashCommand = config.type === 'slash_command';
+
   const content = `
     <h2>${config.name}</h2>
     <div style="margin-bottom: 20px;">
       <span class="badge">${config.type}</span>
       <span class="badge">${config.original_format}</span>
     </div>
+
+    ${isSlashCommand ? `
+      <div style="margin-bottom: 20px; padding: 15px; background-color: var(--background-secondary); border-radius: 4px;">
+        <h3 style="margin-top: 0;">Slash Command Analysis</h3>
+        <ul style="margin-left: 20px;">
+          <li>Requires arguments: ${config.has_arguments ? 'Yes' : 'No'}</li>
+          ${config.argument_hint ? `<li>Argument hint: ${escapeHtml(config.argument_hint)}</li>` : ''}
+          ${config.agent_references ? `
+            <li>Agent references: ${JSON.parse(config.agent_references).map((a: string) => escapeHtml(a)).join(', ')}</li>
+          ` : '<li>Agent references: None</li>'}
+          ${config.skill_references ? `
+            <li>Skill references: ${JSON.parse(config.skill_references).map((s: string) => escapeHtml(s)).join(', ')}</li>
+          ` : '<li>Skill references: None</li>'}
+          ${config.analysis_version ? `<li>Analysis version: ${config.analysis_version}</li>` : ''}
+        </ul>
+
+        <button
+          class="btn btn-secondary"
+          hx-post="/api/configs/${config.id}/refresh-analysis"
+          hx-target="#analysis-status"
+          hx-swap="innerHTML"
+          style="margin-top: 10px;">
+          🔄 Refresh Analysis
+        </button>
+        <span style="font-size: 0.875em; color: var(--text-secondary); margin-left: 10px;">
+          (Re-analyzes command for arguments and references)
+        </span>
+
+        <div id="analysis-status" style="margin-top: 10px;"></div>
+      </div>
+    ` : ''}
 
     <h3>Original Content</h3>
     <pre>${escapeHtml(config.content)}</pre>
@@ -228,6 +261,13 @@ export function configDetailView(config: Config): string {
             \${aiIndicator}
             \${data.cached ? '<p style="color: var(--text-secondary); font-size: 0.875em;">From cache</p>' : ''}
           \`;
+        }
+
+        // Auto-reload page after analysis refresh for updated metadata
+        if (evt.detail.target.id === 'analysis-status' && evt.detail.xhr.status === 200) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         }
       });
     </script>

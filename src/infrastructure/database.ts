@@ -1,13 +1,56 @@
-import { Config, CreateConfigInput, UpdateConfigInput } from '../domain/types';
+import { Config, CreateConfigInput, UpdateConfigInput, SlashCommandAnalysis } from '../domain/types';
 import { nanoid } from 'nanoid';
 
 export class ConfigRepository {
   constructor(private db: D1Database) {}
 
-  async create(input: CreateConfigInput): Promise<Config> {
+  async create(input: CreateConfigInput, analysis?: SlashCommandAnalysis): Promise<Config> {
     const id = nanoid();
     const now = new Date().toISOString();
 
+    // If analysis is provided (for slash commands), include metadata
+    if (analysis) {
+      await this.db
+        .prepare(
+          `INSERT INTO configs (
+            id, name, type, original_format, content,
+            has_arguments, argument_hint, agent_references, skill_references, analysis_version,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          id,
+          input.name,
+          input.type,
+          input.original_format,
+          input.content,
+          analysis.hasArguments ? 1 : 0,
+          analysis.argumentHint || null,
+          analysis.agentReferences.length > 0 ? JSON.stringify(analysis.agentReferences) : null,
+          analysis.skillReferences.length > 0 ? JSON.stringify(analysis.skillReferences) : null,
+          '1.0',
+          now,
+          now
+        )
+        .run();
+
+      return {
+        id,
+        name: input.name,
+        type: input.type,
+        original_format: input.original_format,
+        content: input.content,
+        created_at: now,
+        updated_at: now,
+        has_arguments: analysis.hasArguments,
+        argument_hint: analysis.argumentHint || null,
+        agent_references: analysis.agentReferences.length > 0 ? JSON.stringify(analysis.agentReferences) : undefined,
+        skill_references: analysis.skillReferences.length > 0 ? JSON.stringify(analysis.skillReferences) : undefined,
+        analysis_version: '1.0',
+      };
+    }
+
+    // No analysis - original behavior
     await this.db
       .prepare(
         `INSERT INTO configs (id, name, type, original_format, content, created_at, updated_at)
@@ -79,7 +122,7 @@ export class ConfigRepository {
     return result.results || [];
   }
 
-  async update(id: string, input: UpdateConfigInput): Promise<Config | null> {
+  async update(id: string, input: UpdateConfigInput, analysis?: SlashCommandAnalysis): Promise<Config | null> {
     const existing = await this.findById(id);
     if (!existing) return null;
 
@@ -101,6 +144,20 @@ export class ConfigRepository {
     if (input.content !== undefined) {
       updates.push('content = ?');
       values.push(input.content);
+    }
+
+    // If analysis is provided (for slash commands), update metadata
+    if (analysis) {
+      updates.push('has_arguments = ?');
+      values.push(analysis.hasArguments ? 1 : 0);
+      updates.push('argument_hint = ?');
+      values.push(analysis.argumentHint || null);
+      updates.push('agent_references = ?');
+      values.push(analysis.agentReferences.length > 0 ? JSON.stringify(analysis.agentReferences) : null);
+      updates.push('skill_references = ?');
+      values.push(analysis.skillReferences.length > 0 ? JSON.stringify(analysis.skillReferences) : null);
+      updates.push('analysis_version = ?');
+      values.push('1.0');
     }
 
     if (updates.length === 0) return existing;
