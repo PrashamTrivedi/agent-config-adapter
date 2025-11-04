@@ -211,16 +211,25 @@ describe('ConfigService', () => {
       const updatedConfig = { ...existingConfig, name: 'new-name' };
 
       mockDb.prepare = vi.fn()
+        // First findById in ConfigService.updateConfig
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
             first: vi.fn().mockResolvedValue(existingConfig),
           }),
         })
+        // Second findById in ConfigRepository.update (at start)
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue(existingConfig),
+          }),
+        })
+        // The update query
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
             run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
+        // Third findById at end of update
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
             first: vi.fn().mockResolvedValue(updatedConfig),
