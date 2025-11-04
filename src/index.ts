@@ -31,7 +31,7 @@ app.get('/', (c) => {
 
     <h3>Features</h3>
     <ul style="margin-left: 20px; margin-top: 10px;">
-      <li>Store agent configurations (slash commands, agent definitions, MCP configs)</li>
+      <li>Store agent configurations (slash commands, agent definitions, MCP configs, skills)</li>
       <li>Convert between different agent formats</li>
       <li>Fast retrieval with caching</li>
       <li><strong>NEW:</strong> Multi-file Skills with ZIP upload/download</li>

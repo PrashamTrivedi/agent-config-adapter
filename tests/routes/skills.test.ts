@@ -13,9 +13,8 @@ describe('Skills Routes', () => {
     mockR2 = createMockR2Bucket();
 
     app = new Hono();
-    app.route('/', skillsRouter);
 
-    // Add env to context
+    // Add env to context BEFORE routing
     app.use('*', async (c, next) => {
       c.env = {
         DB: mockDb,
@@ -23,6 +22,8 @@ describe('Skills Routes', () => {
       } as any;
       await next();
     });
+
+    app.route('/', skillsRouter);
   });
 
   describe('GET /', () => {
