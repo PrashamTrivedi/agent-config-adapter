@@ -88,9 +88,18 @@ slashCommandConverterRouter.get('/converter-form', async (c) => {
 slashCommandConverterRouter.post('/:id/convert', async (c) => {
   const configId = c.req.param('id');
 
-  // Get user arguments from request body
-  const body = await c.req.json().catch(() => ({}));
-  const userArguments = body.userArguments;
+  // Get user arguments from request body (handle both JSON and form data)
+  let userArguments: string | undefined;
+  const contentType = c.req.header('Content-Type') || '';
+
+  if (contentType.includes('application/json')) {
+    const body = await c.req.json().catch(() => ({}));
+    userArguments = body.userArguments;
+  } else {
+    // Handle form-urlencoded data
+    const formData = await c.req.parseBody();
+    userArguments = formData.userArguments as string;
+  }
 
   // Initialize AI services
   const apiKey = c.env.OPENAI_API_KEY || '';
