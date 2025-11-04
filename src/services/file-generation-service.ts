@@ -1,5 +1,6 @@
 import { Config, ExtensionWithConfigs } from '../domain/types';
 import { FileStorageRepository } from '../infrastructure/file-storage-repository';
+import { SkillFilesRepository } from '../infrastructure/skill-files-repository';
 import { ManifestService } from './manifest-service';
 
 export interface FileGenerationServiceEnv {
@@ -9,7 +10,7 @@ export interface FileGenerationServiceEnv {
 
 interface GeneratedFile {
   path: string; // Logical path (e.g., "commands/code-review.md")
-  content: string;
+  content: string | Uint8Array; // Support both text and binary content
   mimeType: string;
 }
 
@@ -19,11 +20,13 @@ interface GeneratedFile {
  */
 export class FileGenerationService {
   private fileRepo: FileStorageRepository;
+  private skillFilesRepo: SkillFilesRepository;
   private r2: R2Bucket;
   private manifestService: ManifestService;
 
   constructor(env: FileGenerationServiceEnv) {
     this.fileRepo = new FileStorageRepository(env.DB);
+    this.skillFilesRepo = new SkillFilesRepository(env.DB);
     this.r2 = env.EXTENSION_FILES;
     this.manifestService = new ManifestService();
   }
@@ -164,11 +167,27 @@ export class FileGenerationService {
     );
     for (const config of skillConfigs) {
       const skillName = this.sanitizeFileName(config.name);
+
+      // Add main SKILL.md file
       files.push({
         path: `skills/${skillName}/SKILL.md`,
         content: this.generateSkillFile(config),
         mimeType: 'text/markdown',
       });
+
+      // Add companion files if they exist
+      const companionFiles = await this.skillFilesRepo.findBySkillId(config.id);
+      for (const companionFile of companionFiles) {
+        const fileContent = await this.r2.get(companionFile.r2_key);
+        if (fileContent) {
+          const content = new Uint8Array(await fileContent.arrayBuffer());
+          files.push({
+            path: `skills/${skillName}/${companionFile.file_path}`,
+            content,
+            mimeType: companionFile.mime_type || 'application/octet-stream',
+          });
+        }
+      }
     }
 
     // Generate consolidated MCP config
@@ -220,11 +239,27 @@ export class FileGenerationService {
     );
     for (const config of skillConfigs) {
       const skillName = this.sanitizeFileName(config.name);
+
+      // Add main SKILL.md file
       files.push({
         path: `skills/${skillName}/SKILL.md`,
         content: this.generateSkillFile(config),
         mimeType: 'text/markdown',
       });
+
+      // Add companion files if they exist
+      const companionFiles = await this.skillFilesRepo.findBySkillId(config.id);
+      for (const companionFile of companionFiles) {
+        const fileContent = await this.r2.get(companionFile.r2_key);
+        if (fileContent) {
+          const content = new Uint8Array(await fileContent.arrayBuffer());
+          files.push({
+            path: `skills/${skillName}/${companionFile.file_path}`,
+            content,
+            mimeType: companionFile.mime_type || 'application/octet-stream',
+          });
+        }
+      }
     }
 
     // Generate GEMINI.md context file if description exists

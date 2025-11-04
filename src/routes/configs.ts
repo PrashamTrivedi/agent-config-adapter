@@ -69,6 +69,11 @@ configsRouter.get('/:id/edit', async (c) => {
     return c.json({ error: 'Config not found' }, 404);
   }
 
+  // Redirect skills to their specialized editor
+  if (config.type === 'skill') {
+    return c.redirect(`/skills/${id}/edit`);
+  }
+
   return c.html(configEditView(config));
 });
 
@@ -80,6 +85,11 @@ configsRouter.get('/:id', async (c) => {
 
   if (!config) {
     return c.json({ error: 'Config not found' }, 404);
+  }
+
+  // Redirect skills to their specialized view
+  if (config.type === 'skill') {
+    return c.redirect(`/skills/${id}`);
   }
 
   const accept = c.req.header('Accept') || '';

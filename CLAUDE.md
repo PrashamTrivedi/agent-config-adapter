@@ -18,6 +18,9 @@ npm install
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0001_create_configs_table.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0002_add_updated_at.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_replace_jules_with_gemini.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0004_add_extensions_and_marketplaces.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0005_add_skill_config_type.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0006_add_skill_files.sql
 
 # Load sample data
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
@@ -70,17 +73,18 @@ npx wrangler secret put OPENAI_API_KEY
 - `src/infrastructure/` - D1, KV, R2, AI services
 - `src/services/` - Business logic layer
   - ConfigService, ConversionService (for configs)
+  - SkillsService, SkillZipService (for multi-file skills)
   - ExtensionService, MarketplaceService (for bundling)
   - ManifestService (platform-specific manifests)
   - FileGenerationService, ZipGenerationService (plugin files)
   - Shared between REST API routes and MCP server tools
   - Ensures consistent behavior across interfaces
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers (configs, extensions, marketplaces, plugins, files)
+- `src/routes/` - Hono REST HTTP handlers (configs, skills, extensions, marketplaces, plugins, files)
 - `src/mcp/` - MCP server implementation (server, transport, types)
   - Exposes 6 tools, 1 resource, 3 prompts
   - Uses Streamable HTTP transport for Cloudflare Workers
-- `src/views/` - HTMX server-rendered templates (configs, extensions, marketplaces, plugin browser)
+- `src/views/` - HTMX server-rendered templates (configs, skills, extensions, marketplaces, plugin browser)
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used.
 
@@ -93,14 +97,31 @@ npx wrangler secret put OPENAI_API_KEY
 ### REST API - Configs
 ```
 GET    /api/configs                    List all configs
-GET    /api/configs/:id                Get specific config
+GET    /api/configs/:id                Get specific config (redirects to /skills/:id if skill type)
 GET    /api/configs/:id/format/:format Convert to format (claude_code|codex|gemini)
 POST   /api/configs                    Create config
 PUT    /api/configs/:id                Update config
 DELETE /api/configs/:id                Delete config
 POST   /api/configs/:id/invalidate     Invalidate cached conversions
 
-GET    /configs/:id/edit               Edit config form (UI)
+GET    /configs/:id/edit               Edit config form (redirects to /skills/:id/edit if skill type)
+```
+
+### REST API - Skills
+```
+GET    /api/skills                     List all skills
+GET    /api/skills/:id                 Get skill with companion files
+POST   /api/skills                     Create skill (JSON or form-data)
+POST   /api/skills/upload-zip          Create skill from ZIP upload
+PUT    /api/skills/:id                 Update skill metadata/content
+DELETE /api/skills/:id                 Delete skill and all companion files
+
+GET    /api/skills/:id/files           List all companion files
+POST   /api/skills/:id/files           Upload companion file(s)
+GET    /api/skills/:id/files/:fileId   Download companion file
+DELETE /api/skills/:id/files/:fileId   Delete companion file
+
+GET    /api/skills/:id/download        Download skill as ZIP with all files
 ```
 
 ### REST API - Extensions
@@ -143,7 +164,14 @@ GET    /plugins/marketplaces/:marketplaceId/gemini/definition  Download marketpl
 GET    /plugins/marketplaces/:marketplaceId/download?format=   Download all marketplace plugins as ZIP
 ```
 
-Same routes work for UI at `/configs`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
+Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
+
+**Skills Management Notes:**
+- Skills support multi-file structure: one required SKILL.md file plus optional companion files
+- Gist-like editing interface with tab-based file management
+- ZIP upload/download preserves directory structure and companion files
+- Config interface automatically redirects skill-type configs to skills interface
+- Companion files stored in R2 at `skills/{skill_id}/files/{file_path}`
 
 ### MCP Server
 ```
@@ -173,7 +201,9 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 - Use Vitest for all tests
 - Test adapter conversion logic (critical)
 - Test D1 and KV operations
-- Test services layer (ConfigService, ConversionService)
+- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService)
+- Test routes layer (configs, skills, extensions, marketplaces)
+- Test infrastructure layer (repositories, file storage)
 - All tests must pass before committing
 
 ### MCP Testing
@@ -203,10 +233,17 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
   - `slash_command` (fully implemented with AI-enhanced conversion)
   - `agent_definition` (passthrough only - MVP)
   - `mcp_config` (fully implemented with rule-based conversion, no AI)
+  - `skill` (fully implemented with multi-file support, passthrough conversion)
+- Skills management:
+  - Required SKILL.md file plus optional companion files
+  - ZIP upload/download with structure preservation
+  - Gist-like editing interface with tab-based file management
+  - Automatic redirect from config interface to skills interface
+  - Companion files stored in R2 bucket
 - Extensions bundle multiple configs into distributable packages
 - Marketplaces group multiple extensions for discovery
 - Plugin downloads:
-  - Claude Code: Full ZIP with manifest, commands, agents, MCP configs (primary)
+  - Claude Code: Full ZIP with manifest, commands, agents, MCP configs, skills (primary)
     - Extension ZIPs: Include plugin manifest and all config files
     - Marketplace ZIPs: Include marketplace.json at root with all plugin directories
   - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
@@ -216,8 +253,10 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 ## MVP Limitations
 
 - Agent definitions use passthrough (no conversion yet)
+- Skills use passthrough (no conversion yet)
 - No authentication/authorization
 - Extension and marketplace features not yet integrated with MCP tools
+- Skills features not yet integrated with MCP tools
 
 ## MCP Config Adapter
 

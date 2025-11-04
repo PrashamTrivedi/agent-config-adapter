@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { configsRouter } from './routes/configs';
 import { extensionsRouter } from './routes/extensions';
 import { marketplacesRouter } from './routes/marketplaces';
+import { skillsRouter } from './routes/skills';
 import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { layout } from './views/layout';
@@ -30,9 +31,10 @@ app.get('/', (c) => {
 
     <h3>Features</h3>
     <ul style="margin-left: 20px; margin-top: 10px;">
-      <li>Store agent configurations (slash commands, agent definitions, MCP configs)</li>
+      <li>Store agent configurations (slash commands, agent definitions, MCP configs, skills)</li>
       <li>Convert between different agent formats</li>
       <li>Fast retrieval with caching</li>
+      <li><strong>NEW:</strong> Multi-file Skills with ZIP upload/download</li>
       <li><strong>NEW:</strong> MCP Server support for AI agent integration</li>
       <li><strong>NEW:</strong> Extension Marketplace - Bundle and share configs</li>
     </ul>
@@ -40,6 +42,7 @@ app.get('/', (c) => {
     <div style="margin-top: 30px;">
       <a href="/configs" class="btn">View All Configs</a>
       <a href="/configs/new" class="btn">Add New Config</a>
+      <a href="/skills" class="btn">Browse Skills</a>
       <a href="/extensions" class="btn">Browse Extensions</a>
       <a href="/marketplaces" class="btn">Browse Marketplaces</a>
       <a href="/mcp/info" class="btn" style="background: #4f46e5;">MCP Server Info</a>
@@ -52,12 +55,14 @@ app.get('/', (c) => {
 app.route('/api/configs', configsRouter);
 app.route('/api/extensions', extensionsRouter);
 app.route('/api/marketplaces', marketplacesRouter);
+app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
 app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
+app.route('/skills', skillsRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);

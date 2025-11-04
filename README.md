@@ -16,6 +16,8 @@ and MCP configs once, deploy across Codex, Gemini, and other agents.
   invalidation
 - 🎨 **Web UI**: HTMX-powered interface for managing configurations with edit
   and conversion refresh capabilities
+- 📚 **Skills Management**: Multi-file skill support with gist-like editing,
+  ZIP upload/download, and companion file management
 - 🔌 **REST API**: Full CRUD API for programmatic access
 - 🌐 **MCP Server**: Model Context Protocol server for AI agent integration with
   tools, resources, and prompts
@@ -76,6 +78,9 @@ npm install
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0001_create_configs_table.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0002_add_updated_at.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_replace_jules_with_gemini.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0004_add_extensions_and_marketplaces.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0005_add_skill_config_type.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0006_add_skill_files.sql
 
 # Load sample data (optional)
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
@@ -118,10 +123,10 @@ console).
   /domain          # Domain models and business logic
   /infrastructure  # DB, KV, R2, AI converter, external services
   /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
-  /services        # Business logic layer (config, conversion, extension, marketplace, file generation services)
-  /routes          # Hono REST route handlers (configs, extensions, marketplaces, plugins, files)
+  /services        # Business logic layer (config, conversion, skills, extension, marketplace, file generation services)
+  /routes          # Hono REST route handlers (configs, skills, extensions, marketplaces, plugins, files)
   /mcp             # MCP server implementation (server, transport, types)
-  /views           # HTMX templates (configs, extensions, marketplaces, plugin browser)
+  /views           # HTMX templates (configs, skills, extensions, marketplaces, plugin browser)
   index.ts         # Entry point
 /migrations        # D1 migrations
 /seeds             # Seed data
@@ -132,7 +137,8 @@ console).
 ### Configs
 
 - `GET /api/configs` - List all configs
-- `GET /api/configs/:id` - Get specific config
+- `GET /api/configs/:id` - Get specific config (redirects to `/skills/:id` if
+  skill type)
 - `GET /api/configs/:id/format/:format` - Get config in specific format
   (claude_code, codex, gemini)
 - `POST /api/configs` - Create new config
@@ -140,6 +146,20 @@ console).
 - `DELETE /api/configs/:id` - Delete config
 - `POST /api/configs/:id/invalidate` - Invalidate cached conversions for a
   config
+
+### Skills
+
+- `GET /api/skills` - List all skills
+- `GET /api/skills/:id` - Get skill with all companion files
+- `POST /api/skills` - Create skill (JSON or form-data)
+- `POST /api/skills/upload-zip` - Create skill from ZIP upload
+- `PUT /api/skills/:id` - Update skill metadata/content
+- `DELETE /api/skills/:id` - Delete skill and all companion files
+- `GET /api/skills/:id/files` - List all companion files
+- `POST /api/skills/:id/files` - Upload companion file(s)
+- `GET /api/skills/:id/files/:fileId` - Download companion file
+- `DELETE /api/skills/:id/files/:fileId` - Delete companion file
+- `GET /api/skills/:id/download` - Download skill as ZIP with all files
 
 ### Extensions
 
@@ -468,7 +488,9 @@ The web interface provides a user-friendly way to manage configurations:
 - **Detail View** (`/configs/:id`): View configuration details and convert to
   different formats
 - **Create Form** (`/configs/new`): Add new configurations through a web form
+  (auto-redirects to `/skills/new` when Skill type selected)
 - **Edit Form** (`/configs/:id/edit`): Update existing configurations
+  (auto-redirects to `/skills/:id/edit` for skill-type configs)
 - **Conversion Buttons**: One-click conversion to Claude Code, Codex, or Gemini
   formats
 - **Cache Refresh**: "Refresh Conversions" button to invalidate cached
@@ -476,6 +498,11 @@ The web interface provides a user-friendly way to manage configurations:
 - **AI Status**: Visual indicators showing whether AI or fallback conversion was
   used
 - **Delete Confirmation**: Safe deletion with confirmation prompt
+- **Skills Management** (`/skills`): Multi-file skill support with:
+  - Gist-like editor with tab-based file management
+  - ZIP upload/download functionality
+  - Companion file upload and management
+  - Required SKILL.md file with optional companion files
 - **Extension Management** (`/extensions`): Create, edit, and manage extensions
 - **Marketplace Management** (`/marketplaces`): Create, edit, and manage
   marketplaces
@@ -491,6 +518,8 @@ All UI interactions use HTMX for seamless updates without full page reloads.
 - **agent_definition**: Agent configuration definitions (passthrough only - MVP)
 - **mcp_config**: Model Context Protocol configurations (fully implemented with
   rule-based conversion)
+- **skill**: Multi-file skills with SKILL.md and companion files (fully
+  implemented with ZIP support, passthrough conversion)
 
 ## Supported Formats
 
@@ -799,6 +828,8 @@ shared business logic:
 - **Services Layer**: Business logic orchestration
   - ConfigService: Configuration CRUD operations
   - ConversionService: Format conversion with caching
+  - SkillsService: Multi-file skill management
+  - SkillZipService: ZIP upload/download for skills
   - ExtensionService: Extension management and bundling
   - MarketplaceService: Marketplace management and manifest generation
   - ManifestService: Generate platform-specific manifests (Claude Code, Gemini)
@@ -808,12 +839,12 @@ shared business logic:
   - Provides consistent behavior across different interfaces
 - **Adapter Layer**: Format conversion logic with AI enhancement (extensible for
   new formats)
-- **Routes Layer**: REST HTTP request handlers (Hono) for configs, extensions,
-  marketplaces, and plugins
+- **Routes Layer**: REST HTTP request handlers (Hono) for configs, skills,
+  extensions, marketplaces, and plugins
 - **MCP Layer**: Model Context Protocol server with tools, resources, and
   prompts
-- **Views Layer**: HTML template generation (HTMX) for configs, extensions,
-  marketplaces, and plugin browser
+- **Views Layer**: HTML template generation (HTMX) for configs, skills,
+  extensions, marketplaces, and plugin browser
 
 ### AI-Powered Conversion
 
@@ -855,10 +886,12 @@ Adding a new agent format is straightforward:
 ## Current Limitations (MVP)
 
 - Agent definitions use passthrough adapter (no format conversion yet)
+- Skills use passthrough adapter (no format conversion yet)
 - No authentication/authorization (both REST and MCP)
-- No search or filter functionality in UI
+- No search or filter functionality in UI (basic filters available for configs)
 - Batch operations available via MCP prompts only (not in UI yet)
 - Extension and marketplace features do not yet have MCP tool integration
+- Skills features not yet integrated with MCP tools
 
 ## Next Steps
 

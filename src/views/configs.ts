@@ -285,6 +285,14 @@ export function configCreateView(): string {
           // Response is HTML, let it render
         }
       });
+
+      // Handle type selection change
+      document.getElementById('type').addEventListener('change', function(e) {
+        if (e.target.value === 'skill') {
+          // Redirect to skills create page for multi-file support
+          window.location.href = '/skills/new';
+        }
+      });
     </script>
   `;
   return layout('Add Config', content);
