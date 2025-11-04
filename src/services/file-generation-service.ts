@@ -10,7 +10,7 @@ export interface FileGenerationServiceEnv {
 
 interface GeneratedFile {
   path: string; // Logical path (e.g., "commands/code-review.md")
-  content: string;
+  content: string | Uint8Array; // Support both text and binary content
   mimeType: string;
 }
 
@@ -180,7 +180,7 @@ export class FileGenerationService {
       for (const companionFile of companionFiles) {
         const fileContent = await this.r2.get(companionFile.r2_key);
         if (fileContent) {
-          const content = await fileContent.text();
+          const content = new Uint8Array(await fileContent.arrayBuffer());
           files.push({
             path: `skills/${skillName}/${companionFile.file_path}`,
             content,
@@ -252,7 +252,7 @@ export class FileGenerationService {
       for (const companionFile of companionFiles) {
         const fileContent = await this.r2.get(companionFile.r2_key);
         if (fileContent) {
-          const content = await fileContent.text();
+          const content = new Uint8Array(await fileContent.arrayBuffer());
           files.push({
             path: `skills/${skillName}/${companionFile.file_path}`,
             content,

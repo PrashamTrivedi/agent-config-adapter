@@ -80,8 +80,8 @@ export class SkillZipService {
     for (const file of skill.files) {
       const object = await r2.get(file.r2_key);
       if (object) {
-        const content = await object.text();
-        fileMap[file.file_path] = strToU8(content);
+        const content = new Uint8Array(await object.arrayBuffer());
+        fileMap[file.file_path] = content;
       }
     }
 
