@@ -25,6 +25,8 @@ export class ConfigService {
 
   /**
    * Get all configs from database with optional filters
+   * Note: Does NOT trigger lazy analysis (for performance on list views)
+   * Analysis happens on individual getConfig() calls
    */
   async listConfigs(filters?: {
     type?: string;
@@ -36,9 +38,34 @@ export class ConfigService {
 
   /**
    * Get single config by ID
+   * Automatically analyzes slash commands if not already analyzed (lazy migration)
    */
   async getConfig(id: string): Promise<Config | null> {
-    return await this.repo.findById(id);
+    const config = await this.repo.findById(id);
+
+    if (!config) return null;
+
+    // Lazy analysis: If it's a slash command without metadata, analyze it now
+    if (
+      config.type === 'slash_command' &&
+      !config.analysis_version &&
+      this.analyzer
+    ) {
+      try {
+        console.log(`Lazy analyzing slash command: ${config.name} (${id})`);
+        const analysis = await this.analyzer.analyze(config.content);
+
+        // Update with analysis metadata
+        const updated = await this.repo.update(id, {}, analysis);
+        return updated || config;
+      } catch (error) {
+        console.error('Lazy analysis failed:', error);
+        // Return original config if analysis fails
+        return config;
+      }
+    }
+
+    return config;
   }
 
   /**

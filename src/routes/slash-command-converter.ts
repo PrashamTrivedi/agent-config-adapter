@@ -26,10 +26,19 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const userArguments = body.userArguments;
 
-  // Initialize services
-  const configService = new ConfigService(c.env);
+  // Initialize AI services
+  const apiKey = c.env.OPENAI_API_KEY || '';
+  const accountId = c.env.ACCOUNT_ID;
+  const gatewayId = c.env.GATEWAY_ID;
+  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
 
-  // Get config
+  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
+  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+
+  // Initialize services with analyzer for lazy analysis
+  const configService = new ConfigService(c.env, analyzer);
+
+  // Get config (will trigger lazy analysis if needed)
   const config = await configService.getConfig(configId);
   if (!config) {
     return c.json({ error: 'Config not found' }, 404);
@@ -40,13 +49,7 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
     return c.json({ error: 'Config is not a slash command' }, 400);
   }
 
-  // Initialize AI services
-  const apiKey = c.env.OPENAI_API_KEY || '';
-  const accountId = c.env.ACCOUNT_ID;
-  const gatewayId = c.env.GATEWAY_ID;
-  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
-
-  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
+  // Create converter service (aiConverter already initialized above)
   const converterService = new SlashCommandConverterService(aiConverter);
 
   // Convert the slash command
@@ -97,10 +100,19 @@ slashCommandConverterRouter.get('/', async (c) => {
 });
 
 // GET /api/slash-commands/:id
-// Get specific slash command with metadata
+// Get specific slash command with metadata (triggers lazy analysis if needed)
 slashCommandConverterRouter.get('/:id', async (c) => {
   const id = c.req.param('id');
-  const configService = new ConfigService(c.env);
+
+  // Initialize analyzer for lazy analysis
+  const apiKey = c.env.OPENAI_API_KEY || '';
+  const accountId = c.env.ACCOUNT_ID;
+  const gatewayId = c.env.GATEWAY_ID;
+  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+
+  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
+  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const configService = new ConfigService(c.env, analyzer);
 
   const config = await configService.getConfig(id);
 
