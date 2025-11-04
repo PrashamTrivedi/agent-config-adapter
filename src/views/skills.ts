@@ -79,7 +79,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
     <h2>${escapeHtml(skill.name)}</h2>
     <div style="margin-bottom: 20px;">
       <span class="badge">${skill.original_format}</span>
-      <span class="badge" style="background: #10b981;">${skill.files.length} companion files</span>
+      <span class="badge" style="background: var(--badge-bg);">${skill.files.length} companion files</span>
     </div>
 
     <div style="margin-bottom: 20px;">
@@ -97,7 +97,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
     </div>
 
     <h3>SKILL.md</h3>
-    <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; max-height: 400px; overflow: auto;">${escapeHtml(skill.content)}</pre>
+    <pre style="max-height: 400px; overflow: auto;">${escapeHtml(skill.content)}</pre>
 
     ${
       skill.files.length > 0
@@ -141,7 +141,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
         : ''
     }
 
-    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
       <small style="color: var(--text-secondary);">
         Created: ${new Date(skill.created_at).toLocaleString()}<br>
         Updated: ${new Date(skill.updated_at).toLocaleString()}
@@ -236,7 +236,7 @@ export function skillCreateView(): string {
         display: flex;
         gap: 10px;
         margin-bottom: 20px;
-        border-bottom: 2px solid #e5e7eb;
+        border-bottom: 2px solid var(--border-color);
       }
 
       .tab-btn {
@@ -318,7 +318,7 @@ export function skillEditView(skill: SkillWithFiles): string {
       </div>
     </form>
 
-    <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+    <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
 
     <h3>Companion Files</h3>
     <p style="color: var(--text-secondary); margin-bottom: 15px;">
