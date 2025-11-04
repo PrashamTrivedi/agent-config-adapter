@@ -3,6 +3,12 @@ import { ConfigService } from '../services/config-service';
 import { SlashCommandConverterService } from '../services/slash-command-converter-service';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
 import { AIConverterService } from '../infrastructure/ai-converter';
+import {
+  slashCommandConverterView,
+  slashCommandConverterFormPartial,
+  slashCommandConversionResultPartial,
+  slashCommandNeedsInputPartial,
+} from '../views/slash-command-converter';
 
 type Bindings = {
   DB: D1Database;
@@ -14,6 +20,45 @@ type Bindings = {
 };
 
 export const slashCommandConverterRouter = new Hono<{ Bindings: Bindings }>();
+
+// GET /slash-commands/convert
+// Main converter UI page
+slashCommandConverterRouter.get('/convert', async (c) => {
+  const configService = new ConfigService(c.env);
+
+  // Get all slash commands
+  const configs = await configService.listConfigs({ type: 'slash_command' });
+
+  return c.html(slashCommandConverterView(configs));
+});
+
+// GET /slash-commands/converter-form
+// HTMX partial: Load dynamic form for selected command
+slashCommandConverterRouter.get('/converter-form', async (c) => {
+  const configId = c.req.query('configId');
+
+  if (!configId) {
+    return c.html('<p>Please select a command</p>');
+  }
+
+  // Initialize analyzer for lazy analysis
+  const apiKey = c.env.OPENAI_API_KEY || '';
+  const accountId = c.env.ACCOUNT_ID;
+  const gatewayId = c.env.GATEWAY_ID;
+  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+
+  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
+  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const configService = new ConfigService(c.env, analyzer);
+
+  const config = await configService.getConfig(configId);
+
+  if (!config || config.type !== 'slash_command') {
+    return c.html('<p style="color: var(--danger);">Slash command not found</p>');
+  }
+
+  return c.html(slashCommandConverterFormPartial(config));
+});
 
 // POST /api/slash-commands/:id/convert
 // Convert a slash command config using pre-computed metadata
@@ -59,7 +104,14 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
       userArguments,
     });
 
+    // Check if request wants HTML (from HTMX) or JSON (from API)
+    const accept = c.req.header('Accept') || '';
+    const wantsHtml = accept.includes('text/html') || c.req.header('HX-Request') === 'true';
+
     if (result.needsUserInput) {
+      if (wantsHtml) {
+        return c.html(slashCommandNeedsInputPartial(result.analysis), 400);
+      }
       return c.json(
         {
           message: 'User input required',
@@ -71,6 +123,10 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
       );
     }
 
+    if (wantsHtml) {
+      return c.html(slashCommandConversionResultPartial(result.convertedContent, result.analysis));
+    }
+
     return c.json({
       convertedContent: result.convertedContent,
       needsUserInput: result.needsUserInput,
@@ -78,6 +134,12 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
     });
   } catch (error) {
     console.error('Conversion failed:', error);
+    if (c.req.header('HX-Request') === 'true') {
+      return c.html(
+        '<p style="color: var(--danger);">Conversion failed. Please try again.</p>',
+        500
+      );
+    }
     return c.json({ error: 'Conversion failed' }, 500);
   }
 });

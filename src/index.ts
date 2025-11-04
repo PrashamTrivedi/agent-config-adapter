@@ -43,6 +43,7 @@ app.get('/', (c) => {
     <div style="margin-top: 30px;">
       <a href="/configs" class="btn">View All Configs</a>
       <a href="/configs/new" class="btn">Add New Config</a>
+      <a href="/slash-commands/convert" class="btn">Slash Command Converter</a>
       <a href="/skills" class="btn">Browse Skills</a>
       <a href="/extensions" class="btn">Browse Extensions</a>
       <a href="/marketplaces" class="btn">Browse Marketplaces</a>
@@ -65,6 +66,7 @@ app.route('/configs', configsRouter);
 app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
 app.route('/skills', skillsRouter);
+app.route('/slash-commands', slashCommandConverterRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);
