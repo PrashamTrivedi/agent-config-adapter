@@ -59,7 +59,7 @@ export class FileStorageRepository {
       .bind(id)
       .run();
 
-    return result.success;
+    return result.success && (result.meta?.changes ?? 0) > 0;
   }
 
   async deleteByExtensionId(extensionId: string): Promise<boolean> {
@@ -68,6 +68,6 @@ export class FileStorageRepository {
       .bind(extensionId)
       .run();
 
-    return result.success;
+    return result.success && (result.meta?.changes ?? 0) > 0;
   }
 }

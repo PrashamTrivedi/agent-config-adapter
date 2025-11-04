@@ -13,7 +13,7 @@ describe('SkillFilesRepository', () => {
 
   describe('create', () => {
     it('should create a skill file record', async () => {
-      const mockRun = vi.fn().mockResolvedValue({ success: true });
+      const mockRun = vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } });
 
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
@@ -65,7 +65,7 @@ describe('SkillFilesRepository', () => {
     it('should delete a skill file', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 

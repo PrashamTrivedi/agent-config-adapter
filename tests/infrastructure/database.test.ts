@@ -198,7 +198,7 @@ describe('ConfigRepository', () => {
         })
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
-            run: vi.fn().mockResolvedValue({ success: true }),
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
         .mockReturnValueOnce({
@@ -232,7 +232,7 @@ describe('ConfigRepository', () => {
         })
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
-            run: vi.fn().mockResolvedValue({ success: true }),
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
         .mockReturnValueOnce({
@@ -294,7 +294,7 @@ describe('ConfigRepository', () => {
         })
         .mockReturnValueOnce({
           bind: vi.fn().mockReturnValue({
-            run: vi.fn().mockResolvedValue({ success: true }),
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
           }),
         })
         .mockReturnValueOnce({
@@ -326,7 +326,7 @@ describe('ConfigRepository', () => {
     it('should return success status', async () => {
       mockDb.prepare = vi.fn().mockReturnValue({
         bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       });
 

@@ -150,7 +150,7 @@ export class MarketplaceRepository {
       .bind(id)
       .run();
 
-    return result.success;
+    return result.success && (result.meta?.changes ?? 0) > 0;
   }
 
   /**
