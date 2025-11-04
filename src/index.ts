@@ -5,6 +5,7 @@ import { marketplacesRouter } from './routes/marketplaces';
 import { skillsRouter } from './routes/skills';
 import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
+import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { layout } from './views/layout';
 import { handleMCPStreamable } from './mcp/transport';
 
@@ -57,6 +58,7 @@ app.route('/api/extensions', extensionsRouter);
 app.route('/api/marketplaces', marketplacesRouter);
 app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
+app.route('/api/slash-commands', slashCommandConverterRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
