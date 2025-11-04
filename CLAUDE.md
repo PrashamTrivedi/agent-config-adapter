@@ -107,6 +107,20 @@ POST   /api/configs/:id/invalidate     Invalidate cached conversions
 GET    /configs/:id/edit               Edit config form (redirects to /skills/:id/edit if skill type)
 ```
 
+### REST API - Slash Command Converter
+```
+GET    /api/slash-commands                 List all slash commands with metadata
+GET    /api/slash-commands/:id             Get specific slash command with metadata
+POST   /api/slash-commands/:id/convert     Convert slash command (body: { "userArguments": "optional" })
+```
+
+**Slash Command Converter Notes:**
+- Uses proactive analysis with pre-computed metadata (computed on create/update)
+- Lazy analysis available for existing configs (analyzed on first access)
+- Returns `convertedContent`, `needsUserInput`, and full analysis metadata
+- Metadata includes: `has_arguments`, `argument_hint`, `agent_references`, `skill_references`, `analysis_version`
+- Frontend UI not yet implemented (backend-only in MVP)
+
 ### REST API - Skills
 ```
 GET    /api/skills                     List all skills
