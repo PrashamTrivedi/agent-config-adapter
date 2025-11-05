@@ -124,8 +124,8 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
     return c.json({ error: 'Config is not a slash command' }, 400);
   }
 
-  // Create converter service (aiConverter already initialized above)
-  const converterService = new SlashCommandConverterService(aiConverter);
+  // Create converter service (pass both aiConverter and configService)
+  const converterService = new SlashCommandConverterService(aiConverter, configService);
 
   // Convert the slash command
   try {

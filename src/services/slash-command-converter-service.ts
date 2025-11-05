@@ -5,9 +5,13 @@ import {
   SlashCommandConversionResult,
 } from '../domain/types'
 import { AIConverterService } from '../infrastructure/ai-converter'
+import { ConfigService } from './config-service'
 
 export class SlashCommandConverterService {
-  constructor(private aiConverter: AIConverterService) {}
+  constructor(
+    private aiConverter: AIConverterService,
+    private configService: ConfigService
+  ) {}
 
   /**
    * Convert a slash command using pre-computed metadata.
@@ -70,9 +74,8 @@ export class SlashCommandConverterService {
   }
 
   /**
-   * Resolve agent/skill files from ~/.claude directory
-   * NOTE: This only works in local development - Cloudflare Workers
-   * in production don't have file system access
+   * Resolve agent/skill references from database
+   * Fetches actual content for agent_definition and skill configs
    */
   private async resolveReferences(
     agents: string[],
@@ -80,24 +83,67 @@ export class SlashCommandConverterService {
   ): Promise<Map<string, string>> {
     const references = new Map<string, string>()
 
-    // In Cloudflare Workers, we don't have access to file system
-    // For MVP, we'll skip file resolution and just track reference names
-    // In a full implementation, these would be stored in D1/R2
+    // Fetch agents from database
+    for (const agentName of agents) {
+      try {
+        const configs = await this.configService.listConfigs({
+          type: 'agent_definition',
+          searchName: agentName,
+        })
 
-    console.log('Reference resolution not available in Workers environment')
-    console.log('Agents:', agents)
-    console.log('Skills:', skills)
+        // Prefer exact match, fallback to first result
+        const config = this.findBestMatch(configs, agentName)
 
-    // Track references even if we can't read them
-    for (const agent of agents) {
-      references.set(`agent:${agent}`, `[Agent: ${agent} - content not available]`)
+        if (config) {
+          references.set(`agent:${agentName}`, config.content)
+        } else {
+          references.set(`agent:${agentName}`, `[Agent: ${agentName} - not found]`)
+        }
+      } catch (error) {
+        console.error(`Failed to fetch agent ${agentName}:`, error)
+        references.set(`agent:${agentName}`, `[Agent: ${agentName} - fetch error]`)
+      }
     }
 
-    for (const skill of skills) {
-      references.set(`skill:${skill}`, `[Skill: ${skill} - content not available]`)
+    // Fetch skills from database
+    for (const skillName of skills) {
+      try {
+        const configs = await this.configService.listConfigs({
+          type: 'skill',
+          searchName: skillName,
+        })
+
+        const config = this.findBestMatch(configs, skillName)
+
+        if (config) {
+          references.set(`skill:${skillName}`, config.content)
+        } else {
+          references.set(`skill:${skillName}`, `[Skill: ${skillName} - not found]`)
+        }
+      } catch (error) {
+        console.error(`Failed to fetch skill ${skillName}:`, error)
+        references.set(`skill:${skillName}`, `[Skill: ${skillName} - fetch error]`)
+      }
     }
 
     return references
+  }
+
+  /**
+   * Find the best matching config from search results
+   * Prefers exact name match, falls back to first result
+   */
+  private findBestMatch(configs: Config[], targetName: string): Config | null {
+    if (configs.length === 0) return null
+
+    // 1. Try exact match (case-insensitive)
+    const exactMatch = configs.find(
+      (c) => c.name.toLowerCase() === targetName.toLowerCase()
+    )
+    if (exactMatch) return exactMatch
+
+    // 2. Fallback to first result from LIKE search
+    return configs[0]
   }
 
   /**
