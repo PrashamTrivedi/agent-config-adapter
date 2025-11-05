@@ -1,94 +1,43 @@
 # Purpose
 
-Add MCP tool and prompt for slash command reference fetching and inlining
+Fix slash command converter to fetch and inline agent/skill references from database
 
 ## Original Ask
 
 We need following flow for slash command converter functionality. We need one prompt and a tool, that tool will get name and type pair (e.g. scaffolder-skill, qa-validator-agent) and will fetch relevant content from name and type from database, and return it. Then the prompt will inline the content of tool response if present. And then it will convert the final prompt for the copying.
 
+**Clarification:** This is NOT about MCP integration. It's just updating the slash command conversion service to properly fetch and inline agent/skill references from the database during conversion.
+
 ## Complexity and the reason behind it
 
-**Complexity Score: 3/5**
+**Complexity Score: 2/5**
 
 **Reasoning:**
-- Requires adding new MCP tool and prompt (moderate effort)
-- Needs to update existing slash command converter service to fetch from database
-- Involves integration of multiple services (ConfigService, SlashCommandConverterService)
-- Has both backend implementation (service updates, database queries) and MCP integration
-- Requires understanding of existing MCP infrastructure and slash command conversion flow
-- Testing requires verifying MCP tool/prompt workflow end-to-end
-- Not trivial due to service layer changes, but straightforward implementation
-- Already have similar patterns in codebase to follow
+- Update existing SlashCommandConverterService.resolveReferences() to fetch from database
+- Add ConfigService dependency to the service
+- Add helper method for best-match selection (exact vs partial name match)
+- Update service instantiation in routes
+- Simple, focused change with clear requirements
+- No new features or APIs - just fixing existing functionality
+- Testing is straightforward - verify references are fetched and inlined
+- Already have all the infrastructure (ConfigService, database queries)
 
 ## Architectural changes required
 
 None required - using existing architecture:
-- MCP server structure already supports adding tools and prompts
-- ConfigService and ConfigRepository already have filtering capabilities
-- SlashCommandConverterService already has the conversion logic framework
+- ConfigService and ConfigRepository already have filtering capabilities (`listConfigs` with type and searchName filters)
+- SlashCommandConverterService already has the conversion logic framework with `resolveReferences()` and `generateOutput()`
+- Just need to connect them properly
 
 ## Backend changes required
 
-### 1. Add New MCP Tool: `fetch_config_by_name_and_type`
-
-**File:** `src/mcp/server.ts`
-
-**Implementation:**
-```typescript
-server.tool(
-  'fetch_config_by_name_and_type',
-  'Fetch a config by name and type from the database',
-  {
-    name: z.string().describe('Config name to search for'),
-    type: z.enum(['slash_command', 'agent_definition', 'skill', 'mcp_config']).describe('Config type')
-  },
-  async ({ name, type }) => {
-    // Use ConfigService.listConfigs with filters
-    // Return config content if found (exact match or first match)
-    // Return error if not found
-  }
-);
-```
-
-**Logic:**
-1. Use `ConfigService.listConfigs({ type, searchName: name })`
-2. If multiple results, prefer exact name match
-3. Return config with ID, name, type, content
-4. Return error if not found
-
-### 2. Add New MCP Prompt: `inline_slash_command`
-
-**File:** `src/mcp/server.ts`
-
-**Implementation:**
-```typescript
-server.prompt(
-  'inline_slash_command',
-  'Convert slash command with inlined agent/skill references for copying',
-  {
-    configId: z.string().describe('ID of slash command to convert'),
-    userArguments: z.string().optional().describe('User arguments to replace $ARGUMENTS')
-  },
-  async ({ configId, userArguments }) => {
-    // Return workflow message that guides AI to:
-    // 1. Get slash command using get_config tool
-    // 2. Parse analysis metadata (agent_references, skill_references)
-    // 3. For each reference, use fetch_config_by_name_and_type tool
-    // 4. Inline fetched content into final output
-    // 5. Remove frontmatter
-    // 6. Replace $ARGUMENTS with userArguments if provided
-    // 7. Return ready-to-copy content
-  }
-);
-```
-
-### 3. Update SlashCommandConverterService
+### 1. Update SlashCommandConverterService
 
 **File:** `src/services/slash-command-converter-service.ts`
 
 **Changes Required:**
 
-#### 3.1 Add ConfigService dependency
+#### 1.1 Add ConfigService dependency
 ```typescript
 constructor(
   private aiConverter: AIConverterService,
@@ -96,7 +45,7 @@ constructor(
 ) {}
 ```
 
-#### 3.2 Update `resolveReferences` method (lines 77-101)
+#### 1.2 Update `resolveReferences` method (lines 77-101)
 **Current behavior:** Returns placeholder text `[Agent: name - content not available]`
 
 **New behavior:**
@@ -154,7 +103,7 @@ private async resolveReferences(
 }
 ```
 
-#### 3.3 Add helper method `findBestMatch`
+#### 1.3 Add helper method `findBestMatch`
 ```typescript
 private findBestMatch(configs: Config[], targetName: string): Config | null {
   if (configs.length === 0) return null;
@@ -170,9 +119,9 @@ private findBestMatch(configs: Config[], targetName: string): Config | null {
 }
 ```
 
-### 4. Update Service Instantiation
+### 2. Update Service Instantiation
 
-**File:** `src/routes/slash-command-converter.ts` (and any other places that use SlashCommandConverterService)
+**File:** `src/routes/slash-command-converter.ts`
 
 **Change:**
 ```typescript
@@ -183,222 +132,186 @@ const converterService = new SlashCommandConverterService(aiConverter);
 const converterService = new SlashCommandConverterService(aiConverter, configService);
 ```
 
-**Files to update:**
-- `src/routes/slash-command-converter.ts` (main usage)
-- Check if used anywhere else in the codebase
-
-### 5. Update MCP Types (Optional)
-
-**File:** `src/mcp/types.ts`
-
-Add new tool input type:
-```typescript
-export interface FetchConfigByNameAndTypeToolInput {
-  name: string;
-  type: ConfigType;
-}
-```
-
-Add new prompt args type:
-```typescript
-export interface InlineSlashCommandPromptArgs {
-  configId: string;
-  userArguments?: string;
-}
-```
+**Note:** This is the only place where SlashCommandConverterService is instantiated in the routes layer.
 
 ## Frontend changes required
 
-None required - this is a backend-only MCP feature.
+None required - this is a backend service layer change only.
 
-Frontend slash command converter UI already exists and works independently. MCP tool and prompt are for AI agent workflows, not for direct user interaction via web UI.
+The existing frontend slash command converter UI will automatically benefit from the improved reference resolution once the service is updated.
 
 ## Acceptance Criteria
 
-### MCP Tool: `fetch_config_by_name_and_type`
-
-✅ **AC1:** Tool can fetch config by exact name match
-- Given: Config exists with name "triage" and type "agent_definition"
-- When: Tool is called with `{ name: "triage", type: "agent_definition" }`
-- Then: Returns config with full content
-
-✅ **AC2:** Tool returns first result when multiple partial matches exist
-- Given: Configs exist with names "triage-agent", "triage-helper"
-- When: Tool is called with `{ name: "triage", type: "agent_definition" }`
-- Then: Returns one of the matching configs (preferably exact match if exists)
-
-✅ **AC3:** Tool returns error when config not found
-- Given: No config exists with name "nonexistent"
-- When: Tool is called with `{ name: "nonexistent", type: "skill" }`
-- Then: Returns error message indicating not found
-
-✅ **AC4:** Tool filters by type correctly
-- Given: Config "test" exists as both agent_definition and skill
-- When: Tool is called with `{ name: "test", type: "skill" }`
-- Then: Returns only the skill config, not the agent_definition
-
-### MCP Prompt: `inline_slash_command`
-
-✅ **AC5:** Prompt workflow fetches and inlines agent references
-- Given: Slash command references "triage" agent
-- When: Prompt is executed with the slash command ID
-- Then: Workflow uses `fetch_config_by_name_and_type` to get agent content and inlines it
-
-✅ **AC6:** Prompt workflow fetches and inlines skill references
-- Given: Slash command references "conventional-commit" skill
-- When: Prompt is executed with the slash command ID
-- Then: Workflow uses tool to get skill content and inlines it
-
-✅ **AC7:** Prompt workflow replaces $ARGUMENTS placeholder
-- Given: Slash command contains `$ARGUMENTS` and user provides "scaffolder-v2"
-- When: Prompt is executed with `{ configId: "xxx", userArguments: "scaffolder-v2" }`
-- Then: Final output replaces `$ARGUMENTS` with "scaffolder-v2"
-
-✅ **AC8:** Prompt workflow removes frontmatter
-- Given: Slash command has YAML frontmatter
-- When: Prompt is executed
-- Then: Final output excludes frontmatter, only includes body content
-
 ### Service Layer: `resolveReferences` Update
 
-✅ **AC9:** Service fetches agent references from database
+✅ **AC1:** Service fetches agent references from database
 - Given: Analysis metadata includes `agent_references: ["triage"]`
 - When: `resolveReferences` is called
 - Then: Fetches "triage" agent_definition from database via ConfigService
 
-✅ **AC10:** Service fetches skill references from database
+✅ **AC2:** Service fetches skill references from database
 - Given: Analysis metadata includes `skill_references: ["conventional-commit"]`
 - When: `resolveReferences` is called
 - Then: Fetches "conventional-commit" skill from database via ConfigService
 
-✅ **AC11:** Service handles missing references gracefully
+✅ **AC3:** Service handles missing references gracefully
 - Given: Reference "nonexistent-agent" doesn't exist in database
 - When: `resolveReferences` is called
 - Then: Returns placeholder text `[Agent: nonexistent-agent - not found]` instead of crashing
 
-✅ **AC12:** Service prefers exact name match over partial match
+✅ **AC4:** Service prefers exact name match over partial match
 - Given: Database has "triage" and "triage-helper" agents
 - When: Reference is "triage"
 - Then: Fetches "triage" config (exact match), not "triage-helper"
 
+### End-to-End Conversion
+
+✅ **AC5:** Slash command conversion inlines fetched agent content
+- Given: Slash command references "triage" agent which exists in database
+- When: Conversion is executed via POST /api/slash-commands/:id/convert
+- Then: Final output includes inlined agent content, not placeholder
+
+✅ **AC6:** Slash command conversion inlines fetched skill content
+- Given: Slash command references "conventional-commit" skill which exists in database
+- When: Conversion is executed via POST /api/slash-commands/:id/convert
+- Then: Final output includes inlined skill content, not placeholder
+
+✅ **AC7:** Slash command conversion with both agent and skill references
+- Given: Slash command references both "triage" agent and "conventional-commit" skill
+- When: Conversion is executed
+- Then: Final output includes both inlined contents correctly
+
+✅ **AC8:** Slash command conversion with user arguments
+- Given: Slash command has `$ARGUMENTS` placeholder
+- When: Conversion is executed with `{ "userArguments": "scaffolder-v2" }`
+- Then: Final output replaces `$ARGUMENTS` with "scaffolder-v2" AND inlines references
+
 ## Validation
 
-### Backend Testing
+### Unit Tests
 
-#### Unit Tests
-**File:** `src/services/slash-command-converter-service.test.ts`
+**File:** `src/services/slash-command-converter-service.test.ts` (new or extend existing)
 
 **Test Cases:**
 1. `resolveReferences` fetches agents from database
+   - Mock ConfigService.listConfigs to return agent config
+   - Verify correct type filter ('agent_definition')
+   - Verify returned content is stored in references map
+
 2. `resolveReferences` fetches skills from database
+   - Mock ConfigService.listConfigs to return skill config
+   - Verify correct type filter ('skill')
+   - Verify returned content is stored in references map
+
 3. `resolveReferences` handles missing references with placeholder
+   - Mock ConfigService.listConfigs to return empty array
+   - Verify placeholder text `[Agent: name - not found]` is returned
+
 4. `findBestMatch` prefers exact match
+   - Provide array with "triage" and "triage-helper"
+   - Search for "triage"
+   - Verify exact match "triage" is returned
+
 5. `findBestMatch` returns first result when no exact match
+   - Provide array with "triage-agent" and "triage-helper"
+   - Search for "triage"
+   - Verify first result is returned
+
 6. `resolveReferences` handles database errors gracefully
+   - Mock ConfigService.listConfigs to throw error
+   - Verify error placeholder `[Agent: name - fetch error]` is returned
 
-**File:** `src/mcp/server.test.ts` (new or extend existing)
+### Integration Tests
 
-**Test Cases:**
-1. `fetch_config_by_name_and_type` tool returns config on exact match
-2. `fetch_config_by_name_and_type` tool returns first result on partial match
-3. `fetch_config_by_name_and_type` tool returns error when not found
-4. `fetch_config_by_name_and_type` tool filters by type correctly
-5. `inline_slash_command` prompt returns workflow message with correct steps
-
-#### Integration Tests
 **File:** `src/routes/slash-command-converter.test.ts` (extend existing)
 
 **Test Cases:**
 1. End-to-end conversion with database-fetched agent reference
+   - Create agent config in test database
+   - Create slash command with agent reference
+   - POST /api/slash-commands/:id/convert
+   - Verify response includes inlined agent content
+
 2. End-to-end conversion with database-fetched skill reference
+   - Create skill config in test database
+   - Create slash command with skill reference
+   - POST /api/slash-commands/:id/convert
+   - Verify response includes inlined skill content
+
 3. Conversion with both agent and skill references
+   - Create both agent and skill configs
+   - Create slash command referencing both
+   - Verify both are inlined in final output
+
 4. Conversion with missing references (fallback to placeholder)
+   - Create slash command referencing non-existent agent
+   - Verify output includes placeholder, not crash
 
-### MCP Testing
+5. Conversion with user arguments and references
+   - Create slash command with $ARGUMENTS and references
+   - POST with userArguments
+   - Verify both replacement and inlining work correctly
 
-**Manual Testing Steps:**
+### Manual Testing
 
-1. **Setup MCP Client:**
+**Test REST API with real database:**
+
+1. **Setup local development environment:**
    ```bash
    npm run dev
    # Verify server running at http://localhost:8787
    ```
 
-2. **Test Tool: fetch_config_by_name_and_type**
+2. **Create test agent config:**
    ```bash
-   # Create test configs first
    curl -X POST http://localhost:8787/api/configs \
      -H "Content-Type: application/json" \
-     -d '{"name":"triage","type":"agent_definition","original_format":"claude_code","content":"Test agent content"}'
-
-   # Test MCP tool via /mcp endpoint
-   curl -X POST http://localhost:8787/mcp \
-     -H "Content-Type: application/json" \
      -d '{
-       "jsonrpc": "2.0",
-       "method": "tools/call",
-       "params": {
-         "name": "fetch_config_by_name_and_type",
-         "arguments": {
-           "name": "triage",
-           "type": "agent_definition"
-         }
-       },
-       "id": 1
+       "name": "triage",
+       "type": "agent_definition",
+       "original_format": "claude_code",
+       "content": "You are a bug triage specialist. Analyze the code and identify issues."
      }'
-
-   # Expected: Returns config with content
    ```
 
-3. **Test Prompt: inline_slash_command**
+3. **Create test skill config:**
    ```bash
-   # Create test slash command with references
+   curl -X POST http://localhost:8787/api/configs \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "conventional-commit",
+       "type": "skill",
+       "original_format": "claude_code",
+       "content": "Use conventional commit format: type(scope): message"
+     }'
+   ```
+
+4. **Create test slash command with references:**
+   ```bash
    curl -X POST http://localhost:8787/api/configs \
      -H "Content-Type: application/json" \
      -d '{
        "name": "test-inlining",
        "type": "slash_command",
        "original_format": "claude_code",
-       "content": "---\nargument-hint: scaffolder name\n---\n\nRun **triage** agent on the code.\n\nUse **conventional-commit** skill for commits.\n\nReplace: $ARGUMENTS"
+       "content": "---\nargument-hint: component name\n---\n\nAnalyze the $ARGUMENTS component.\n\nUse **triage** agent to identify issues.\n\nUse **conventional-commit** skill for commits."
      }'
-
-   # Get config ID from response, then test prompt
-   curl -X POST http://localhost:8787/mcp \
-     -H "Content-Type: application/json" \
-     -d '{
-       "jsonrpc": "2.0",
-       "method": "prompts/get",
-       "params": {
-         "name": "inline_slash_command",
-         "arguments": {
-           "configId": "<CONFIG_ID>",
-           "userArguments": "scaffolder-v2"
-         }
-       },
-       "id": 2
-     }'
-
-   # Expected: Returns workflow message with tool usage steps
    ```
 
-4. **Verify MCP Info Page:**
+5. **Test conversion (get config ID from step 4):**
    ```bash
-   curl http://localhost:8787/mcp/info
-   # Expected: Shows 6 tools (including new fetch_config_by_name_and_type)
-   # Expected: Shows 4 prompts (including new inline_slash_command)
+   curl -X POST http://localhost:8787/api/slash-commands/<CONFIG_ID>/convert \
+     -H "Content-Type: application/json" \
+     -d '{ "userArguments": "authentication" }'
    ```
 
-### API Testing
-
-**Test REST API still works after service changes:**
-
-```bash
-# Test slash command converter API (should use updated resolveReferences)
-POST /api/slash-commands/:id/convert
-Body: { "userArguments": "test-args" }
-
-# Expected: Inlines agent/skill content from database (not placeholders)
-```
+6. **Verify output:**
+   - Check response JSON has `convertedContent` field
+   - Verify `$ARGUMENTS` is replaced with "authentication"
+   - Verify frontmatter is removed
+   - Verify agent content is inlined (not placeholder)
+   - Verify skill content is inlined (not placeholder)
+   - Verify `needsUserInput: false`
 
 ### Verification Commands
 
@@ -424,24 +337,12 @@ npm run lint
 # Expected: No linting errors
 ```
 
-### End-to-End Workflow Test
+### Success Criteria
 
-**Scenario: Convert a slash command with agent and skill references**
-
-1. Create agent config in database
-2. Create skill config in database
-3. Create slash command that references both
-4. Use MCP prompt `inline_slash_command` via AI workflow
-5. Verify:
-   - Tool fetches agent content
-   - Tool fetches skill content
-   - Prompt inlines both
-   - Frontmatter is removed
-   - $ARGUMENTS is replaced
-   - Final output is ready to copy
-
-**Success Criteria:**
-- All tests pass
-- MCP info page shows new tool and prompt
-- End-to-end workflow produces correct inlined output
-- No regressions in existing functionality
+- All unit tests pass
+- All integration tests pass
+- Manual testing shows agent/skill content is inlined (not placeholders)
+- No regressions in existing slash command converter functionality
+- TypeScript compilation succeeds with no errors
+- Linting passes with no errors
+- Code coverage remains at or above current levels
