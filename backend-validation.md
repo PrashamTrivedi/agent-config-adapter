@@ -1052,10 +1052,11 @@ idx_configs_has_arguments ON configs(has_arguments) WHERE type = 'slash_command'
    - System works with rule-based fallbacks
    - Not a blocker for core functionality
 
-2. **File system access not available in Workers**
-   - Reference resolution shows placeholder messages
-   - In full implementation, would use D1/R2
-   - Documented in code comments
+2. **Reference resolution fully implemented**
+   - Agent and skill references are fetched from D1 database
+   - Uses ConfigService.listConfigs() with smart matching (exact or partial)
+   - Gracefully handles missing references with clear error messages
+   - No placeholder messages - actual content is inlined during conversion
 
 3. **Frontend UI not integrated with MCP tools**
    - MCP tools exist separately

@@ -11,6 +11,8 @@ and MCP configs once, deploy across Codex, Gemini, and other agents.
   and Gemini formats
 - 🤖 **AI-Powered Conversion**: Uses OpenAI GPT-5-mini via Cloudflare AI Gateway
   for intelligent format conversion
+- 🔗 **Reference Inlining**: Slash command converter automatically fetches and
+  inlines agent/skill references from database during conversion
 - 💾 **Persistent Storage**: D1 database for reliable config storage
 - ⚡ **Fast Caching**: KV namespace for quick config retrieval with manual
   invalidation
