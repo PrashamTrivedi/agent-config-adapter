@@ -15,7 +15,9 @@ describe('SlashCommandConverterService', () => {
       convert: vi.fn(),
       chatWithTools: vi.fn().mockResolvedValue({
         content: 'Converted command without frontmatter',
-        tool_calls: undefined
+        tool_calls: undefined,
+        reasoning_tokens: 42,
+        output_tokens: 100
       }),
     } as unknown as AIConverterService;
 
@@ -140,10 +142,14 @@ describe('SlashCommandConverterService', () => {
               },
             },
           ],
+          reasoning_tokens: 30,
+          output_tokens: 50
         })
         .mockResolvedValueOnce({
           content: 'Final converted output with inlined agent',
           tool_calls: undefined,
+          reasoning_tokens: 45,
+          output_tokens: 120
         });
 
       vi.mocked(mockConfigService.listConfigs)
@@ -214,6 +220,8 @@ describe('SlashCommandConverterService', () => {
             },
           },
         ],
+        reasoning_tokens: 25,
+        output_tokens: 40
       });
 
       vi.mocked(mockConfigService.listConfigs).mockResolvedValue([]);
@@ -241,6 +249,8 @@ describe('SlashCommandConverterService', () => {
       vi.mocked(mockAIConverter.chatWithTools).mockResolvedValueOnce({
         content: 'Simple converted command',
         tool_calls: undefined,
+        reasoning_tokens: 38,
+        output_tokens: 95
       });
 
       const testConfig: Config = {

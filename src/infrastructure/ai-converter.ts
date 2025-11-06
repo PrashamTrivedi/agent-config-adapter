@@ -58,7 +58,7 @@ export class AIConverterService {
   }
 
   /**
-   * Chat completion with tool/function calling support
+   * Response API with tool calling and low reasoning effort
    * Used for slash command conversion with READ_CONFIGS tool
    */
   async chatWithTools(
@@ -86,41 +86,43 @@ export class AIConverterService {
       id: string
       function: {name: string; arguments: string}
     }>
+    reasoning_tokens?: number
+    output_tokens?: number
   }> {
     try {
-      const response = await this.openai.chat.completions.create({
+      // Extract system instructions from first system message
+      const systemMsg = messages.find(m => m.role === 'system')
+      const instructions = systemMsg?.content || ''
+
+      // Filter out system messages, keep user/assistant/tool messages
+      const input = messages.filter(m => m.role !== 'system')
+
+      const response = await this.openai.responses.create({
         model: 'gpt-5-mini',
-        messages: messages as any,
+        instructions: instructions,  // System prompt goes here
+        input: input as any,          // User/assistant/tool messages
         tools: tools as any,
         tool_choice: 'auto',
-      })
-
-      const message = response.choices[0].message
+        reasoning: {
+          effort: 'low'  // Enable low reasoning for better performance
+        },
+        max_output_tokens: 2000
+      }) as any // Type cast needed until OpenAI SDK types are updated
 
       return {
-        content: message.content,
-        tool_calls: message.tool_calls?.map(tc => {
-          if ('function' in tc) {
-            return {
-              id: tc.id,
-              function: {
-                name: tc.function.name,
-                arguments: tc.function.arguments
-              }
-            }
+        content: response.output_text,
+        tool_calls: response.tool_calls?.map((tc: any) => ({
+          id: tc.id,
+          function: {
+            name: tc.function.name,
+            arguments: tc.function.arguments
           }
-          // Handle custom tool calls if needed
-          return {
-            id: tc.id,
-            function: {
-              name: '',
-              arguments: ''
-            }
-          }
-        })
+        })),
+        reasoning_tokens: response.reasoning_tokens,
+        output_tokens: response.output_tokens
       }
     } catch (error) {
-      console.error('AI chat with tools failed:', error)
+      console.error('Response API with tools failed:', error)
       throw new Error('AI conversion with tools failed')
     }
   }
