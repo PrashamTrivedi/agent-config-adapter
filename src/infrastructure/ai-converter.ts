@@ -40,7 +40,7 @@ export class AIConverterService {
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-mini',
+        model: 'gpt-5-2025-08-07',
         messages: [
           {
             role: 'user',
@@ -68,7 +68,7 @@ export class AIConverterService {
       tool_calls?: Array<{
         id: string
         type: string
-        function: { name: string; arguments: string }
+        function: {name: string; arguments: string}
       }>
       tool_call_id?: string
     }>,
@@ -84,7 +84,7 @@ export class AIConverterService {
     content: string | null
     tool_calls?: Array<{
       id: string
-      function: { name: string; arguments: string }
+      function: {name: string; arguments: string}
     }>
   }> {
     try {
