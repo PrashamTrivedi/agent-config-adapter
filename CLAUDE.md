@@ -119,7 +119,12 @@ POST   /api/slash-commands/:id/convert     Convert slash command (body: { "userA
 - Lazy analysis available for existing configs (analyzed on first access)
 - Returns `convertedContent`, `needsUserInput`, and full analysis metadata
 - Metadata includes: `has_arguments`, `argument_hint`, `agent_references`, `skill_references`, `analysis_version`
-- Frontend UI not yet implemented (backend-only in MVP)
+- **Reference Inlining**: Fetches agent/skill references from D1 database during conversion
+  - Uses ConfigService.listConfigs() with smart matching (exact name preferred, falls back to partial match)
+  - Inlines actual content instead of placeholders
+  - AI determines which references to inline vs omit based on command logic
+  - Handles missing references gracefully with clear error messages
+- Frontend UI fully implemented with search and refresh capabilities
 
 ### REST API - Skills
 ```
