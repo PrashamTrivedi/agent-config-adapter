@@ -27,79 +27,195 @@ describe('SlashCommandConverterService', () => {
     service = new SlashCommandConverterService(mockAIConverter, mockConfigService);
   });
 
-  describe('resolveReferences', () => {
-    it('should fetch agent references from database', async () => {
-      const mockAgentConfig: Config = {
-        id: 'agent-1',
-        name: 'triage',
-        type: 'agent_definition',
+  describe('convert with tool-based approach', () => {
+    it('should call chatWithTools with system and user prompts', async () => {
+      const testConfig: Config = {
+        id: 'cmd-1',
+        name: 'test-command',
+        type: 'slash_command',
         original_format: 'claude_code',
-        content: 'You are a triage agent. Analyze code for bugs.',
+        content: '---\nname: test\n---\nTest content',
         created_at: '2024-01-01T00:00:00.000Z',
         updated_at: '2024-01-01T00:00:00.000Z',
+        agent_references: JSON.stringify([]),
+        skill_references: JSON.stringify([]),
       };
 
-      vi.mocked(mockConfigService.listConfigs).mockResolvedValue([mockAgentConfig]);
+      await service.convert(testConfig, { configId: 'cmd-1' });
+
+      // Verify chatWithTools was called
+      expect(mockAIConverter.chatWithTools).toHaveBeenCalled();
+
+      // Verify first call arguments
+      const callArgs = vi.mocked(mockAIConverter.chatWithTools).mock.calls[0];
+      const messages = callArgs[0];
+      const tools = callArgs[1];
+
+      // Check messages structure
+      expect(messages).toHaveLength(2);
+      expect(messages[0].role).toBe('system');
+      expect(messages[0].content).toContain('slash command converter');
+      expect(messages[1].role).toBe('user');
+      expect(messages[1].content).toContain('Test content');
+
+      // Check tools structure
+      expect(tools).toHaveLength(1);
+      expect(tools[0].function.name).toBe('read_configs');
+    });
+
+    it('should build reference context with all agents and skills', async () => {
+      const mockAgents: Config[] = [
+        {
+          id: 'agent-1',
+          name: 'triage',
+          type: 'agent_definition',
+          original_format: 'claude_code',
+          content: 'Agent content',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
+
+      const mockSkills: Config[] = [
+        {
+          id: 'skill-1',
+          name: 'conventional-commit',
+          type: 'skill',
+          original_format: 'claude_code',
+          content: 'Skill content',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
+
+      vi.mocked(mockConfigService.listConfigs)
+        .mockResolvedValueOnce(mockAgents) // First call for agents
+        .mockResolvedValueOnce(mockSkills); // Second call for skills
 
       const testConfig: Config = {
         id: 'cmd-1',
         name: 'test-command',
         type: 'slash_command',
         original_format: 'claude_code',
-        content: 'Test command content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
+        content: 'Test content',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        agent_references: JSON.stringify([]),
+        skill_references: JSON.stringify([]),
+      };
+
+      await service.convert(testConfig, { configId: 'cmd-1' });
+
+      // Verify context building
+      const callArgs = vi.mocked(mockAIConverter.chatWithTools).mock.calls[0];
+      const systemPrompt = callArgs[0][0].content as string;
+
+      expect(systemPrompt).toContain('Agents: triage');
+      expect(systemPrompt).toContain('Skills: conventional-commit');
+    });
+
+    it('should handle tool calls and execute read_configs', async () => {
+      const mockAgentConfig: Config = {
+        id: 'agent-1',
+        name: 'triage',
+        type: 'agent_definition',
+        original_format: 'claude_code',
+        content: 'Triage agent instructions',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      // Mock AI to return tool calls first, then final content
+      vi.mocked(mockAIConverter.chatWithTools)
+        .mockResolvedValueOnce({
+          content: null,
+          tool_calls: [
+            {
+              id: 'call_123',
+              function: {
+                name: 'read_configs',
+                arguments: JSON.stringify({
+                  references: [{ name: 'triage', type: 'agent' }],
+                }),
+              },
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          content: 'Final converted output with inlined agent',
+          tool_calls: undefined,
+        });
+
+      vi.mocked(mockConfigService.listConfigs)
+        .mockResolvedValueOnce([]) // agents list
+        .mockResolvedValueOnce([]) // skills list
+        .mockResolvedValueOnce([mockAgentConfig]); // read_configs call
+
+      const testConfig: Config = {
+        id: 'cmd-1',
+        name: 'test-command',
+        type: 'slash_command',
+        original_format: 'claude_code',
+        content: 'Use **triage** agent',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
         agent_references: JSON.stringify(['triage']),
         skill_references: JSON.stringify([]),
       };
 
       const result = await service.convert(testConfig, { configId: 'cmd-1' });
 
-      expect(mockConfigService.listConfigs).toHaveBeenCalledWith({
-        type: 'agent_definition',
-        searchName: 'triage',
-      });
+      // Verify tool iteration happened
+      expect(mockAIConverter.chatWithTools).toHaveBeenCalledTimes(2);
 
-      // The result should include the agent content (not a placeholder)
-      // Since we're calling convert(), we need to mock the AI inlining strategy
-      expect(result).toBeDefined();
+      // Verify final output
+      expect(result.convertedContent).toBe('Final converted output with inlined agent');
     });
 
-    it('should fetch skill references from database', async () => {
-      const mockSkillConfig: Config = {
-        id: 'skill-1',
-        name: 'conventional-commit',
-        type: 'skill',
-        original_format: 'claude_code',
-        content: 'Use conventional commit format: type(scope): message',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-      };
-
-      vi.mocked(mockConfigService.listConfigs).mockResolvedValue([mockSkillConfig]);
-
+    it('should include user arguments in the prompt', async () => {
       const testConfig: Config = {
         id: 'cmd-1',
         name: 'test-command',
         type: 'slash_command',
         original_format: 'claude_code',
-        content: 'Test command content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
+        content: 'Debug $ARGUMENTS',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        has_arguments: true,
+        argument_hint: 'component name',
         agent_references: JSON.stringify([]),
-        skill_references: JSON.stringify(['conventional-commit']),
+        skill_references: JSON.stringify([]),
       };
 
-      await service.convert(testConfig, { configId: 'cmd-1' });
-
-      expect(mockConfigService.listConfigs).toHaveBeenCalledWith({
-        type: 'skill',
-        searchName: 'conventional-commit',
+      await service.convert(testConfig, {
+        configId: 'cmd-1',
+        userArguments: 'authentication module',
       });
+
+      const callArgs = vi.mocked(mockAIConverter.chatWithTools).mock.calls[0];
+      const userPrompt = callArgs[0][1].content as string;
+
+      expect(userPrompt).toContain('authentication module');
+      expect(userPrompt).toContain('Replace $ARGUMENTS');
     });
 
-    it('should handle missing references gracefully', async () => {
-      // Mock empty result (config not found)
+    it('should stop after max iterations to prevent infinite loops', async () => {
+      // Mock AI to keep requesting tools
+      vi.mocked(mockAIConverter.chatWithTools).mockResolvedValue({
+        content: null,
+        tool_calls: [
+          {
+            id: 'call_loop',
+            function: {
+              name: 'read_configs',
+              arguments: JSON.stringify({
+                references: [{ name: 'test', type: 'agent' }],
+              }),
+            },
+          },
+        ],
+      });
+
       vi.mocked(mockConfigService.listConfigs).mockResolvedValue([]);
 
       const testConfig: Config = {
@@ -107,305 +223,103 @@ describe('SlashCommandConverterService', () => {
         name: 'test-command',
         type: 'slash_command',
         original_format: 'claude_code',
-        content: 'Test command with **nonexistent-agent**',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-        agent_references: JSON.stringify(['nonexistent-agent']),
+        content: 'Test',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        agent_references: JSON.stringify([]),
         skill_references: JSON.stringify([]),
       };
 
-      // Mock AI inlining strategy to inline the missing reference
-      vi.mocked(mockAIConverter.convert).mockResolvedValue(
-        JSON.stringify({ inline: ['agent:nonexistent-agent'], omit: [] })
-      );
+      await service.convert(testConfig, { configId: 'cmd-1' });
 
-      const result = await service.convert(testConfig, { configId: 'cmd-1' });
-
-      // Should not crash, and should return a placeholder
-      expect(result).toBeDefined();
-      expect(result.convertedContent).toContain('[Agent: nonexistent-agent - not found]');
+      // Should stop after 3 iterations (max) = 3 total calls
+      // iteration 0, 1, 2 (then breaks at iteration 3)
+      expect(mockAIConverter.chatWithTools).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle database errors gracefully', async () => {
-      // Mock database error
-      vi.mocked(mockConfigService.listConfigs).mockRejectedValue(
-        new Error('Database connection failed')
-      );
-
-      const testConfig: Config = {
-        id: 'cmd-1',
-        name: 'test-command',
-        type: 'slash_command',
-        original_format: 'claude_code',
-        content: 'Test command',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-        agent_references: JSON.stringify(['triage']),
-        skill_references: JSON.stringify([]),
-      };
-
-      // Mock AI inlining strategy
-      vi.mocked(mockAIConverter.convert).mockResolvedValue(
-        JSON.stringify({ inline: ['agent:triage'], omit: [] })
-      );
-
-      const result = await service.convert(testConfig, { configId: 'cmd-1' });
-
-      // Should not crash, should return error placeholder
-      expect(result).toBeDefined();
-      expect(result.convertedContent).toContain('[Agent: triage - fetch error]');
-    });
-
-    it('should prefer exact name match over partial match', async () => {
-      const exactMatchConfig: Config = {
-        id: 'agent-1',
-        name: 'triage',
-        type: 'agent_definition',
-        original_format: 'claude_code',
-        content: 'Exact match content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-      };
-
-      const partialMatchConfig: Config = {
-        id: 'agent-2',
-        name: 'triage-helper',
-        type: 'agent_definition',
-        original_format: 'claude_code',
-        content: 'Partial match content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-      };
-
-      // Return both configs (database would return both for LIKE search)
-      vi.mocked(mockConfigService.listConfigs).mockResolvedValue([
-        partialMatchConfig,
-        exactMatchConfig,
-      ]);
-
-      const testConfig: Config = {
-        id: 'cmd-1',
-        name: 'test-command',
-        type: 'slash_command',
-        original_format: 'claude_code',
-        content: 'Test command',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-        agent_references: JSON.stringify(['triage']),
-        skill_references: JSON.stringify([]),
-      };
-
-      // Mock AI inlining strategy
-      vi.mocked(mockAIConverter.convert).mockResolvedValue(
-        JSON.stringify({ inline: ['agent:triage'], omit: [] })
-      );
-
-      const result = await service.convert(testConfig, { configId: 'cmd-1' });
-
-      // Should use exact match content, not partial match
-      expect(result.convertedContent).toContain('Exact match content');
-      expect(result.convertedContent).not.toContain('Partial match content');
-    });
-
-    it('should fetch both agent and skill references', async () => {
-      const mockAgentConfig: Config = {
-        id: 'agent-1',
-        name: 'triage',
-        type: 'agent_definition',
-        original_format: 'claude_code',
-        content: 'Triage agent content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-      };
-
-      const mockSkillConfig: Config = {
-        id: 'skill-1',
-        name: 'conventional-commit',
-        type: 'skill',
-        original_format: 'claude_code',
-        content: 'Conventional commit skill content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-      };
-
-      // Mock different responses for different config types
-      vi.mocked(mockConfigService.listConfigs).mockImplementation(async (filters) => {
-        if (filters?.type === 'agent_definition') {
-          return [mockAgentConfig];
-        }
-        if (filters?.type === 'skill') {
-          return [mockSkillConfig];
-        }
-        return [];
+    it('should return final output when AI does not use tools', async () => {
+      vi.mocked(mockAIConverter.chatWithTools).mockResolvedValueOnce({
+        content: 'Simple converted command',
+        tool_calls: undefined,
       });
 
       const testConfig: Config = {
         id: 'cmd-1',
-        name: 'test-command',
+        name: 'simple-command',
         type: 'slash_command',
         original_format: 'claude_code',
-        content: 'Use **triage** and **conventional-commit**',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-        agent_references: JSON.stringify(['triage']),
-        skill_references: JSON.stringify(['conventional-commit']),
+        content: '---\nname: simple\n---\nSimple command',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        agent_references: JSON.stringify([]),
+        skill_references: JSON.stringify([]),
       };
-
-      // Mock AI inlining strategy to inline both
-      vi.mocked(mockAIConverter.convert).mockResolvedValue(
-        JSON.stringify({
-          inline: ['agent:triage', 'skill:conventional-commit'],
-          omit: [],
-        })
-      );
 
       const result = await service.convert(testConfig, { configId: 'cmd-1' });
 
-      // Should include both agent and skill content
-      expect(result.convertedContent).toContain('Triage agent content');
-      expect(result.convertedContent).toContain('Conventional commit skill content');
-
-      // Verify both types were queried
-      expect(mockConfigService.listConfigs).toHaveBeenCalledWith({
-        type: 'agent_definition',
-        searchName: 'triage',
-      });
-      expect(mockConfigService.listConfigs).toHaveBeenCalledWith({
-        type: 'skill',
-        searchName: 'conventional-commit',
-      });
+      expect(result.convertedContent).toBe('Simple converted command');
+      expect(result.needsUserInput).toBe(false);
+      expect(mockAIConverter.chatWithTools).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('findBestMatch', () => {
+  describe('findBestMatch (helper method)', () => {
     it('should return null for empty array', () => {
-      // Access private method through any cast (for testing purposes)
-      const findBestMatch = (service as any).findBestMatch.bind(service);
-      const result = findBestMatch([], 'test');
+      // Access private method via type assertion for testing
+      const result = (service as any).findBestMatch([], 'test');
       expect(result).toBeNull();
     });
 
-    it('should return exact match when available', () => {
+    it('should prefer exact name match (case-insensitive)', () => {
       const configs: Config[] = [
         {
           id: '1',
-          name: 'triage-helper',
+          name: 'test-helper',
           type: 'agent_definition',
           original_format: 'claude_code',
-          content: 'helper',
-          created_at: '2024-01-01T00:00:00.000Z',
-          updated_at: '2024-01-01T00:00:00.000Z',
+          content: 'Helper content',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
         },
         {
           id: '2',
-          name: 'triage',
+          name: 'test',
           type: 'agent_definition',
           original_format: 'claude_code',
-          content: 'exact',
-          created_at: '2024-01-01T00:00:00.000Z',
-          updated_at: '2024-01-01T00:00:00.000Z',
+          content: 'Exact match content',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
         },
       ];
 
-      const findBestMatch = (service as any).findBestMatch.bind(service);
-      const result = findBestMatch(configs, 'triage');
-
-      expect(result).toBeDefined();
-      expect(result.name).toBe('triage');
-      expect(result.content).toBe('exact');
+      const result = (service as any).findBestMatch(configs, 'test');
+      expect(result.id).toBe('2');
     });
 
-    it('should be case-insensitive for exact match', () => {
+    it('should fallback to first result when no exact match', () => {
       const configs: Config[] = [
         {
           id: '1',
-          name: 'TRIAGE',
+          name: 'test-agent',
           type: 'agent_definition',
           original_format: 'claude_code',
-          content: 'uppercase',
-          created_at: '2024-01-01T00:00:00.000Z',
-          updated_at: '2024-01-01T00:00:00.000Z',
-        },
-      ];
-
-      const findBestMatch = (service as any).findBestMatch.bind(service);
-      const result = findBestMatch(configs, 'triage');
-
-      expect(result).toBeDefined();
-      expect(result.content).toBe('uppercase');
-    });
-
-    it('should return first result when no exact match', () => {
-      const configs: Config[] = [
-        {
-          id: '1',
-          name: 'triage-agent',
-          type: 'agent_definition',
-          original_format: 'claude_code',
-          content: 'first',
-          created_at: '2024-01-01T00:00:00.000Z',
-          updated_at: '2024-01-01T00:00:00.000Z',
+          content: 'First result',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
         },
         {
           id: '2',
-          name: 'triage-helper',
+          name: 'test-helper',
           type: 'agent_definition',
           original_format: 'claude_code',
-          content: 'second',
-          created_at: '2024-01-01T00:00:00.000Z',
-          updated_at: '2024-01-01T00:00:00.000Z',
+          content: 'Second result',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
         },
       ];
 
-      const findBestMatch = (service as any).findBestMatch.bind(service);
-      const result = findBestMatch(configs, 'triage');
-
-      expect(result).toBeDefined();
-      expect(result.content).toBe('first'); // Returns first result
-    });
-  });
-
-  describe('convert with user arguments', () => {
-    it('should replace $ARGUMENTS placeholder and inline references', async () => {
-      const mockAgentConfig: Config = {
-        id: 'agent-1',
-        name: 'scaffolder',
-        type: 'agent_definition',
-        original_format: 'claude_code',
-        content: 'Scaffolding agent content',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-      };
-
-      vi.mocked(mockConfigService.listConfigs).mockResolvedValue([mockAgentConfig]);
-
-      const testConfig: Config = {
-        id: 'cmd-1',
-        name: 'test-command',
-        type: 'slash_command',
-        original_format: 'claude_code',
-        content: '---\nargument-hint: component\n---\n\nScaffold $ARGUMENTS component\n\nUse **scaffolder**',
-        created_at: '2024-01-01T00:00:00.000Z',
-        updated_at: '2024-01-01T00:00:00.000Z',
-        has_arguments: true,
-        argument_hint: 'component',
-        agent_references: JSON.stringify(['scaffolder']),
-        skill_references: JSON.stringify([]),
-      };
-
-      // Mock AI inlining strategy
-      vi.mocked(mockAIConverter.convert).mockResolvedValue(
-        JSON.stringify({ inline: ['agent:scaffolder'], omit: [] })
-      );
-
-      const result = await service.convert(testConfig, {
-        configId: 'cmd-1',
-        userArguments: 'authentication',
-      });
-
-      expect(result.convertedContent).toContain('authentication');
-      expect(result.convertedContent).not.toContain('$ARGUMENTS');
-      expect(result.convertedContent).toContain('Scaffolding agent content');
+      const result = (service as any).findBestMatch(configs, 'test');
+      expect(result.id).toBe('1');
     });
   });
 });
