@@ -175,6 +175,7 @@ Consider:
 - If it's just a suggestion ("you can use X"), omit it
 - If the logic flow depends on it, inline it
 
+
 Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 {
   "inline": ["agent:triage", "skill:conventional-commit"],
