@@ -57,6 +57,74 @@ export class AIConverterService {
     }
   }
 
+  /**
+   * Chat completion with tool/function calling support
+   * Used for slash command conversion with READ_CONFIGS tool
+   */
+  async chatWithTools(
+    messages: Array<{
+      role: 'system' | 'user' | 'assistant' | 'tool'
+      content: string | null
+      tool_calls?: Array<{
+        id: string
+        type: string
+        function: { name: string; arguments: string }
+      }>
+      tool_call_id?: string
+    }>,
+    tools: Array<{
+      type: string
+      function: {
+        name: string
+        description: string
+        parameters: Record<string, any>
+      }
+    }>
+  ): Promise<{
+    content: string | null
+    tool_calls?: Array<{
+      id: string
+      function: { name: string; arguments: string }
+    }>
+  }> {
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-5-mini',
+        messages: messages as any,
+        tools: tools as any,
+        tool_choice: 'auto',
+      })
+
+      const message = response.choices[0].message
+
+      return {
+        content: message.content,
+        tool_calls: message.tool_calls?.map(tc => {
+          if ('function' in tc) {
+            return {
+              id: tc.id,
+              function: {
+                name: tc.function.name,
+                arguments: tc.function.arguments
+              }
+            }
+          }
+          // Handle custom tool calls if needed
+          return {
+            id: tc.id,
+            function: {
+              name: '',
+              arguments: ''
+            }
+          }
+        })
+      }
+    } catch (error) {
+      console.error('AI chat with tools failed:', error)
+      throw new Error('AI conversion with tools failed')
+    }
+  }
+
   private buildConversionPrompt(
     sourceContent: string,
     sourceFormat: AgentFormat,

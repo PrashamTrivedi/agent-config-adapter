@@ -13,11 +13,15 @@ describe('SlashCommandConverterService', () => {
     // Mock AIConverterService
     mockAIConverter = {
       convert: vi.fn(),
+      chatWithTools: vi.fn().mockResolvedValue({
+        content: 'Converted command without frontmatter',
+        tool_calls: undefined
+      }),
     } as unknown as AIConverterService;
 
     // Mock ConfigService
     mockConfigService = {
-      listConfigs: vi.fn(),
+      listConfigs: vi.fn().mockResolvedValue([]),
     } as unknown as ConfigService;
 
     service = new SlashCommandConverterService(mockAIConverter, mockConfigService);
