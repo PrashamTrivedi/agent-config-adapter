@@ -4,12 +4,12 @@ import {
   SlashCommandConversionInput,
   SlashCommandConversionResult,
 } from '../domain/types'
-import {AIConverterService} from '../infrastructure/ai-converter'
+import type { AIProvider } from '../infrastructure/ai/types'
 import {ConfigService} from './config-service'
 
 export class SlashCommandConverterService {
   constructor(
-    private aiConverter: AIConverterService,
+    private aiProvider: AIProvider,
     private configService: ConfigService
   ) { }
 
@@ -145,7 +145,7 @@ export class SlashCommandConverterService {
     let iteration = 0
 
     while (iteration < maxIterations) {
-      const response = await this.aiConverter.chatWithTools(messages, tools)
+      const response = await this.aiProvider.chatWithTools(messages, tools)
 
       // Check if AI wants to use tools
       if (response.tool_calls && response.tool_calls.length > 0) {
