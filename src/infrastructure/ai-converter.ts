@@ -109,17 +109,23 @@ export class AIConverterService {
         max_output_tokens: 2000
       }) as any // Type cast needed until OpenAI SDK types are updated
 
+      // Extract tool calls from response.output array
+      // Response API returns tool calls inside output items with type "function_call"
+      const toolCalls = response.output
+        ?.filter((item: any) => item.type === 'function_call')
+        ?.map((tc: any) => ({
+          id: tc.call_id,
+          function: {
+            name: tc.name,
+            arguments: tc.arguments
+          }
+        }))
+
       return {
         content: response.output_text,
-        tool_calls: response.tool_calls?.map((tc: any) => ({
-          id: tc.id,
-          function: {
-            name: tc.function.name,
-            arguments: tc.function.arguments
-          }
-        })),
-        reasoning_tokens: response.reasoning_tokens,
-        output_tokens: response.output_tokens
+        tool_calls: toolCalls?.length > 0 ? toolCalls : undefined,
+        reasoning_tokens: response.usage?.output_tokens_details?.reasoning_tokens,
+        output_tokens: response.usage?.output_tokens
       }
     } catch (error) {
       console.error('Response API with tools failed:', error)
