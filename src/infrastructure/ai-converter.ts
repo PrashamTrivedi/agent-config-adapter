@@ -94,11 +94,12 @@ export class AIConverterService {
       const systemMsg = messages.find(m => m.role === 'system')
       const instructions = systemMsg?.content || ''
 
-      // Filter out system messages, keep user/assistant/tool messages
+      // Filter out system messages, keep user/assistant messages only
       // Response API requires content to be string or array, not null
       // Response API doesn't accept tool_calls or tool_call_id fields
+      // Response API doesn't support role='tool' - only user/assistant/system/developer
       const input = messages
-        .filter(m => m.role !== 'system')
+        .filter(m => m.role !== 'system' && m.role !== 'tool')  // Exclude system and tool messages
         .map(m => {
           const {tool_calls, tool_call_id, ...rest} = m
           return {
