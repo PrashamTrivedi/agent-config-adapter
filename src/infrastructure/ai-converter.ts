@@ -28,7 +28,7 @@ export interface AIConversionResult {
  * const provider = factory.createProvider()
  * ```
  */
-export class AIConverterService {
+export class AIConverterService implements AIProvider {
   private provider: AIProvider
 
   constructor(apiKey: string, accountId: string, gatewayId: string, gatewayToken?: string) {
@@ -46,19 +46,19 @@ export class AIConverterService {
     })
   }
 
+  // AIProvider interface implementation (delegates to provider)
   async convert(
     sourceContent: string,
     sourceFormat: AgentFormat,
     targetFormat: AgentFormat,
     configType: ConfigType
-  ): Promise<string> {
-    const result = await this.provider.convert(
+  ): Promise<import('./ai/types').AIConversionResult> {
+    return this.provider.convert(
       sourceContent,
       sourceFormat,
       targetFormat,
       configType
     )
-    return result.content
   }
 
   /**
@@ -84,18 +84,17 @@ export class AIConverterService {
         parameters: Record<string, any>
       }
     }>
-  ): Promise<{
-    content: string | null
-    tool_calls?: Array<{
-      id: string
-      function: {name: string; arguments: string}
-    }>
-  }> {
-    const response = await this.provider.chatWithTools(messages, tools)
-    return {
-      content: response.content,
-      tool_calls: response.tool_calls
-    }
+  ): Promise<import('./ai/types').ChatResponse> {
+    return this.provider.chatWithTools(messages, tools)
+  }
+
+  // Implement AIProvider interface methods for backward compatibility
+  getProviderName(): string {
+    return this.provider.getProviderName()
+  }
+
+  getMetrics(): any {
+    return this.provider.getMetrics()
   }
 
 }

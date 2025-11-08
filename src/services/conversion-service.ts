@@ -15,7 +15,7 @@ export interface ConversionServiceEnv {
   // Provider keys configured in Cloudflare Dashboard (AI Gateway → Provider Keys)
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
-  GATEWAY_TOKEN: string; // cf-aig-authorization token (REQUIRED for BYOK)
+  GATEWAY_TOKEN?: string; // cf-aig-authorization token (preferred for BYOK)
 
   // Provider configuration
   AI_PROVIDER?: ProviderType;

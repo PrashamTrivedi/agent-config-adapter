@@ -129,11 +129,11 @@ export class OpenAIProvider implements AIProvider {
 
 			return {
 				content: message.content,
-				tool_calls: message.tool_calls?.map((tc) => ({
+				tool_calls: message.tool_calls?.map((tc: any) => ({
 					id: tc.id,
 					function: {
-						name: tc.function.name,
-						arguments: tc.function.arguments,
+						name: tc.function?.name || '',
+						arguments: tc.function?.arguments || '{}',
 					},
 				})),
 				metadata: {

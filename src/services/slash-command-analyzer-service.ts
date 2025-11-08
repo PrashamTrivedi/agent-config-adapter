@@ -116,7 +116,7 @@ IMPORTANT: Output only the JSON object, nothing else.`
       )
 
       // Parse the AI response
-      const cleaned = response.trim()
+      const cleaned = response.content.trim()
       const parsed = JSON.parse(cleaned)
 
       return {

@@ -13,6 +13,7 @@ export type GeminiThinkingBudget = number // 0 to 24576, or -1 for dynamic
 
 /**
  * Thinking budget presets for common use cases
+ * NOTE: Thinking features are planned but may not be fully supported by SDK yet
  */
 export const THINKING_PRESETS = {
 	none: 0, // Disable thinking (fastest, cheapest)
@@ -37,10 +38,10 @@ export interface GeminiConfig {
 	/** Cloudflare AI Gateway token (cf-aig-authorization) */
 	gatewayToken: string
 
-	/** Thinking budget (0 to 24576, or -1 for dynamic) */
+	/** Thinking budget (0 to 24576, or -1 for dynamic) - Reserved for future use */
 	thinkingBudget?: GeminiThinkingBudget
 
-	/** Include thoughts in response */
+	/** Include thoughts in response - Reserved for future use */
 	includeThoughts?: boolean
 }
 
@@ -53,13 +54,14 @@ export interface GeminiConfig {
  * 3. AI Gateway adds x-goog-api-key header with stored key
  * 4. AI Gateway forwards request to Google AI Studio
  * 5. Billing goes to YOUR Google account
+ *
+ * NOTE: Thinking features are configured but may not be fully supported by SDK yet
  */
 export class GeminiProvider implements AIProvider {
 	private client: GoogleGenAI
 	private baseUrl: string
 	private gatewayToken: string
 	private thinkingBudget: GeminiThinkingBudget
-	private includeThoughts: boolean
 
 	constructor(config: GeminiConfig) {
 		// TRUE BYOK: No provider API key in Worker code
@@ -69,7 +71,6 @@ export class GeminiProvider implements AIProvider {
 		this.baseUrl = `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/google-ai-studio`
 		this.gatewayToken = config.gatewayToken
 		this.thinkingBudget = config.thinkingBudget ?? THINKING_PRESETS.none
-		this.includeThoughts = config.includeThoughts ?? true
 	}
 
 	async convert(
@@ -92,23 +93,21 @@ export class GeminiProvider implements AIProvider {
 							'cf-aig-authorization': `Bearer ${this.gatewayToken}`, // Authenticate to Gateway
 						},
 					},
-					thinkingConfig: {
-						thinkingBudget: this.thinkingBudget,
-					},
-					includeThoughts: this.includeThoughts,
+					// NOTE: Thinking config reserved for future SDK support
+					// thinkingConfig: {
+					// 	thinkingBudget: this.thinkingBudget,
+					// },
 				},
 			})
 
 			const durationMs = Date.now() - startTime
-			const result = response.text
+			const result = response.text || ''
 
 			console.log('[Gemini] Conversion successful', {
 				model: 'gemini-2.5-flash',
 				thinkingBudget: this.thinkingBudget,
 				inputTokens: response.usageMetadata?.promptTokenCount,
 				outputTokens: response.usageMetadata?.candidatesTokenCount,
-				thinkingTokens: response.thoughtsTokenCount,
-				hasThoughts: !!response.thoughts,
 				durationMs,
 			})
 
@@ -121,13 +120,10 @@ export class GeminiProvider implements AIProvider {
 					model: 'gemini-2.5-flash',
 					inputTokens: response.usageMetadata?.promptTokenCount,
 					outputTokens: response.usageMetadata?.candidatesTokenCount,
-					thinkingTokens: response.thoughtsTokenCount,
-					thoughts: response.thoughts,
 					durationMs,
 					estimatedCost: this.calculateCost(
 						response.usageMetadata?.promptTokenCount,
-						response.usageMetadata?.candidatesTokenCount,
-						response.thoughtsTokenCount
+						response.usageMetadata?.candidatesTokenCount
 					),
 				},
 			}
@@ -156,29 +152,26 @@ export class GeminiProvider implements AIProvider {
 						},
 					},
 					tools: geminiTools.length > 0 ? [{ functionDeclarations: geminiTools }] : undefined,
-					thinkingConfig: {
-						thinkingBudget: this.thinkingBudget,
-					},
-					includeThoughts: this.includeThoughts,
 				},
 			})
 
 			const durationMs = Date.now() - startTime
-			const functionCalls = response.functionCalls()
+
+			// functionCalls is a property, not a method
+			const functionCalls = response.functionCalls || []
 
 			console.log('[Gemini] Chat with tools successful', {
 				model: 'gemini-2.5-flash',
 				thinkingBudget: this.thinkingBudget,
 				inputTokens: response.usageMetadata?.promptTokenCount,
 				outputTokens: response.usageMetadata?.candidatesTokenCount,
-				thinkingTokens: response.thoughtsTokenCount,
-				functionCallsCount: functionCalls?.length || 0,
+				functionCallsCount: functionCalls.length,
 				durationMs,
 			})
 
 			return {
 				content: response.text || null,
-				tool_calls: functionCalls?.map((fc, idx) => ({
+				tool_calls: functionCalls.map((fc: any, idx: number) => ({
 					id: `call_${idx}`,
 					function: {
 						name: fc.name,
@@ -190,8 +183,6 @@ export class GeminiProvider implements AIProvider {
 					model: 'gemini-2.5-flash',
 					inputTokens: response.usageMetadata?.promptTokenCount,
 					outputTokens: response.usageMetadata?.candidatesTokenCount,
-					thinkingTokens: response.thoughtsTokenCount,
-					thoughts: response.thoughts,
 					durationMs,
 				},
 			}
@@ -222,7 +213,7 @@ export class GeminiProvider implements AIProvider {
 	 * Gemini 2.5 Flash pricing:
 	 * - Input: $0.15/1M tokens
 	 * - Regular output: $0.60/1M tokens
-	 * - Thinking output: $3.50/1M tokens
+	 * - Thinking output: $3.50/1M tokens (reserved for future use)
 	 */
 	private calculateCost(
 		inputTokens?: number,
