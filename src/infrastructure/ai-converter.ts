@@ -11,15 +11,13 @@ export class AIConverterService {
   private openai: OpenAI
 
   constructor(apiKey: string, accountId: string, gatewayId: string, gatewayToken?: string) {
-    const config: any = {
-      apiKey: apiKey || 'dummy-key-byok-configured',
-      baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`
-    }
+    // When using BYOK mode (gatewayToken provided), use the gateway token as apiKey
+    // The gateway will authenticate and use its stored OpenAI key
+    const effectiveApiKey = gatewayToken || apiKey || 'dummy-key-byok-configured'
 
-    if (gatewayToken) {
-      config.defaultHeaders = {
-        'cf-aig-authorization': `Bearer ${gatewayToken}`
-      }
+    const config: any = {
+      apiKey: effectiveApiKey,
+      baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`
     }
 
     this.openai = new OpenAI(config)
