@@ -97,11 +97,21 @@ export class AIConverterService {
       // Filter out system messages, keep user/assistant/tool messages
       const input = messages.filter(m => m.role !== 'system')
 
+      // Transform tools from Chat Completions format to Response API format
+      // Response API expects: { type, name, description, parameters }
+      // Chat Completions has: { type, function: { name, description, parameters } }
+      const transformedTools = tools.map(tool => ({
+        type: tool.type,
+        name: tool.function.name,
+        description: tool.function.description,
+        parameters: tool.function.parameters
+      }))
+
       const response = await this.openai.responses.create({
         model: 'gpt-5-mini',
         instructions: instructions,  // System prompt goes here
         input: input as any,          // User/assistant/tool messages
-        tools: tools as any,
+        tools: transformedTools as any,
         tool_choice: 'auto',
         reasoning: {
           effort: 'low'  // Enable low reasoning for better performance
