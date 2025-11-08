@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Agent Config Adapter - Universal configuration adapter for AI coding agents. Stores configurations (slash commands, agent definitions, MCP configs) and converts between Claude Code, Codex, and Gemini formats.
 
-**Tech Stack**: Cloudflare Workers, Hono, D1 (SQLite), KV cache, AI Gateway (OpenAI GPT-5-mini)
+**Tech Stack**: Cloudflare Workers, Hono, D1 (SQLite), KV cache, R2, AI Gateway (Multi-Provider: OpenAI GPT-5-Mini, Google Gemini 2.5 Flash)
 
 ## Development Commands
 
@@ -27,9 +27,13 @@ npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-conf
 
 # Setup environment variables for local development
 cp .dev.vars.example .dev.vars
-# REQUIRED: Add your OpenAI API key from https://platform.openai.com/api-keys
-# AI Gateway does NOT store provider keys - you must provide your own
-# Edit .dev.vars: Set OPENAI_API_KEY, ACCOUNT_ID, and GATEWAY_ID
+# TRUE BYOK Setup (Bring Your Own Key):
+# 1. Get API keys from OpenAI and/or Google
+# 2. Store them in Cloudflare Dashboard → AI Gateway → Provider Keys
+# 3. Create gateway token in Cloudflare Dashboard → AI Gateway → Settings
+# 4. Edit .dev.vars: Set GATEWAY_TOKEN, ACCOUNT_ID, GATEWAY_ID, AI_PROVIDER
+# 5. Optional: Set OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
+# Provider keys are stored in Cloudflare, NOT in .dev.vars or Worker secrets!
 ```
 
 ### Development
@@ -59,11 +63,15 @@ npm run deploy
 # First-time setup
 npx wrangler d1 create agent-config-adapter
 npx wrangler kv:namespace create CONFIG_CACHE
+npx wrangler r2 bucket create agent-config-extension-files
 # Update IDs in wrangler.jsonc
 
-# Set production secrets
-npx wrangler secret put OPENAI_API_KEY
-# Update ACCOUNT_ID and GATEWAY_ID in wrangler.jsonc vars section
+# TRUE BYOK Setup:
+# 1. Store provider API keys in Cloudflare Dashboard (NOT as secrets)
+# 2. Create gateway token and store as secret:
+npx wrangler secret put GATEWAY_TOKEN
+# 3. Update wrangler.jsonc vars: ACCOUNT_ID, GATEWAY_ID, AI_PROVIDER
+# 4. Optional vars: OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
 ```
 
 ## Architecture
@@ -71,8 +79,13 @@ npx wrangler secret put OPENAI_API_KEY
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
 - `src/infrastructure/` - D1, KV, R2, AI services
+  - `src/infrastructure/ai/` - **Multi-Provider AI Infrastructure** (NEW)
+    - `types.ts` - AIProvider interface and shared types
+    - `openai-provider.ts` - OpenAI GPT-5-Mini with reasoning modes
+    - `gemini-provider.ts` - Google Gemini 2.5 Flash with thinking budgets
+    - `provider-factory.ts` - Multi-provider management with auto fallback
 - `src/services/` - Business logic layer
-  - ConfigService, ConversionService (for configs)
+  - ConfigService, ConversionService (for configs) - **Updated for multi-provider**
   - SkillsService, SkillZipService (for multi-file skills)
   - ExtensionService, MarketplaceService (for bundling)
   - ManifestService (platform-specific manifests)
@@ -86,11 +99,24 @@ npx wrangler secret put OPENAI_API_KEY
   - Uses Streamable HTTP transport for Cloudflare Workers
 - `src/views/` - HTMX server-rendered templates (configs, skills, extensions, marketplaces, plugin browser)
 
-**Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used.
+**Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used (provider, model, tokens, cost, duration).
 
-**AI Gateway Authentication**: Requires a valid OpenAI API key. AI Gateway proxies requests to OpenAI but does NOT store provider API keys. You must provide your own OpenAI API key via the `OPENAI_API_KEY` environment variable/secret. Without a valid key, the system falls back to rule-based conversions only.
+**Multi-Provider AI Architecture (TRUE BYOK)**:
+- **Supported Providers**: OpenAI (GPT-5-Mini variants), Google Gemini (2.5 Flash)
+- **Provider Selection**: `auto` (prefer Gemini 15x cheaper, fallback to OpenAI), `openai`, or `gemini`
+- **Authentication Flow**:
+  1. Provider API keys stored in Cloudflare Dashboard → AI Gateway → Provider Keys (ONE-TIME setup)
+  2. Worker authenticates to AI Gateway using `GATEWAY_TOKEN` (cf-aig-authorization header)
+  3. AI Gateway retrieves provider keys from Cloudflare Secrets Store at runtime
+  4. AI Gateway forwards requests to OpenAI/Google with stored keys
+  5. Billing goes directly to YOUR provider accounts (OpenAI/Google)
+- **Advanced Features**:
+  - OpenAI: Reasoning modes (high/medium/low/minimal) - maps to GPT-5-Mini model variants
+  - Gemini: Thinking budgets (0-24576 tokens or dynamic) - reserved for future SDK support
+  - Backend logging of AI responses with metadata (provider, model, tokens, cost, duration)
+- **No API Keys in Code**: Provider keys NEVER stored in Worker code or secrets - only in Cloudflare Dashboard
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `OPENAI_API_KEY` (secret), `ACCOUNT_ID` (var), `GATEWAY_ID` (var)
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `GATEWAY_TOKEN` (secret), `ACCOUNT_ID` (var), `GATEWAY_ID` (var), `AI_PROVIDER` (var), `OPENAI_REASONING_MODE` (var), `GEMINI_THINKING_BUDGET` (var)
 
 ## API Endpoints
 
