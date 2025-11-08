@@ -4,14 +4,14 @@ import {
   SlashCommandConversionInput,
   SlashCommandConversionResult,
 } from '../domain/types'
-import { AIConverterService } from '../infrastructure/ai-converter'
-import { ConfigService } from './config-service'
+import {AIConverterService} from '../infrastructure/ai-converter'
+import {ConfigService} from './config-service'
 
 export class SlashCommandConverterService {
   constructor(
     private aiConverter: AIConverterService,
     private configService: ConfigService
-  ) {}
+  ) { }
 
   /**
    * Convert slash command using single AI call with tool support
@@ -66,8 +66,8 @@ export class SlashCommandConverterService {
     skills: string[]
   }> {
     const [agentConfigs, skillConfigs] = await Promise.all([
-      this.configService.listConfigs({ type: 'agent_definition' }),
-      this.configService.listConfigs({ type: 'skill' }),
+      this.configService.listConfigs({type: 'agent_definition'}),
+      this.configService.listConfigs({type: 'skill'}),
     ])
 
     return {
@@ -83,7 +83,7 @@ export class SlashCommandConverterService {
     content: string,
     userArguments: string | undefined,
     analysis: SlashCommandAnalysis,
-    availableReferences: { agents: string[]; skills: string[] }
+    availableReferences: {agents: string[]; skills: string[]}
   ): Promise<string> {
     // Build comprehensive system prompt
     const systemPrompt = this.buildSystemPrompt(availableReferences)
@@ -132,13 +132,13 @@ export class SlashCommandConverterService {
       tool_calls?: Array<{
         id: string
         type: string
-        function: { name: string; arguments: string }
+        function: {name: string; arguments: string}
       }>
       tool_call_id?: string
     }> = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ]
+        {role: "system", content: systemPrompt},
+        {role: "user", content: userPrompt}
+      ]
 
     let finalContent = ''
     const maxIterations = 3 // Prevent infinite loops
@@ -187,8 +187,8 @@ export class SlashCommandConverterService {
    * Execute READ_CONFIGS tool calls
    */
   private async executeToolCalls(
-    toolCalls: Array<{ id: string; function: { name: string; arguments: string } }>
-  ): Promise<Array<{ tool_call_id: string; content: string }>> {
+    toolCalls: Array<{id: string; function: {name: string; arguments: string}}>
+  ): Promise<Array<{tool_call_id: string; content: string}>> {
     const results = []
 
     for (const toolCall of toolCalls) {
@@ -210,9 +210,9 @@ export class SlashCommandConverterService {
    * Read configs from database for tool call
    */
   private async readConfigs(
-    references: Array<{ name: string; type: 'agent' | 'skill' }>
-  ): Promise<Record<string, { found: boolean; content?: string; error?: string }>> {
-    const results: Record<string, { found: boolean; content?: string; error?: string }> = {}
+    references: Array<{name: string; type: 'agent' | 'skill'}>
+  ): Promise<Record<string, {found: boolean; content?: string; error?: string}>> {
+    const results: Record<string, {found: boolean; content?: string; error?: string}> = {}
 
     for (const ref of references) {
       const key = `${ref.type}:${ref.name}`
@@ -252,142 +252,24 @@ export class SlashCommandConverterService {
    * Build comprehensive system prompt
    */
   private buildSystemPrompt(
-    availableReferences: { agents: string[]; skills: string[] }
+    availableReferences: {agents: string[]; skills: string[]}
   ): string {
-    return `You are a slash command converter for AI coding agents.
+    return `<core_task>
+Convert Claude Code slash commands to standalone prompts with SURGICAL changes only:
+1. Remove YAML frontmatter
+2. Replace $ARGUMENT in execution contexts (NOT in explanatory text)
+3. Inline critical dependencies (converted from system → user prompt format)
+</core_task>
 
-**Your Task:**
-Convert a Claude Code slash command into a standalone prompt by making SURGICAL CHANGES ONLY:
-1. Remove YAML frontmatter (--- delimited section)
-2. Replace $ARGUMENT/$ARGUMENTS with user-provided values
-3. Inline critical agent/skill references when necessary
 
-DO NOT rewrite, restructure, or rephrase the command. Think of this as making the command "copy-paste ready" not "completely rewritten."
-
----
-
-## Preservation Rules (CRITICAL - READ CAREFULLY)
-
-**You MUST preserve the original command as much as possible:**
-
-1. **Formatting**: Keep ALL markdown formatting exactly as is
-   - Bold headers: \`**Step 1:**\` stays \`**Step 1:**\` (not \`Step 1 —\`)
-   - Italics, code blocks, XML tags (\`<PlanFormat>\`), lists, indentation
-   - If it's bold in the original, keep it bold in the output
-
-2. **Structure**: Maintain exact structure
-   - Step numbering and hierarchy
-   - Section headers and subheaders
-   - Bullet point structure and nesting
-
-3. **Tone and Personality**: Preserve the original voice
-   - Formal, casual, funny - keep it exactly as written
-   - Emphasis words: IMPORTANT, NEVER, ALWAYS, STRICTLY - keep them
-   - Personality elements (jokes, Star Wars quotes, etc.) - keep them
-   - Example: "IMPORTANT: AVOID CREATING TODO LIST" stays exactly as is
-
-4. **Content Specificity**: Keep all details
-   - Examples, edge cases, validation formats
-   - Specific phrases, commands, and instructions
-   - Conditional logic and decision trees
-
-**Only modify what is ABSOLUTELY NECESSARY for the conversion.**
-
----
-
-## Conversion Rules
-
-### 1. Remove Frontmatter
-Strip the YAML frontmatter section (between \`---\` markers). This includes:
-- \`description:\`
-- \`argument-hint:\`
-- \`allowed-tools:\`
-- etc.
-
-### 2. Replace Arguments
-
-If user provides arguments:
-- Replace \`$ARGUMENT\` or \`$ARGUMENTS\` with the actual value
-- Replace placeholder references like \`{task-description}\` with the value
-
-**Context-Aware Replacement** (CRITICAL):
-- ONLY replace \`$ARGUMENT\` when it appears in EXECUTION instructions
-- DO NOT replace in EXPLANATORY or META text about the argument itself
-- Examples of where NOT to replace:
-  * "If \`$ARGUMENT\` is provided in..." (explaining the argument format)
-  * "The \`$ARGUMENT\` can be..." (describing what the argument is)
-  * "\`$ARGUMENT\` format: task | ticket-id" (documenting argument structure)
-- When in doubt: Does inserting the actual value make grammatical/semantic sense?
-
-**Handling Multiple Occurrences:**
-- If \`$ARGUMENT\` appears multiple times in execution instructions, replace ALL
-- For lengthy arguments that appear repeatedly:
-  - First mention: Use full argument value
-  - Subsequent mentions: Consider if repetition adds value or causes confusion
-  - If confusing: Use shorthand or reference ("as specified above", "the target environment")
-- Avoid excessive repetition that makes the prompt harder to read
-
-### 3. Inline Agent/Skill References
-
-**When to Inline:**
-- INLINE if the command logic depends on the agent/skill
-- INLINE if the command explicitly calls or delegates to it
-- OMIT if it's just a suggestion or optional reference
-- OMIT if it's not critical to execution
-
-**How to Inline (SYSTEM PROMPT → USER PROMPT CONVERSION):**
-
-**CRITICAL CONTEXT**: Agent/skill content is a SYSTEM PROMPT (defines AI behavior), but slash commands are USER PROMPTS (task instructions). When inlining, you must convert appropriately.
-
-✅ **Acceptable Changes:**
-- Strip frontmatter (name, description, tools, color) - organizational metadata
-- **Convert system prompt identity to user prompt instructions:**
-  - REMOVE: "You are an Expert X with deep expertise in Y..."
-  - REMOVE: Identity/personality statements
-  - KEEP: All procedural/instructional content
-  - ADD: Minimal transition framing: "When doing X, follow these instructions:"
-- Update output paths if they use placeholders like \`$ARGUMENT\`
-- **THAT'S IT - NOTHING ELSE**
-
-✅ **What to Preserve:**
-- ALL procedural sections: Process, Output Format, behavioral guidance
-- Markdown structure: headers (\`## Process\`, \`## Output Format\`), bold, lists
-- Specific steps, format specifications, examples
-- Behavioral instructions: "Be concise", "Focus on...", etc.
-- Detailed investigation steps: "inspect browser console", "test endpoints"
-
-❌ **What to Remove (System Prompt Identity):**
-- "You are..." statements (system prompt identity - not appropriate for user prompts)
-- "You excel at..." or similar capability declarations
-- Personality/expertise descriptions
-- Any "meta" content about the agent's role/identity
-
-❌ **Unacceptable Changes:**
-- Summarizing detailed steps
-- Removing output format specifications
-- Dropping behavioral guidance
-- Flattening markdown structure (headers → bullets)
-- Simplifying or paraphrasing procedural content
-
-### 4. Handle Non-Inlined References
-
-For agent/skill mentions you choose NOT to inline:
-- Remove ONLY the reference mention itself
-- Example: "use **triage** agent" → "perform triage" or remove the phrase
-- Keep all surrounding text exactly as is
-- DO NOT rephrase or restructure surrounding content
-
----
-
-## Sandbox Environment Context
-
+<sandbox_environment_context>
 (This section is context for YOU to understand - do NOT add this to the output)
 
 The converted output will run in sandboxed environments that:
 - Only have codebase files available
 - Are always git repositories
 - Have limited network access
-- Cannot access GitHub data by default
+- Cannot access GitHub directly
 - Cannot read from ~/.claude or similar directories
 - **File Browsing Limitation**: The AI agent can read/browse files, but the USER cannot directly browse the file system
   - Best practice: Agent should commit and push changes to a git branch so users can review via git/GitHub UI
@@ -395,6 +277,7 @@ The converted output will run in sandboxed environments that:
 
 Use this context to decide:
 - Which references need inlining (external dependencies → inline)
+- Which contents to strip down (Think, can we have github content since sandbox can't access github directly)
 - Which assumptions are safe (git commands → safe)
 - What network-dependent features to avoid
 - When to add git commit/push guidance (if original command expects user file review)
@@ -405,38 +288,122 @@ To reduce false positives when detecting references:
 
 Agents: ${availableReferences.agents.join(', ')}
 Skills: ${availableReferences.skills.join(', ')}
+</sandbox_environment_context>
 
+<frontmatter_removal>
+Strip everything between '-- -' markers at the start of the command.
+</frontmatter_removal>
+
+
+<argument_replacement>
+<when_to_replace>
+✅ REPLACE $ARGUMENT when it appears in EXECUTION instructions:
+- "Pass $ARGUMENT to the command"
+- "Fetch ticket $ARGUMENT from GitHub"
+- "Write output to taskNotes/$ARGUMENT/file.md"
+
+❌ DO NOT REPLACE in EXPLANATORY or META text:
+- "If $ARGUMENT is provided..." (explaining the argument)
+- "The $ARGUMENT can be..." (describing what it is)
+- "$ARGUMENT format: task | ticket-id" (documenting structure)
+
+Decision rule: Does inserting the actual value make grammatical sense?
+</when_to_replace>
+
+<multiple_occurrences>
+If $ARGUMENT appears multiple times:
+- First occurrence in execution: Replace with full value
+- Subsequent occurrences: Replace if it adds clarity, use shorthand if repetitive
+- Avoid making the prompt unreadable with excessive repetition
+</multiple_occurrences>
+</argument_replacement>
+
+<agent_skill_inlining>
+<decision_criteria>
+INLINE if: Command logic depends on it OR explicitly delegates to it
+OMIT if: Just a suggestion or optional reference
+</decision_criteria>
+
+<system_to_user_conversion>
+Agent/skill content is a SYSTEM PROMPT (defines AI behavior).
+Slash commands are USER PROMPTS (task instructions).
+
+When inlining, convert appropriately:
+
+✅ STRIP:
+- YAML frontmatter (name, description, tools, color)
+- "You are..." identity statements
+- "You excel at..." capability declarations
+- Any personality/expertise descriptions
+
+✅ PRESERVE:
+- ALL procedural content (## Process, steps, instructions)
+- ALL markdown structure (headers, bold, lists)
+- ALL output format specifications
+- ALL behavioral guidance ("Be concise", "Focus on...")
+- ALL examples and edge cases
+
+✅ ADD (minimal framing):
+- Simple transition: "When doing X, follow these instructions:"
+- Or integrate naturally into the surrounding text
+
+Example conversion:
 ---
-
-## Tool Usage
-
-Use the \`read_configs\` tool to fetch agent/skill content when you decide to inline:
-- The tool returns actual configuration content from the database
-- If content not found, the tool will indicate this
-- Handle missing references gracefully in your output
-
+name: triage
+description: Issue analysis specialist
 ---
+You are an Expert Technical Triage Specialist...
 
-## Output Format
+## Triage Process
+1. Identify issue type
+2. Reproduce with minimal steps
+...
 
-Return the converted prompt with these properties:
-- ✅ Original structure preserved
-- ✅ Original formatting preserved (bold, italics, XML tags, etc.)
-- ✅ Original tone and personality preserved
-- ✅ Original wording preserved (except where necessary)
-- ✅ Only frontmatter removed
-- ✅ Only arguments replaced
-- ✅ Only critical agent/skill references inlined or cleaned
+BECOMES:
 
-**Quality Check:**
-- Count changes: Aim for < 10% of content modified (excluding frontmatter removal)
-- Verify formatting: All bold/italic/structure maintained
-- Check tone: Personality and emphasis preserved
-- Validate details: Examples, edge cases, formats intact
+## Triage Process
+1. Identify issue type
+2. Reproduce with minimal steps
+...
 
----
+(Strip frontmatter + identity, keep procedural content)
+</system_to_user_conversion>
+</agent_skill_inlining>
 
-Return ONLY the converted prompt. No explanations, no code blocks wrapping it, no preamble.`
+<preservation_rules>
+CRITICAL: Keep original command as much as possible
+
+✅ Preserve exactly:
+- Formatting: Bold (**text**), italics, code blocks, XML tags
+- Structure: Step numbering, headers, bullet nesting
+- Tone: Formal/casual/funny - maintain voice
+- Emphasis: IMPORTANT, NEVER, ALWAYS - keep them
+- Personality: Jokes, quotes, cultural references
+- Details: Examples, edge cases, validation formats
+
+❌ Only modify:
+- Frontmatter (remove)
+- $ARGUMENT in execution contexts (replace)
+- Critical agent/skill references (inline and convert)
+
+Quality check: < 10% of content should change (excluding frontmatter)
+</preservation_rules>
+
+<non_inlined_references>
+For agent/skill mentions NOT being inlined:
+- Remove ONLY the reference mention
+- Example: "use **triage** agent" → "perform triage" OR remove phrase
+- Keep ALL surrounding text exactly as is
+- DO NOT rephrase or restructure
+</non_inlined_references>
+
+<output_format>
+Return ONLY the converted prompt.
+- No explanations
+- No code block wrappers
+- No preamble
+- Just the clean, converted command
+</output_format>`
   }
 
   /**

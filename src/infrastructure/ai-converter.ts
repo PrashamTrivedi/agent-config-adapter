@@ -40,13 +40,14 @@ export class AIConverterService {
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-5-mini-2025-08-07',
         messages: [
           {
             role: 'user',
             content: prompt,
           },
         ],
+        reasoning_effort: "low"
       })
 
       const result = response.choices[0].message.content || ''
@@ -89,8 +90,9 @@ export class AIConverterService {
   }> {
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-mini',
+        model: 'gpt-5-mini-2025-08-07',
         messages: messages as any,
+        reasoning_effort: "low",
         tools: tools as any,
         tool_choice: 'auto',
       })
