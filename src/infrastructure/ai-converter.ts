@@ -95,7 +95,13 @@ export class AIConverterService {
       const instructions = systemMsg?.content || ''
 
       // Filter out system messages, keep user/assistant/tool messages
-      const input = messages.filter(m => m.role !== 'system')
+      // Response API requires content to be string or array, not null
+      const input = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          ...m,
+          content: m.content || ''  // Convert null to empty string
+        }))
 
       // Transform tools from Chat Completions format to Response API format
       // Response API expects: { type, name, description, parameters }
