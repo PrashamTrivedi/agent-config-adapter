@@ -4,6 +4,7 @@
   "description": "Universal configuration adapter for AI coding agents with REST API and MCP server support",
   "main": "index.js",
   "dependencies": {
+    "@google/genai": "^1.29.0",
     "@modelcontextprotocol/sdk": "^1.20.0",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
