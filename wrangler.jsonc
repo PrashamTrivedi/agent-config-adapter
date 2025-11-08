@@ -24,8 +24,19 @@
     }
   ],
   "vars": {
+    // Cloudflare Configuration
     "ACCOUNT_ID": "b286748abb233ddf7bf942f876f11eac",
-    "GATEWAY_ID": "ai-agent-adapter"
+    "GATEWAY_ID": "ai-agent-adapter",
+
+    // Multi-Provider Configuration
+    // Provider Selection: 'openai' | 'gemini' | 'auto' (auto = prefer Gemini, fallback to OpenAI)
+    "AI_PROVIDER": "auto",
+
+    // OpenAI Reasoning Mode: 'high' | 'medium' | 'low' | 'minimal'
+    "OPENAI_REASONING_MODE": "low",
+
+    // Gemini Thinking Budget: "0" (disable) to "24576" (max), or "-1" (dynamic)
+    "GEMINI_THINKING_BUDGET": "0"
   },
   "observability": {
     "logs": {

@@ -1,19 +1,59 @@
-# OpenAI API Key - REQUIRED for AI-powered conversions
-# Get your API key from: https://platform.openai.com/api-keys
-# IMPORTANT: AI Gateway does NOT store provider API keys - you must provide your own
-# If omitted or invalid, the system falls back to rule-based conversions only
-# Example: OPENAI_API_KEY=sk-proj-...
-OPENAI_API_KEY=
+# ============================================================================
+# TRUE BYOK (Bring Your Own Key) Configuration
+# ============================================================================
+# IMPORTANT: Provider API keys (OpenAI, Gemini) are stored in Cloudflare
+# Dashboard, NOT in this file or Workers secrets!
+#
+# Setup Steps:
+# 1. Get provider API keys from OpenAI/Google
+# 2. Store them in: Cloudflare Dashboard → AI → AI Gateway → Provider Keys
+# 3. Configure only the GATEWAY_TOKEN below (for Worker → Gateway auth)
+#
+# You are billed directly by OpenAI/Google, not through Cloudflare
+# ============================================================================
 
-# Cloudflare Account ID (find in your Cloudflare dashboard)
+# ============================================================================
+# Cloudflare Configuration (NO provider keys here!)
+# ============================================================================
+
+# Cloudflare Account ID (find in dashboard URL)
 ACCOUNT_ID=b286748abb233ddf7bf942f876f11eac
 
-# AI Gateway ID (created in Cloudflare AI Gateway dashboard)
+# AI Gateway ID (created in AI Gateway dashboard)
+# This is NOT an API key - it's an identifier for your gateway
 GATEWAY_ID=ai-agent-adapter
 
-# AI Gateway Authentication Token - OPTIONAL for authenticated gateways
-# Create token in: Cloudflare Dashboard > AI Gateway > [Your Gateway] > Authentication
-# This is required if you enabled "Authenticated Gateway" in the AI Gateway settings
-# Leave empty if using an unauthenticated gateway
-# Format: token value (without "Bearer " prefix - added automatically)
+# AI Gateway Token (REQUIRED for BYOK authentication)
+# This token authenticates your Worker to AI Gateway
+# Create in: Cloudflare Dashboard → AI Gateway → Settings → Create Token
+# This is a Cloudflare token, NOT a provider API key
+GATEWAY_TOKEN=
+
+# ============================================================================
+# Provider Selection and Configuration
+# ============================================================================
+
+# Provider Selection: 'openai' | 'gemini' | 'auto' (default: auto)
+# auto = prefer Gemini for cost, fallback to OpenAI
+AI_PROVIDER=auto
+
+# OpenAI Reasoning Mode: 'high' | 'medium' | 'low' | 'minimal' (default: low)
+OPENAI_REASONING_MODE=low
+
+# Gemini Thinking Budget: 0 (disable) to 24576 (max), or -1 (dynamic) (default: 0)
+# Presets: 0=none, 512=minimal, 1024=low, 2048=medium, 4096=high, -1=dynamic
+GEMINI_THINKING_BUDGET=0
+
+# ============================================================================
+# Legacy Configuration (Deprecated - For Backward Compatibility Only)
+# ============================================================================
+# These are kept for backward compatibility with existing deployments
+# New deployments should use GATEWAY_TOKEN instead
+
+# DEPRECATED: Use GATEWAY_TOKEN instead
+# OpenAI API Key - Only used if GATEWAY_TOKEN is not set
+OPENAI_API_KEY=
+
+# DEPRECATED: Use GATEWAY_TOKEN instead
+# Legacy name for gateway token - renamed to GATEWAY_TOKEN
 AI_GATEWAY_TOKEN=
