@@ -95,7 +95,7 @@ export class SlashCommandConverterService {
         type: "function" as const,
         function: {
           name: "read_configs",
-          description: "Read agent or skill configuration content from the database. Use this to fetch referenced agents/skills that need to be inlined in the converted command.",
+          description: "Read agent or skill configuration content from the database. Use this to fetch referenced agents/skills that need to be extracted to XML sections in the converted command.",
           parameters: {
             type: "object",
             properties: {
@@ -258,7 +258,11 @@ export class SlashCommandConverterService {
 Convert Claude Code slash commands to standalone prompts with SURGICAL changes only:
 1. Remove YAML frontmatter
 2. Replace $ARGUMENT in execution contexts (NOT in explanatory text)
-3. Inline critical dependencies (converted from system → user prompt format)
+3. Extract critical dependencies to external XML sections (preserve references in main prompt)
+
+Output Format:
+- Main prompt (with references to skills/agents preserved)
+- Followed by XML sections for each extracted dependency
 </core_task>
 
 
@@ -267,20 +271,17 @@ Convert Claude Code slash commands to standalone prompts with SURGICAL changes o
 
 The converted output will run in sandboxed environments that:
 - Only have codebase files available
-- Are always git repositories
+- Are ALWAYS git repositories (checked out in clean state)
 - Have limited network access
-- Cannot access GitHub directly
-- Cannot read from ~/.claude or similar directories
-- **File Browsing Limitation**: The AI agent can read/browse files, but the USER cannot directly browse the file system
-  - Best practice: Agent should commit and push changes to a git branch so users can review via git/GitHub UI
-  - If the original command instructs "review file X" or "check the output", consider adding git workflow guidance
+- Have NO GitHub access (use git commands only)
+- Cannot read from ~/.claude or similar external directories
+- AI agent can read/browse files, but USER cannot directly browse filesystem unless pushed in the specific branch
 
 Use this context to decide:
-- Which references need inlining (external dependencies → inline)
-- Which contents to strip down (Think, can we have github content since sandbox can't access github directly)
-- Which assumptions are safe (git commands → safe)
+- Which references need extracting to XML sections
+- Which git/GitHub checks to REMOVE (repo existence is guaranteed)
 - What network-dependent features to avoid
-- When to add git commit/push guidance (if original command expects user file review)
+- When to suggest git commit/push workflows (always safe)
 
 **Available References in Database:**
 
@@ -318,91 +319,215 @@ If $ARGUMENT appears multiple times:
 </multiple_occurrences>
 </argument_replacement>
 
-<agent_skill_inlining>
+<agent_skill_extraction>
 <decision_criteria>
-INLINE if: Command logic depends on it OR explicitly delegates to it
+EXTRACT if: Command logic depends on it OR explicitly delegates to it
 OMIT if: Just a suggestion or optional reference
 </decision_criteria>
 
-<system_to_user_conversion>
-Agent/skill content is a SYSTEM PROMPT (defines AI behavior).
-Slash commands are USER PROMPTS (task instructions).
+<xml_output_format>
+When you decide to extract agent/skill content:
 
-When inlining, convert appropriately:
+1. **Keep reference in main prompt:**
+   - Original: "Use **conventional-commit** skill for commits"
+   - Main prompt: "Use **conventional-commit** skill for commits" (unchanged)
+   - Do NOT inline content into main prompt body
 
-✅ STRIP:
-- YAML frontmatter (name, description, tools, color)
-- "You are..." identity statements
-- "You excel at..." capability declarations
-- Any personality/expertise descriptions
+2. **Add XML section AFTER main prompt:**
+   Format: \`<Skill-Conventional-Commit>content</Skill-Conventional-Commit>\`
 
-✅ PRESERVE:
-- ALL procedural content (## Process, steps, instructions)
-- ALL markdown structure (headers, bold, lists)
-- ALL output format specifications
-- ALL behavioral guidance ("Be concise", "Focus on...")
-- ALL examples and edge cases
+   Naming convention:
+   - Skills: \`<Skill-Name>\` (capitalize each word, use hyphens)
+   - Agents: \`<Agent-Name>\` (capitalize each word, use hyphens)
 
-✅ ADD (minimal framing):
-- Simple transition: "When doing X, follow these instructions:"
-- Or integrate naturally into the surrounding text
+   Examples:
+   - "conventional-commit" skill → \`<Skill-Conventional-Commit>\`
+   - "web-search-specialist" agent → \`<Agent-Web-Search-Specialist>\`
+   - "triage" agent → \`<Agent-Triage>\`
+   - "qa-validator" agent → \`<Agent-Qa-Validator>\`
 
-Example conversion:
+3. **Convert system prompt to user prompt in XML section:**
+   ✅ STRIP from XML content:
+   - YAML frontmatter (name, description, tools, color)
+   - "You are..." identity statements
+   - "You excel at..." capability declarations
+   - Any personality/expertise descriptions
+
+   ✅ PRESERVE in XML content:
+   - ALL procedural content (## Process, steps, instructions)
+   - ALL markdown structure (headers, bold, lists)
+   - ALL output format specifications
+   - ALL behavioral guidance ("Be concise", "Focus on...")
+   - ALL examples and edge cases
+
+   ✅ TRIM from XML content:
+   - Code examples (remove or simplify to 1-2 lines)
+   - Keep command references and command syntax
+   - Example: Remove full code blocks, keep "Run \`npm test\`" or "Use \`git status\`"
+</xml_output_format>
+
+<complete_example>
+INPUT (slash command):
+\`\`\`
+---
+description: Fix bugs in component
+argument-hint: component name
+---
+
+Analyze the $ARGUMENT component.
+
+Use **triage** agent to identify issues.
+Use **conventional-commit** skill for commits.
+
+Test thoroughly before committing.
+\`\`\`
+
+TRIAGE AGENT CONTENT (system prompt):
+\`\`\`
 ---
 name: triage
 description: Issue analysis specialist
+tools: [Bash, Read, Grep]
 ---
-You are an Expert Technical Triage Specialist...
+
+You are an Expert Technical Triage Specialist with deep expertise...
 
 ## Triage Process
-1. Identify issue type
+1. Identify issue type from error/symptoms
 2. Reproduce with minimal steps
-...
+3. Find root cause (check logs, inspect browser console)
 
-BECOMES:
+Example reproduction:
+\\\`\\\`\\\`typescript
+// Reproduce the bug
+const result = brokenFunction();
+console.log(result); // Expected: X, Actual: Y
+\\\`\\\`\\\`
 
+## Output Format
+**ISSUE**: [One line]
+**CAUSE**: [Root cause]
+**FIX**: [Solution]
+
+Be extremely concise.
+\`\`\`
+
+CONVENTIONAL-COMMIT SKILL CONTENT:
+\`\`\`
+---
+name: conventional-commit
+description: Commit message formatter
+---
+
+You are a commit message expert...
+
+## Commit Format
+type(scope): message
+
+Types: feat, fix, docs, refactor
+
+Example:
+\\\`\\\`\\\`bash
+git commit -m "feat(auth): add OAuth2 support"
+git commit -m "fix(ui): resolve button alignment"
+\\\`\\\`\\\`
+\`\`\`
+
+OUTPUT (with XML extraction):
+\`\`\`
+Analyze the authentication component.
+
+Use **triage** agent to identify issues.
+Use **conventional-commit** skill for commits.
+
+Test thoroughly before committing.
+
+<Agent-Triage>
 ## Triage Process
-1. Identify issue type
+1. Identify issue type from error/symptoms
 2. Reproduce with minimal steps
-...
+3. Find root cause (check logs, inspect browser console)
 
-(Strip frontmatter + identity, keep procedural content)
-</system_to_user_conversion>
-</agent_skill_inlining>
+## Output Format
+**ISSUE**: [One line]
+**CAUSE**: [Root cause]
+**FIX**: [Solution]
+
+Be extremely concise.
+</Agent-Triage>
+
+<Skill-Conventional-Commit>
+## Commit Format
+type(scope): message
+
+Types: feat, fix, docs, refactor
+
+Commands: \`git commit -m "type(scope): message"\`
+</Skill-Conventional-Commit>
+\`\`\`
+
+Notice what changed:
+- ✓ Frontmatter removed
+- ✓ $ARGUMENT → "authentication"
+- ✓ Main prompt keeps agent/skill references (NOT inlined)
+- ✓ XML sections added AFTER main prompt
+- ✓ XML naming: \`<Agent-Triage>\`, \`<Skill-Conventional-Commit>\`
+- ✓ System prompt identity removed from XML content
+- ✓ Procedural content preserved in XML
+- ✓ Code examples trimmed (kept command syntax only)
+</complete_example>
+</agent_skill_extraction>
 
 <preservation_rules>
 CRITICAL: Keep original command as much as possible
 
-✅ Preserve exactly:
+✅ Preserve exactly in MAIN PROMPT:
 - Formatting: Bold (**text**), italics, code blocks, XML tags
 - Structure: Step numbering, headers, bullet nesting
 - Tone: Formal/casual/funny - maintain voice
 - Emphasis: IMPORTANT, NEVER, ALWAYS - keep them
 - Personality: Jokes, quotes, cultural references
 - Details: Examples, edge cases, validation formats
+- Agent/skill references: Keep "use **agent-name** agent" as is
 
-❌ Only modify:
+❌ Only modify in MAIN PROMPT:
 - Frontmatter (remove)
-- $ARGUMENT in execution contexts (replace)
-- Critical agent/skill references (inline and convert)
+- $ARGUMENT in execution contexts (replace smartly in context)
+- Nothing else in main prompt
 
-Quality check: < 10% of content should change (excluding frontmatter)
+✅ In XML SECTIONS (extracted agent/skill content):
+- Strip system prompt identity ("You are...")
+- Preserve all procedural content and structure
+- Trim code examples to command syntax only
+- Keep all behavioral guidance and output formats
+
+Quality check: < 5% of main prompt content should change (excluding frontmatter)
 </preservation_rules>
 
-<non_inlined_references>
-For agent/skill mentions NOT being inlined:
-- Remove ONLY the reference mention
-- Example: "use **triage** agent" → "perform triage" OR remove phrase
-- Keep ALL surrounding text exactly as is
-- DO NOT rephrase or restructure
-</non_inlined_references>
-
 <output_format>
-Return ONLY the converted prompt.
-- No explanations
-- No code block wrappers
-- No preamble
-- Just the clean, converted command
+Return the converted output in this exact format:
+
+1. Main prompt (with frontmatter removed, $ARGUMENT replaced, references preserved)
+2. Blank line
+3. XML sections (one per extracted agent/skill)
+
+Structure:
+\`\`\`
+[Main prompt content]
+
+<Agent-Name>
+[Agent content - system identity removed, procedural content preserved, code examples trimmed]
+</Agent-Name>
+
+<Skill-Name>
+[Skill content - system identity removed, procedural content preserved, code examples trimmed]
+</Skill-Name>
+\`\`\`
+
+- No explanations before or after
+- No code block wrappers around the entire output
+- No preamble or commentary
+- Just: main prompt + XML sections
 </output_format>`
   }
 
