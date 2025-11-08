@@ -96,12 +96,16 @@ export class AIConverterService {
 
       // Filter out system messages, keep user/assistant/tool messages
       // Response API requires content to be string or array, not null
+      // Response API doesn't accept tool_calls or tool_call_id fields
       const input = messages
         .filter(m => m.role !== 'system')
-        .map(m => ({
-          ...m,
-          content: m.content || ''  // Convert null to empty string
-        }))
+        .map(m => {
+          const {tool_calls, tool_call_id, ...rest} = m
+          return {
+            ...rest,
+            content: m.content || ''  // Convert null to empty string
+          }
+        })
 
       // Transform tools from Chat Completions format to Response API format
       // Response API expects: { type, name, description, parameters }
