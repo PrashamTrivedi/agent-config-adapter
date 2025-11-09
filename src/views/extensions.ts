@@ -3,27 +3,61 @@ import { layout } from './layout';
 
 export function extensionListView(extensions: ExtensionWithConfigs[]): string {
   const content = `
-    <h2>All Extensions</h2>
-    <a href="/extensions/new" class="btn">Create Extension</a>
-    ${extensions.length === 0 ? '<p>No extensions yet. Create your first one!</p>' : `
-      <ul class="config-list">
-        ${extensions.map(ext => `
-          <li>
-            <a href="/extensions/${ext.id}" style="font-weight: 500;">
-              ${escapeHtml(ext.name)}
-            </a>
-            <span class="badge">v${escapeHtml(ext.version)}</span>
-            <span class="badge">${ext.configs.length} config${ext.configs.length !== 1 ? 's' : ''}</span>
-            ${ext.author ? `<div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              Author: ${escapeHtml(ext.author)}
-            </div>` : ''}
-            ${ext.description ? `<div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              ${escapeHtml(ext.description)}
-            </div>` : ''}
-          </li>
-        `).join('')}
-      </ul>
-    `}
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">📦 Extensions</h2>
+        <a href="/extensions/new" class="btn ripple">+ Create Extension</a>
+      </div>
+
+      ${extensions.length === 0 ? `
+        <div class="card" style="text-align: center; padding: 40px;">
+          <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+          <h3>No extensions yet</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">Extensions bundle multiple configs into distributable packages</p>
+          <a href="/extensions/new" class="btn">Create your first extension</a>
+        </div>
+      ` : `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+          ${extensions.map(ext => `
+            <div class="card card-hover card-interactive scale-in" onclick="window.location.href='/extensions/${ext.id}'">
+              <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+                ${ext.icon_url ? `
+                  <img src="${escapeHtml(ext.icon_url)}" alt="${escapeHtml(ext.name)}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
+                ` : `
+                  <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    📦
+                  </div>
+                `}
+                <div style="flex: 1; min-width: 0;">
+                  <h3 style="margin: 0 0 5px 0; font-size: 1.1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${escapeHtml(ext.name)}
+                  </h3>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span class="status-indicator status-info" style="font-size: 0.8em; padding: 2px 8px;">
+                      <span class="status-dot"></span>
+                      v${escapeHtml(ext.version)}
+                    </span>
+                    <span class="badge">${ext.configs.length} config${ext.configs.length !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+              </div>
+
+              ${ext.description ? `
+                <p style="font-size: 0.875em; color: var(--text-secondary); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                  ${escapeHtml(ext.description)}
+                </p>
+              ` : ''}
+
+              ${ext.author ? `
+                <div style="font-size: 0.8em; color: var(--text-secondary); padding-top: 12px; border-top: 1px solid var(--border-color);">
+                  👤 ${escapeHtml(ext.author)}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `}
+    </div>
   `;
   return layout('Extensions', content);
 }
@@ -166,16 +200,15 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
     </details>
 
     <h3>Actions</h3>
-    <div style="margin-top: 20px;">
-      <a href="/extensions/${extension.id}/edit" class="btn">Edit</a>
-      <a href="/extensions" class="btn btn-secondary">Back to List</a>
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+      <a href="/extensions/${extension.id}/edit" class="btn ripple">✏️ Edit</a>
+      <a href="/extensions" class="btn btn-secondary">← Back to List</a>
       <button
-        class="btn btn-danger"
-        hx-delete="/api/extensions/${extension.id}"
-        hx-confirm="Are you sure you want to delete this extension?"
-        hx-target="body"
-        hx-swap="outerHTML">
-        Delete
+        class="btn btn-danger ripple"
+        onclick="confirmAction('Are you sure you want to delete this extension? This will not delete the configs.', () => {
+          htmx.ajax('DELETE', '/api/extensions/${extension.id}', {target:'body', swap:'outerHTML'});
+        })">
+        🗑️ Delete
       </button>
     </div>
 
@@ -184,12 +217,25 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
       document.body.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'manifest-preview') {
           const data = JSON.parse(evt.detail.xhr.responseText);
+          const jsonStr = JSON.stringify(data, null, 2);
           evt.detail.target.innerHTML = \`
-            <h4>Manifest Content</h4>
-            <pre>\${JSON.stringify(data, null, 2)}</pre>
+            <div class="card fade-in">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0;">📄 Manifest Content</h4>
+                <button class="btn btn-secondary copy-btn" onclick="copyManifest(\\\`\${jsonStr.replace(/\`/g, '\\\\\`')}\\\`)">
+                  📋 Copy
+                </button>
+              </div>
+              <pre style="margin: 0; max-height: 400px; overflow-y: auto;">\${jsonStr}</pre>
+            </div>
           \`;
+          window.showToast('Manifest loaded successfully', 'success');
         }
       });
+
+      function copyManifest(text) {
+        window.copyToClipboard(text, event.target);
+      }
     </script>
   `;
   return layout(extension.name, content);
