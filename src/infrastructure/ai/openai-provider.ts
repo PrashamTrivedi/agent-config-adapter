@@ -12,10 +12,6 @@ import type { AgentFormat, ConfigType } from '../../domain/types'
 export type OpenAIReasoningMode = 'high' | 'medium' | 'low' | 'minimal'
 
 export interface OpenAIConfig {
-	// TRUE BYOK: NO provider API key in code
-	// Provider keys configured ONCE in Cloudflare Dashboard (AI Gateway → Provider Keys)
-	// Worker code only needs gateway token for authentication
-
 	/** Cloudflare Account ID */
 	accountId: string
 
@@ -27,12 +23,22 @@ export interface OpenAIConfig {
 
 	/** Reasoning mode (maps to model variant) */
 	reasoningMode?: OpenAIReasoningMode
+
+	/** Direct API key for local development (still routes through AI Gateway) */
+	directApiKey?: string
 }
 
 /**
  * OpenAI provider implementation with TRUE BYOK architecture
  *
- * Authentication Flow:
+ * ALL requests route through AI Gateway for logging, analytics, caching, and rate limiting.
+ *
+ * Local Development Authentication Flow:
+ * 1. SDK includes actual API key (from .dev.vars) in Authorization header
+ * 2. AI Gateway forwards the key to OpenAI
+ * 3. Billing goes directly to YOUR OpenAI account
+ *
+ * Production BYOK Authentication Flow:
  * 1. Worker authenticates to AI Gateway using cf-aig-authorization header
  * 2. AI Gateway retrieves OpenAI API key from Cloudflare Secrets Store
  * 3. AI Gateway adds Authorization header with stored key
@@ -42,19 +48,32 @@ export interface OpenAIConfig {
 export class OpenAIProvider implements AIProvider {
 	private client: OpenAI
 	private reasoningMode: OpenAIReasoningMode
+	private modelName: string = 'gpt-5-mini' // Base model name - reasoning controlled via parameter
 
 	constructor(config: OpenAIConfig) {
-		// TRUE BYOK: No provider API key in Worker code
-		// Gateway token authenticates Worker → AI Gateway
-		// AI Gateway retrieves OpenAI key from Secrets Store
-		this.client = new OpenAI({
-			apiKey: '', // Empty string (SDK requirement, not used)
-			baseURL: `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/openai`,
-			defaultHeaders: {
-				'cf-aig-authorization': `Bearer ${config.gatewayToken}`, // Authenticate to Gateway
-			},
-		})
 		this.reasoningMode = config.reasoningMode || 'low'
+
+		// ALWAYS route through AI Gateway for logging, analytics, caching, and rate limiting
+		const baseURL = `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayId}/openai`
+
+		// Use direct API key if provided (local dev), otherwise use BYOK placeholder (production)
+		if (config.directApiKey) {
+			// Local development: SDK includes actual API key in Authorization header
+			// AI Gateway forwards the key to OpenAI
+			this.client = new OpenAI({
+				apiKey: config.directApiKey,
+				baseURL,
+				defaultHeaders: { 'cf-aig-authorization': `Bearer ${config.gatewayToken}` },
+			})
+		} else {
+			// Production BYOK: SDK uses empty key
+			// AI Gateway adds Authorization header with stored key from Dashboard
+			this.client = new OpenAI({
+				apiKey: '',
+				baseURL,
+				defaultHeaders: { 'cf-aig-authorization': `Bearer ${config.gatewayToken}` },
+			})
+		}
 	}
 
 	async convert(
@@ -65,22 +84,26 @@ export class OpenAIProvider implements AIProvider {
 	): Promise<AIConversionResult> {
 		const startTime = Date.now()
 		const prompt = this.buildConversionPrompt(content, sourceFormat, targetFormat, configType)
-		const model = this.getModelForReasoningMode(this.reasoningMode)
 
 		try {
 			const response = await this.client.chat.completions.create({
-				model,
+				model: this.modelName,
 				messages: [{ role: 'user', content: prompt }],
+				reasoning_effort: this.reasoningMode, // Control reasoning depth via parameter
 			})
 
 			const durationMs = Date.now() - startTime
 			const result = response.choices[0].message.content || ''
 
+			// Extract reasoning tokens if available (GPT-5 specific)
+			const reasoningTokens = (response.usage as any)?.completion_tokens_details?.reasoning_tokens
+
 			console.log('[OpenAI] Conversion successful', {
-				model,
-				reasoningMode: this.reasoningMode,
+				model: this.modelName,
+				reasoningEffort: this.reasoningMode,
 				inputTokens: response.usage?.prompt_tokens,
 				outputTokens: response.usage?.completion_tokens,
+				reasoningTokens,
 				durationMs,
 			})
 
@@ -90,11 +113,11 @@ export class OpenAIProvider implements AIProvider {
 				fallbackUsed: false,
 				metadata: {
 					provider: 'openai',
-					model,
+					model: this.modelName,
 					inputTokens: response.usage?.prompt_tokens,
 					outputTokens: response.usage?.completion_tokens,
 					durationMs,
-					estimatedCost: this.calculateCost(response.usage),
+					estimatedCost: this.calculateCost(response.usage, reasoningTokens),
 				},
 			}
 		} catch (error) {
@@ -105,24 +128,28 @@ export class OpenAIProvider implements AIProvider {
 
 	async chatWithTools(messages: ChatMessage[], tools: Tool[]): Promise<ChatResponse> {
 		const startTime = Date.now()
-		const model = this.getModelForReasoningMode(this.reasoningMode)
 
 		try {
 			const response = await this.client.chat.completions.create({
-				model,
+				model: this.modelName,
 				messages: messages as any,
 				tools: tools as any,
 				tool_choice: 'auto',
+				reasoning_effort: this.reasoningMode, // Control reasoning depth via parameter
 			})
 
 			const durationMs = Date.now() - startTime
 			const message = response.choices[0].message
 
+			// Extract reasoning tokens if available (GPT-5 specific)
+			const reasoningTokens = (response.usage as any)?.completion_tokens_details?.reasoning_tokens
+
 			console.log('[OpenAI] Chat with tools successful', {
-				model,
-				reasoningMode: this.reasoningMode,
+				model: this.modelName,
+				reasoningEffort: this.reasoningMode,
 				inputTokens: response.usage?.prompt_tokens,
 				outputTokens: response.usage?.completion_tokens,
+				reasoningTokens,
 				toolCallsCount: message.tool_calls?.length || 0,
 				durationMs,
 			})
@@ -138,7 +165,7 @@ export class OpenAIProvider implements AIProvider {
 				})),
 				metadata: {
 					provider: 'openai',
-					model,
+					model: this.modelName,
 					inputTokens: response.usage?.prompt_tokens,
 					outputTokens: response.usage?.completion_tokens,
 					durationMs,
@@ -166,23 +193,13 @@ export class OpenAIProvider implements AIProvider {
 	}
 
 	/**
-	 * Map reasoning mode to OpenAI model variant
-	 */
-	private getModelForReasoningMode(mode: OpenAIReasoningMode): string {
-		const modelMap: Record<OpenAIReasoningMode, string> = {
-			high: 'gpt-5-mini-high',
-			medium: 'gpt-5-mini-medium',
-			low: 'gpt-5-mini-low',
-			minimal: 'gpt-5-mini-minimal',
-		}
-		return modelMap[mode]
-	}
-
-	/**
 	 * Calculate estimated cost for OpenAI API usage
 	 * GPT-5-Mini pricing: $0.25/1M input tokens, $2.00/1M output tokens
+	 *
+	 * Note: Reasoning tokens are included in completion_tokens count,
+	 * so we don't double-count them. The reasoningTokens parameter is for logging only.
 	 */
-	private calculateCost(usage?: { prompt_tokens?: number; completion_tokens?: number }): number {
+	private calculateCost(usage?: { prompt_tokens?: number; completion_tokens?: number }, reasoningTokens?: number): number {
 		if (!usage) return 0
 
 		const inputCost = (usage.prompt_tokens || 0) * 0.25 / 1_000_000

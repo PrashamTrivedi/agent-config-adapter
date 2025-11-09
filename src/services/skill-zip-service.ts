@@ -49,7 +49,7 @@ export class SkillZipService {
 
       companionFiles.push({
         path: this.normalizePath(path),
-        content: content.buffer,
+        content: content.buffer as ArrayBuffer,
         mimeType,
       });
     }

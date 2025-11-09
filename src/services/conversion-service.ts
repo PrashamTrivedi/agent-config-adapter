@@ -15,16 +15,16 @@ export interface ConversionServiceEnv {
   // Provider keys configured in Cloudflare Dashboard (AI Gateway → Provider Keys)
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
-  GATEWAY_TOKEN?: string; // cf-aig-authorization token (preferred for BYOK)
+  AI_GATEWAY_TOKEN?: string; // cf-aig-authorization token for BYOK
 
   // Provider configuration
   AI_PROVIDER?: ProviderType;
   OPENAI_REASONING_MODE?: OpenAIReasoningMode;
   GEMINI_THINKING_BUDGET?: string; // String because env vars are strings
 
-  // Legacy support (deprecated)
-  OPENAI_API_KEY?: string; // Deprecated - only for backward compatibility
-  AI_GATEWAY_TOKEN?: string; // Deprecated - renamed to GATEWAY_TOKEN
+  // Direct API keys for local development (still routes through AI Gateway)
+  OPENAI_API_KEY?: string; // For local dev
+  GEMINI_API_KEY?: string; // For local dev
 }
 
 export interface ConversionResult {
@@ -41,7 +41,7 @@ export interface ConversionResult {
  *
  * TRUE BYOK Architecture:
  * - Provider API keys stored in Cloudflare Dashboard (NOT in Worker code/secrets)
- * - Worker authenticates to AI Gateway using GATEWAY_TOKEN
+ * - Worker authenticates to AI Gateway using AI_GATEWAY_TOKEN
  * - AI Gateway retrieves provider keys from Secrets Store at runtime
  * - Supports multi-provider (OpenAI, Gemini) with automatic fallback
  */
@@ -57,8 +57,7 @@ export class ConversionService {
     this.env = env;
 
     // Initialize provider factory if BYOK is configured
-    // Support legacy OPENAI_API_KEY for backward compatibility
-    const gatewayToken = env.GATEWAY_TOKEN || env.AI_GATEWAY_TOKEN;
+    const gatewayToken = env.AI_GATEWAY_TOKEN;
     if (gatewayToken) {
       this.providerFactory = new ProviderFactory({
         ACCOUNT_ID: env.ACCOUNT_ID,
@@ -69,11 +68,13 @@ export class ConversionService {
         GEMINI_THINKING_BUDGET: env.GEMINI_THINKING_BUDGET
           ? parseInt(env.GEMINI_THINKING_BUDGET)
           : undefined,
+        OPENAI_API_KEY: env.OPENAI_API_KEY, // For local dev
+        GEMINI_API_KEY: env.GEMINI_API_KEY, // For local dev
       });
     } else {
       this.providerFactory = null;
       console.warn(
-        '[ConversionService] No GATEWAY_TOKEN configured - AI conversion disabled, using rule-based conversion only'
+        '[ConversionService] No AI_GATEWAY_TOKEN configured - AI conversion disabled, using rule-based conversion only'
       );
     }
   }

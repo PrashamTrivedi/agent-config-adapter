@@ -254,7 +254,23 @@ export class SlashCommandConverterService {
   private buildSystemPrompt(
     availableReferences: {agents: string[]; skills: string[]}
   ): string {
-    return `<core_task>
+    return `<tool_usage_instructions>
+IMPORTANT: You have access to a read_configs function tool. When you need agent or skill content:
+1. Call the read_configs function with proper JSON parameters
+2. DO NOT generate code examples or Python syntax
+3. DO NOT use print() or any programming language syntax
+4. Use the standard function calling API to request the content
+
+Example of what the function expects:
+{
+  "references": [
+    {"name": "triage", "type": "agent"},
+    {"name": "conventional-commit", "type": "skill"}
+  ]
+}
+</tool_usage_instructions>
+
+<core_task>
 Convert Claude Code slash commands to standalone prompts with SURGICAL changes only:
 1. Remove YAML frontmatter
 2. Replace $ARGUMENT in execution contexts (NOT in explanatory text)

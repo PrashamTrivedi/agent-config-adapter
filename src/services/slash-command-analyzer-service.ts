@@ -1,8 +1,8 @@
 import { SlashCommandAnalysis } from '../domain/types'
-import { AIConverterService } from '../infrastructure/ai-converter'
+import type { AIProvider } from '../infrastructure/ai/types'
 
 export class SlashCommandAnalyzerService {
-  constructor(private aiConverter: AIConverterService) {}
+  constructor(private aiConverter: AIProvider) {}
 
   /**
    * Analyze a slash command to detect arguments, agent references, and skill references.

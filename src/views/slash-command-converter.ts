@@ -101,7 +101,7 @@ export function slashCommandConverterDropdownPartial(commands: Config[], searchQ
 // Dynamic form loaded when a command is selected
 export function slashCommandConverterFormPartial(config: Config): string {
   // Parse analysis metadata
-  const hasArguments = config.has_arguments === 1 || config.has_arguments === true;
+  const hasArguments = !!config.has_arguments;
   const argumentHint = config.argument_hint;
   const agentReferences = config.agent_references ? JSON.parse(config.agent_references) : [];
   const skillReferences = config.skill_references ? JSON.parse(config.skill_references) : [];

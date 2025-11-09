@@ -2,7 +2,9 @@ import { Hono } from 'hono';
 import { ConfigService } from '../services/config-service';
 import { SlashCommandConverterService } from '../services/slash-command-converter-service';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
-import { AIConverterService } from '../infrastructure/ai-converter';
+import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provider-factory';
+import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
+import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import {
   slashCommandConverterView,
   slashCommandConverterDropdownPartial,
@@ -14,10 +16,18 @@ import {
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
-  OPENAI_API_KEY?: string;
+
+  // Multi-provider configuration
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
-  AI_GATEWAY_TOKEN?: string;
+  AI_GATEWAY_TOKEN?: string; // BYOK gateway token
+  AI_PROVIDER?: ProviderType; // 'openai' | 'gemini' | 'auto'
+  OPENAI_REASONING_MODE?: OpenAIReasoningMode;
+  GEMINI_THINKING_BUDGET?: string; // String because env vars are strings
+
+  // Direct API keys for local development
+  OPENAI_API_KEY?: string;
+  GEMINI_API_KEY?: string;
 };
 
 export const slashCommandConverterRouter = new Hono<{ Bindings: Bindings }>();
@@ -62,14 +72,25 @@ slashCommandConverterRouter.get('/converter-form', async (c) => {
     return c.html('<p>Please select a command</p>');
   }
 
-  // Initialize analyzer for lazy analysis
-  const apiKey = c.env.OPENAI_API_KEY || '';
-  const accountId = c.env.ACCOUNT_ID;
-  const gatewayId = c.env.GATEWAY_ID;
-  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+  // Initialize provider factory for multi-provider support
+  const gatewayToken = c.env.AI_GATEWAY_TOKEN;
+  if (!gatewayToken) {
+    return c.html('<p style="color: var(--danger);">AI Gateway not configured</p>');
+  }
 
-  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
-  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const factory = new ProviderFactory({
+    ACCOUNT_ID: c.env.ACCOUNT_ID,
+    GATEWAY_ID: c.env.GATEWAY_ID,
+    GATEWAY_TOKEN: gatewayToken,
+    AI_PROVIDER: c.env.AI_PROVIDER,
+    OPENAI_REASONING_MODE: c.env.OPENAI_REASONING_MODE,
+    GEMINI_THINKING_BUDGET: c.env.GEMINI_THINKING_BUDGET ? parseInt(c.env.GEMINI_THINKING_BUDGET) : undefined,
+    OPENAI_API_KEY: c.env.OPENAI_API_KEY, // For local dev
+    GEMINI_API_KEY: c.env.GEMINI_API_KEY, // For local dev
+  });
+
+  const provider = factory.createProvider();
+  const analyzer = new SlashCommandAnalyzerService(provider);
   const configService = new ConfigService(c.env, analyzer);
 
   const config = await configService.getConfig(configId);
@@ -101,14 +122,25 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
     userArguments = formData.userArguments as string;
   }
 
-  // Initialize AI services
-  const apiKey = c.env.OPENAI_API_KEY || '';
-  const accountId = c.env.ACCOUNT_ID;
-  const gatewayId = c.env.GATEWAY_ID;
-  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+  // Initialize provider factory for multi-provider support
+  const gatewayToken = c.env.AI_GATEWAY_TOKEN;
+  if (!gatewayToken) {
+    return c.json({ error: 'AI Gateway not configured' }, 500);
+  }
 
-  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
-  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const factory = new ProviderFactory({
+    ACCOUNT_ID: c.env.ACCOUNT_ID,
+    GATEWAY_ID: c.env.GATEWAY_ID,
+    GATEWAY_TOKEN: gatewayToken,
+    AI_PROVIDER: c.env.AI_PROVIDER,
+    OPENAI_REASONING_MODE: c.env.OPENAI_REASONING_MODE,
+    GEMINI_THINKING_BUDGET: c.env.GEMINI_THINKING_BUDGET ? parseInt(c.env.GEMINI_THINKING_BUDGET) : undefined,
+    OPENAI_API_KEY: c.env.OPENAI_API_KEY, // For local dev
+    GEMINI_API_KEY: c.env.GEMINI_API_KEY, // For local dev
+  });
+
+  const provider = factory.createProvider();
+  const analyzer = new SlashCommandAnalyzerService(provider);
 
   // Initialize services with analyzer for lazy analysis
   const configService = new ConfigService(c.env, analyzer);
@@ -124,8 +156,8 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
     return c.json({ error: 'Config is not a slash command' }, 400);
   }
 
-  // Create converter service (pass both aiConverter and configService)
-  const converterService = new SlashCommandConverterService(aiConverter, configService);
+  // Create converter service (pass both provider and configService)
+  const converterService = new SlashCommandConverterService(provider, configService);
 
   // Convert the slash command
   try {
@@ -196,14 +228,25 @@ slashCommandConverterRouter.get('/', async (c) => {
 slashCommandConverterRouter.get('/:id', async (c) => {
   const id = c.req.param('id');
 
-  // Initialize analyzer for lazy analysis
-  const apiKey = c.env.OPENAI_API_KEY || '';
-  const accountId = c.env.ACCOUNT_ID;
-  const gatewayId = c.env.GATEWAY_ID;
-  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+  // Initialize provider factory for multi-provider support
+  const gatewayToken = c.env.AI_GATEWAY_TOKEN;
+  if (!gatewayToken) {
+    return c.json({ error: 'AI Gateway not configured' }, 500);
+  }
 
-  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
-  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const factory = new ProviderFactory({
+    ACCOUNT_ID: c.env.ACCOUNT_ID,
+    GATEWAY_ID: c.env.GATEWAY_ID,
+    GATEWAY_TOKEN: gatewayToken,
+    AI_PROVIDER: c.env.AI_PROVIDER,
+    OPENAI_REASONING_MODE: c.env.OPENAI_REASONING_MODE,
+    GEMINI_THINKING_BUDGET: c.env.GEMINI_THINKING_BUDGET ? parseInt(c.env.GEMINI_THINKING_BUDGET) : undefined,
+    OPENAI_API_KEY: c.env.OPENAI_API_KEY, // For local dev
+    GEMINI_API_KEY: c.env.GEMINI_API_KEY, // For local dev
+  });
+
+  const provider = factory.createProvider();
+  const analyzer = new SlashCommandAnalyzerService(provider);
   const configService = new ConfigService(c.env, analyzer);
 
   const config = await configService.getConfig(id);

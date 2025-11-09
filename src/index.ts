@@ -17,16 +17,16 @@ type Bindings = {
   // Cloudflare Configuration
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
-  GATEWAY_TOKEN?: string; // BYOK authentication token (preferred)
+  AI_GATEWAY_TOKEN?: string; // BYOK authentication token
 
   // Multi-Provider Configuration
   AI_PROVIDER?: 'openai' | 'gemini' | 'auto';
   OPENAI_REASONING_MODE?: 'high' | 'medium' | 'low' | 'minimal';
   GEMINI_THINKING_BUDGET?: string;
 
-  // Legacy Configuration (Deprecated - For Backward Compatibility)
-  OPENAI_API_KEY?: string; // Deprecated: Use GATEWAY_TOKEN instead
-  AI_GATEWAY_TOKEN?: string; // Deprecated: Renamed to GATEWAY_TOKEN
+  // API Keys for Local Development (still routes through AI Gateway)
+  OPENAI_API_KEY?: string; // For local dev
+  GEMINI_API_KEY?: string; // For local dev
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

@@ -34,15 +34,12 @@ export class AIConverterService implements AIProvider {
   constructor(apiKey: string, accountId: string, gatewayId: string, gatewayToken?: string) {
     console.warn('[DEPRECATED] AIConverterService is deprecated. Use ProviderFactory instead.')
 
-    // Delegate to new OpenAI provider for backward compatibility
-    // Support both legacy apiKey and new BYOK gatewayToken
-    const effectiveToken = gatewayToken || apiKey || 'dummy-key-byok-configured'
-
     this.provider = new OpenAIProvider({
       accountId,
       gatewayId,
-      gatewayToken: effectiveToken,
-      reasoningMode: 'low' // Keep backward compatibility with existing behavior
+      gatewayToken: gatewayToken || '',
+      directApiKey: apiKey, // Pass API key for local dev
+      reasoningMode: 'low'
     })
   }
 

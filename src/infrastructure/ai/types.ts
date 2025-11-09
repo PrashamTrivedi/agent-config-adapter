@@ -55,7 +55,7 @@ export interface AIConversionMetadata {
 	/** Provider name (openai, gemini) */
 	provider: string
 
-	/** Model used (gpt-5-mini-low, gemini-2.5-flash, etc.) */
+	/** Model used (gpt-5-mini, gemini-2.5-flash, etc.) */
 	model: string
 
 	/** Input tokens consumed */
