@@ -9,8 +9,7 @@ and MCP configs once, deploy across Codex, Gemini, and other agents.
 
 - 🔄 **Format Conversion**: Convert slash commands between Claude Code, Codex,
   and Gemini formats
-- 🤖 **AI-Powered Conversion**: Uses OpenAI GPT-5-mini via Cloudflare AI Gateway
-  for intelligent format conversion
+- 🤖 **AI-Powered Conversion**: Multi-provider support (OpenAI GPT-5-Mini, Google Gemini 2.5 Flash) via Cloudflare AI Gateway for intelligent format conversion
 - 🔗 **Reference Inlining**: Slash command converter automatically fetches and
   inlines agent/skill references from database during conversion
 - 💾 **Persistent Storage**: D1 database for reliable config storage
@@ -89,31 +88,39 @@ npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-conf
 
 # Setup environment variables for local development
 cp .dev.vars.example .dev.vars
-# REQUIRED: Get OpenAI API key from https://platform.openai.com/api-keys
-# IMPORTANT: AI Gateway does NOT store provider keys - you must provide your own
-# Edit .dev.vars: Set OPENAI_API_KEY, ACCOUNT_ID, and GATEWAY_ID
+# Edit .dev.vars and add your API keys (OpenAI and/or Google Gemini)
+# Get keys from:
+# - OpenAI: https://platform.openai.com/api-keys
+# - Google: https://aistudio.google.com/app/apikey
+# All requests route through AI Gateway for logging, analytics, caching
 
 # Start development server
 npm run dev
 ```
 
-### OpenAI API Key Setup
+### Multi-Provider AI Setup
 
-**IMPORTANT**: Cloudflare AI Gateway proxies requests to OpenAI but **does NOT
-store** your OpenAI API key. You must provide your own API key:
+The system supports **OpenAI GPT-5-Mini** and **Google Gemini 2.5 Flash** with automatic fallback. All requests route through Cloudflare AI Gateway for logging, analytics, caching, and rate limiting.
 
-1. Get an API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Add it to `.dev.vars`:
+**Local Development (Recommended)**:
+1. Get API keys from [OpenAI Platform](https://platform.openai.com/api-keys) and/or [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Add to `.dev.vars`:
    ```bash
    OPENAI_API_KEY=sk-proj-your-key-here
+   GEMINI_API_KEY=your-gemini-key-here
+   AI_PROVIDER=auto  # auto = prefer Gemini (15x cheaper), fallback to OpenAI
    ```
-3. For production, use Wrangler secrets:
-   ```bash
-   npx wrangler secret put OPENAI_API_KEY
-   ```
+3. Keys are passed through AI Gateway to providers (you get full AI Gateway benefits)
 
-**Without a valid OpenAI API key**, the system will fall back to rule-based
-conversions only (no AI-powered conversion).
+**Production BYOK (Bring Your Own Key)**:
+1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
+2. Create AI Gateway token and store as Worker secret:
+   ```bash
+   npx wrangler secret put AI_GATEWAY_TOKEN
+   ```
+3. Worker authenticates to AI Gateway, which retrieves keys from Cloudflare Secrets Store
+
+**Without valid API keys**, the system will fall back to rule-based conversions only (no AI-powered conversion).
 
 The app will be available at `http://localhost:8787` (or another port shown in
 console).
@@ -123,7 +130,12 @@ console).
 ```
 /src
   /domain          # Domain models and business logic
-  /infrastructure  # DB, KV, R2, AI converter, external services
+  /infrastructure  # DB, KV, R2, AI services
+    /ai            # Multi-provider AI infrastructure (NEW)
+      types.ts            # AIProvider interface and shared types
+      openai-provider.ts  # OpenAI GPT-5-Mini with reasoning_effort
+      gemini-provider.ts  # Google Gemini 2.5 Flash with thinking budgets
+      provider-factory.ts # Multi-provider management with auto fallback
   /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
   /services        # Business logic layer (config, conversion, skills, extension, marketplace, file generation services)
   /routes          # Hono REST route handlers (configs, skills, extensions, marketplaces, plugins, files)
@@ -790,9 +802,9 @@ Before deploying (first time setup):
 
 4. Update [wrangler.jsonc](wrangler.jsonc) with production IDs
 
-5. Set OpenAI API key secret:
+5. For production BYOK: Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys, then set gateway token:
    ```bash
-   npx wrangler secret put OPENAI_API_KEY
+   npx wrangler secret put AI_GATEWAY_TOKEN
    ```
 
 6. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars
@@ -810,7 +822,10 @@ Before deploying (first time setup):
 - **Database**: Cloudflare D1 (SQLite)
 - **Cache**: Cloudflare KV
 - **Storage**: Cloudflare R2 (for plugin files)
-- **AI**: OpenAI GPT-5-mini via Cloudflare AI Gateway
+- **AI Providers**: Multi-provider support via Cloudflare AI Gateway
+  - OpenAI GPT-5-Mini (with reasoning_effort parameter)
+  - Google Gemini 2.5 Flash (with thinking budgets)
+- **AI SDKs**: OpenAI SDK, Google GenAI SDK
 - **MCP**: @modelcontextprotocol/sdk (Model Context Protocol server)
 - **Transport Bridge**: fetch-to-node (Web Fetch to Node.js HTTP adapter)
 - **Frontend**: HTMX with server-side rendering
@@ -825,8 +840,8 @@ shared business logic:
 
 - **Domain Layer**: Core business logic and types (no infrastructure
   dependencies)
-- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), and AI
-  conversion service implementations
+- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), and multi-provider AI services
+  - AI infrastructure: Provider abstraction, OpenAI/Gemini implementations, factory with auto-fallback
 - **Services Layer**: Business logic orchestration
   - ConfigService: Configuration CRUD operations
   - ConversionService: Format conversion with caching
@@ -854,15 +869,17 @@ The system uses different strategies based on configuration type:
 
 #### Slash Commands (AI-Enhanced)
 
-1. **Primary**: AI-powered conversion using OpenAI GPT-5-mini via Cloudflare AI
-   Gateway
+1. **Primary**: AI-powered conversion using multi-provider system via Cloudflare AI Gateway
+   - Supports OpenAI GPT-5-Mini and Google Gemini 2.5 Flash
+   - Auto mode: Prefers Gemini (15x cheaper), falls back to OpenAI
+   - OpenAI: Configurable reasoning modes via `reasoning_effort` parameter (high/medium/low/minimal)
+   - Gemini: Thinking budgets support (reserved for future SDK enhancement)
    - Provides intelligent, context-aware format conversion
    - Preserves semantic meaning across different agent formats
    - Handles edge cases better than rule-based conversion
-   - Superior conversion quality compared to previous Llama 3.1 implementation
 
 2. **Fallback**: Rule-based conversion using format-specific adapters
-   - Automatically used if AI conversion fails
+   - Automatically used if AI conversion fails or no API keys configured
    - Ensures reliable conversion in all scenarios
    - Transparent to the user
 

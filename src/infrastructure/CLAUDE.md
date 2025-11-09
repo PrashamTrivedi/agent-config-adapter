@@ -16,13 +16,22 @@ Database, caching, and external service integrations.
 - Invalidate all format variations on update/delete
 - Supported formats: `claude_code`, `codex`, `gemini`
 
-## AI Converter
+## Multi-Provider AI System
 
-- **Model**: OpenAI GPT-5-mini via Cloudflare AI Gateway
-- **Authentication**: Requires OpenAI API key (BYOK - Bring Your Own Key)
-- Build detailed prompts with source and target format specs
-- Uses OpenAI SDK with `chat.completions.create()` method
-- Gateway URL: `https://gateway.ai.cloudflare.com/v1/{ACCOUNT_ID}/{GATEWAY_ID}/openai`
-- Optional AI Gateway token authentication via `cf-aig-authorization` header
-- Throw error if conversion fails to trigger fallback
-- Never add explanations or code blocks to converted output
+- **Providers**: OpenAI GPT-5-Mini, Google Gemini 2.5 Flash (see `src/infrastructure/ai/`)
+- **Architecture**: Provider abstraction with factory pattern and auto-fallback
+- **Provider Selection**: Auto mode (prefer Gemini for cost), or explicit provider choice
+- **Authentication**:
+  - Local dev: Direct API keys (OPENAI_API_KEY, GEMINI_API_KEY) passed through AI Gateway
+  - Production BYOK: AI_GATEWAY_TOKEN for Worker → Gateway, provider keys stored in Cloudflare Dashboard
+- **AI Gateway Integration**: ALL requests route through AI Gateway for logging, analytics, caching
+- **OpenAI Features**:
+  - Model: `gpt-5-mini` with `reasoning_effort` parameter (high/medium/low/minimal)
+  - Gateway URL: `https://gateway.ai.cloudflare.com/v1/{ACCOUNT_ID}/{GATEWAY_ID}/openai`
+- **Gemini Features**:
+  - Model: `gemini-2.5-flash` with thinking budgets (reserved for future SDK support)
+  - Gateway URL: `https://gateway.ai.cloudflare.com/v1/{ACCOUNT_ID}/{GATEWAY_ID}/google-ai-studio`
+- **Conversion Rules**:
+  - Build detailed prompts with source and target format specs
+  - Throw error if conversion fails to trigger rule-based fallback
+  - Never add explanations or code blocks to converted output

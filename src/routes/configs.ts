@@ -11,7 +11,8 @@ type Bindings = {
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
-  AI_GATEWAY_TOKEN?: string;
+  AI_GATEWAY_TOKEN?: string; // BYOK gateway token
+  AI_PROVIDER?: 'openai' | 'gemini' | 'auto';
 };
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
@@ -221,9 +222,9 @@ configsRouter.post('/:id/refresh-analysis', async (c) => {
   const apiKey = c.env.OPENAI_API_KEY || '';
   const accountId = c.env.ACCOUNT_ID;
   const gatewayId = c.env.GATEWAY_ID;
-  const aiGatewayToken = c.env.AI_GATEWAY_TOKEN;
+  const gatewayToken = c.env.AI_GATEWAY_TOKEN;
 
-  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, aiGatewayToken);
+  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, gatewayToken);
   const analyzer = new SlashCommandAnalyzerService(aiConverter);
   const configService = new ConfigService(c.env, analyzer);
 

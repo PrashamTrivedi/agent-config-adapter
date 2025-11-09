@@ -1,5 +1,7 @@
 import OpenAI from 'openai'
 import {AgentFormat, ConfigType} from '../domain/types'
+import { OpenAIProvider } from './ai/openai-provider'
+import type { AIProvider } from './ai/types'
 
 export interface AIConversionResult {
   content: string
@@ -7,53 +9,53 @@ export interface AIConversionResult {
   fallbackUsed: boolean
 }
 
-export class AIConverterService {
-  private openai: OpenAI
+/**
+ * @deprecated Use ProviderFactory and AIProvider interface instead
+ *
+ * This class is kept for backward compatibility but delegates to the new provider architecture.
+ * Migration path:
+ * ```typescript
+ * // Old way:
+ * const converter = new AIConverterService(apiKey, accountId, gatewayId, gatewayToken)
+ *
+ * // New way:
+ * const factory = new ProviderFactory({
+ *   ACCOUNT_ID: accountId,
+ *   GATEWAY_ID: gatewayId,
+ *   GATEWAY_TOKEN: gatewayToken,
+ *   AI_PROVIDER: 'openai' // or 'gemini' or 'auto'
+ * })
+ * const provider = factory.createProvider()
+ * ```
+ */
+export class AIConverterService implements AIProvider {
+  private provider: AIProvider
 
   constructor(apiKey: string, accountId: string, gatewayId: string, gatewayToken?: string) {
-    // When using BYOK mode (gatewayToken provided), use the gateway token as apiKey
-    // The gateway will authenticate and use its stored OpenAI key
-    const effectiveApiKey = gatewayToken || apiKey || 'dummy-key-byok-configured'
+    console.warn('[DEPRECATED] AIConverterService is deprecated. Use ProviderFactory instead.')
 
-    const config: any = {
-      apiKey: effectiveApiKey,
-      baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`
-    }
-
-    this.openai = new OpenAI(config)
+    this.provider = new OpenAIProvider({
+      accountId,
+      gatewayId,
+      gatewayToken: gatewayToken || '',
+      directApiKey: apiKey, // Pass API key for local dev
+      reasoningMode: 'low'
+    })
   }
 
+  // AIProvider interface implementation (delegates to provider)
   async convert(
     sourceContent: string,
     sourceFormat: AgentFormat,
     targetFormat: AgentFormat,
     configType: ConfigType
-  ): Promise<string> {
-    const prompt = this.buildConversionPrompt(
+  ): Promise<import('./ai/types').AIConversionResult> {
+    return this.provider.convert(
       sourceContent,
       sourceFormat,
       targetFormat,
       configType
     )
-
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-mini-2025-08-07',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        reasoning_effort: "high"
-      })
-
-      const result = response.choices[0].message.content || ''
-      return result.trim()
-    } catch (error) {
-      console.error('AI conversion failed:', error)
-      throw new Error('AI conversion failed')
-    }
   }
 
   /**
@@ -79,128 +81,17 @@ export class AIConverterService {
         parameters: Record<string, any>
       }
     }>
-  ): Promise<{
-    content: string | null
-    tool_calls?: Array<{
-      id: string
-      function: {name: string; arguments: string}
-    }>
-  }> {
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-5-mini-2025-08-07',
-        messages: messages as any,
-        reasoning_effort: "high",
-        tools: tools as any,
-        tool_choice: 'auto',
-      })
-
-      const message = response.choices[0].message
-
-      return {
-        content: message.content,
-        tool_calls: message.tool_calls?.map(tc => {
-          if ('function' in tc) {
-            return {
-              id: tc.id,
-              function: {
-                name: tc.function.name,
-                arguments: tc.function.arguments
-              }
-            }
-          }
-          // Handle custom tool calls if needed
-          return {
-            id: tc.id,
-            function: {
-              name: '',
-              arguments: ''
-            }
-          }
-        })
-      }
-    } catch (error) {
-      console.error('AI chat with tools failed:', error)
-      throw new Error('AI conversion with tools failed')
-    }
+  ): Promise<import('./ai/types').ChatResponse> {
+    return this.provider.chatWithTools(messages, tools)
   }
 
-  private buildConversionPrompt(
-    sourceContent: string,
-    sourceFormat: AgentFormat,
-    targetFormat: AgentFormat,
-    configType: ConfigType
-  ): string {
-    const systemContext = `You are a configuration format converter for AI coding agents. Your task is to convert configuration files between different agent formats while preserving semantic meaning and functionality.
-
-IMPORTANT RULES:
-1. Preserve the exact semantic meaning of the original configuration
-2. Maintain all functionality - do not add or remove features
-3. Follow the target format's syntax precisely
-4. Output ONLY the converted configuration - no explanations, no markdown code blocks, no preamble
-5. If the source has parameters/arguments, preserve them in the target format's convention
-6. Follow these convention for memory files, Claude Code has CLAUDE.md, Gemini  has GEMINI.md and Codex has AGENTS.md. So when you encounter one in the source file, replace it for Destination. 
-    - e.g. If you encounter CLAUDE.md and are converting it to Gemini, Replace CLAUDE.md with GEMINI.md
-
-${this.getFormatSpec(sourceFormat, 'SOURCE')}
-
-${this.getFormatSpec(targetFormat, 'TARGET')}`
-
-    const userPrompt = `Convert the following ${configType} configuration from ${sourceFormat} format to ${targetFormat} format:
-
-${sourceContent}
-
-Remember: Output ONLY the converted configuration in ${targetFormat} format. No explanations.`
-
-    return systemContext + '\n\n' + userPrompt
+  // Implement AIProvider interface methods for backward compatibility
+  getProviderName(): string {
+    return this.provider.getProviderName()
   }
 
-  private getFormatSpec(format: AgentFormat, label: string): string {
-    switch (format) {
-      case 'claude_code':
-        return `${label} FORMAT: Claude Code
-Claude Code slash commands use Markdown with YAML frontmatter:
----
-name: command-name
-description: Brief description of what the command does
-allowed-tools: List of allowed tools
----
-
-The actual prompt content goes here.
-It can be multiple lines.
-
-Parameters can be referenced as $ARGUMENTS in the prompt.`
-
-      case 'codex':
-        return `${label} FORMAT: Codex
-Codex uses AGENTS.md style with markdown sections:
-# command-name
-
-Brief description of what the command does
-
-## Prompt
-
-The actual prompt content goes here.
-It can be multiple lines.
-
-Parameters are referenced as {{args}} in the prompt.`
-
-      case 'gemini':
-        return `${label} FORMAT: Gemini
-Gemini uses TOML files (.toml) with this structure:
-Parameters are referenced as {{args}} in the prompt.
-description = "Brief description of what the command does"
-prompt = """
-The actual prompt content goes here.
-It can be multiple lines.
-"""
-
-Note: Use triple-quoted strings for multi-line prompts.
-If there are no parameters, omit the args field entirely.`
-
-      default:
-        return ''
-    }
+  getMetrics(): any {
+    return this.provider.getMetrics()
   }
 
 }

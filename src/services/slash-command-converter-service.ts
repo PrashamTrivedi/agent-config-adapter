@@ -4,12 +4,12 @@ import {
   SlashCommandConversionInput,
   SlashCommandConversionResult,
 } from '../domain/types'
-import {AIConverterService} from '../infrastructure/ai-converter'
+import type { AIProvider } from '../infrastructure/ai/types'
 import {ConfigService} from './config-service'
 
 export class SlashCommandConverterService {
   constructor(
-    private aiConverter: AIConverterService,
+    private aiProvider: AIProvider,
     private configService: ConfigService
   ) { }
 
@@ -145,7 +145,7 @@ export class SlashCommandConverterService {
     let iteration = 0
 
     while (iteration < maxIterations) {
-      const response = await this.aiConverter.chatWithTools(messages, tools)
+      const response = await this.aiProvider.chatWithTools(messages, tools)
 
       // Check if AI wants to use tools
       if (response.tool_calls && response.tool_calls.length > 0) {
@@ -254,7 +254,23 @@ export class SlashCommandConverterService {
   private buildSystemPrompt(
     availableReferences: {agents: string[]; skills: string[]}
   ): string {
-    return `<core_task>
+    return `<tool_usage_instructions>
+IMPORTANT: You have access to a read_configs function tool. When you need agent or skill content:
+1. Call the read_configs function with proper JSON parameters
+2. DO NOT generate code examples or Python syntax
+3. DO NOT use print() or any programming language syntax
+4. Use the standard function calling API to request the content
+
+Example of what the function expects:
+{
+  "references": [
+    {"name": "triage", "type": "agent"},
+    {"name": "conventional-commit", "type": "skill"}
+  ]
+}
+</tool_usage_instructions>
+
+<core_task>
 Convert Claude Code slash commands to standalone prompts with SURGICAL changes only:
 1. Remove YAML frontmatter
 2. Replace $ARGUMENT in execution contexts (NOT in explanatory text)

@@ -1,19 +1,71 @@
-# OpenAI API Key - REQUIRED for AI-powered conversions
-# Get your API key from: https://platform.openai.com/api-keys
-# IMPORTANT: AI Gateway does NOT store provider API keys - you must provide your own
-# If omitted or invalid, the system falls back to rule-based conversions only
-# Example: OPENAI_API_KEY=sk-proj-...
-OPENAI_API_KEY=
+# ============================================================================
+# Multi-Provider AI Configuration
+# ============================================================================
+# This project supports OpenAI (GPT-5-Mini) and Google Gemini (2.5 Flash)
+# ALL requests route through Cloudflare AI Gateway for logging, analytics,
+# caching, and rate limiting - in both local development and production.
+#
+# Local Development:
+# - Use direct API keys below (OPENAI_API_KEY, GEMINI_API_KEY)
+# - Keys are passed through AI Gateway to providers
+# - You get AI Gateway benefits (logging, analytics) even in local dev
+#
+# Production (TRUE BYOK):
+# - Store provider API keys in Cloudflare Dashboard (NOT in Worker secrets)
+# - Worker authenticates to AI Gateway using AI_GATEWAY_TOKEN
+# - AI Gateway retrieves provider keys from Cloudflare Secrets Store
+# - Direct billing to YOUR OpenAI/Google accounts
+# ============================================================================
 
-# Cloudflare Account ID (find in your Cloudflare dashboard)
+# ============================================================================
+# Cloudflare Configuration
+# ============================================================================
+
+# Cloudflare Account ID (find in dashboard URL)
 ACCOUNT_ID=b286748abb233ddf7bf942f876f11eac
 
-# AI Gateway ID (created in Cloudflare AI Gateway dashboard)
+# AI Gateway ID (created in AI Gateway dashboard)
+# This is NOT an API key - it's an identifier for your gateway
 GATEWAY_ID=ai-agent-adapter
 
-# AI Gateway Authentication Token - OPTIONAL for authenticated gateways
-# Create token in: Cloudflare Dashboard > AI Gateway > [Your Gateway] > Authentication
-# This is required if you enabled "Authenticated Gateway" in the AI Gateway settings
-# Leave empty if using an unauthenticated gateway
-# Format: token value (without "Bearer " prefix - added automatically)
+# AI Gateway Token (REQUIRED for production BYOK)
+# This token authenticates your Worker to AI Gateway in production
+# Create in: Cloudflare Dashboard → AI Gateway → Settings → Create Token
+# This is a Cloudflare token, NOT a provider API key
+# Optional for local dev (only needed if you want to test BYOK flow)
 AI_GATEWAY_TOKEN=
+
+# ============================================================================
+# Provider Selection and Configuration
+# ============================================================================
+
+# Provider Selection: 'openai' | 'gemini' | 'auto' (default: auto)
+# auto = prefer Gemini for cost, fallback to OpenAI
+AI_PROVIDER=auto
+
+# OpenAI Reasoning Mode: 'high' | 'medium' | 'low' | 'minimal' (default: low)
+# This maps to OpenAI's reasoning_effort API parameter (NOT different models)
+# All modes use the same base model (gpt-5-mini) with different reasoning depths
+OPENAI_REASONING_MODE=low
+
+# Gemini Thinking Budget: 0 (disable) to 24576 (max), or -1 (dynamic) (default: 0)
+# Presets: 0=none, 512=minimal, 1024=low, 2048=medium, 4096=high, -1=dynamic
+GEMINI_THINKING_BUDGET=0
+
+# ============================================================================
+# Direct API Keys for Local Development (Recommended)
+# ============================================================================
+# Use these for local development to get started quickly
+# Your keys are passed through AI Gateway to providers
+# Benefits: Logging, analytics, caching, rate limiting (same as production)
+# Get keys from:
+# - OpenAI: https://platform.openai.com/api-keys
+# - Google: https://aistudio.google.com/app/apikey
+#
+# Production uses BYOK with keys stored in Cloudflare Dashboard instead
+
+# OpenAI API Key (for local development)
+OPENAI_API_KEY=
+
+# Google Gemini API Key (for local development)
+GEMINI_API_KEY=

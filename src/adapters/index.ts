@@ -42,7 +42,7 @@ class AIEnhancedAdapter implements FormatAdapter {
         type
       );
       return {
-        content: aiResult,
+        content: aiResult.content,
         usedAI: true,
         fallbackUsed: false,
       };

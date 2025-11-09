@@ -13,10 +13,20 @@ type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
   EXTENSION_FILES: R2Bucket;
-  OPENAI_API_KEY?: string;
+
+  // Cloudflare Configuration
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
-  AI_GATEWAY_TOKEN?: string;
+  AI_GATEWAY_TOKEN?: string; // BYOK authentication token
+
+  // Multi-Provider Configuration
+  AI_PROVIDER?: 'openai' | 'gemini' | 'auto';
+  OPENAI_REASONING_MODE?: 'high' | 'medium' | 'low' | 'minimal';
+  GEMINI_THINKING_BUDGET?: string;
+
+  // API Keys for Local Development (still routes through AI Gateway)
+  OPENAI_API_KEY?: string; // For local dev
+  GEMINI_API_KEY?: string; // For local dev
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

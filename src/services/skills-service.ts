@@ -225,7 +225,7 @@ export class SkillsService {
 
     // Validate file sizes
     this.zipService.validateFileSizes([
-      { path: 'SKILL.md', content: new TextEncoder().encode(structure.skillContent).buffer },
+      { path: 'SKILL.md', content: new TextEncoder().encode(structure.skillContent).buffer as ArrayBuffer },
       ...structure.companionFiles,
     ]);
 
