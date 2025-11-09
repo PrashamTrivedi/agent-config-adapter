@@ -14,18 +14,32 @@ export function configListContainerPartial(
     ` : `
       <ul class="config-list">
         ${configs.map(c => `
-          <li>
-            <a href="/configs/${c.id}" style="font-weight: 500;">
+          <li class="card card-hover fade-in">
+            <a href="/configs/${c.id}" style="font-weight: 500; font-size: 1.1em;">
               ${escapeHtml(c.name)}
             </a>
-            <span class="badge">${c.type}</span>
-            <span class="badge">${c.original_format}</span>
-            <div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              Created: ${new Date(c.created_at).toLocaleDateString()}
+            <div style="margin-top: 8px;">
+              <span class="status-indicator status-info">
+                <span class="status-dot"></span>
+                ${c.type.replace('_', ' ')}
+              </span>
+              <span class="badge">${c.original_format}</span>
+            </div>
+            <div style="font-size: 0.875em; margin-top: 8px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
+              <span>Created: ${new Date(c.created_at).toLocaleDateString()}</span>
+              <div class="quick-actions" style="opacity: 0; transition: opacity 0.2s;">
+                <a href="/configs/${c.id}/edit" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.875em; margin-right: 5px;">Edit</a>
+                <a href="/configs/${c.id}" class="btn" style="padding: 4px 10px; font-size: 0.875em;">View →</a>
+              </div>
             </div>
           </li>
         `).join('')}
       </ul>
+      <style>
+        .config-list li:hover .quick-actions {
+          opacity: 1;
+        }
+      </style>
     `}
   `;
 }
@@ -38,8 +52,10 @@ export function configListView(
   const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
 
   const content = `
-    <h2>All Configurations</h2>
-    <a href="/configs/new" class="btn">Add New Config</a>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin: 0;">All Configurations</h2>
+      <a href="/configs/new" class="btn ripple">+ Add New Config</a>
+    </div>
 
     <!-- Filter Controls -->
     <div class="filter-container" id="filter-controls">
@@ -156,60 +172,74 @@ export function configDetailView(config: Config): string {
   const isSlashCommand = config.type === 'slash_command';
 
   const content = `
-    <h2>${config.name}</h2>
-    <div style="margin-bottom: 20px;">
-      <span class="badge">${config.type}</span>
-      <span class="badge">${config.original_format}</span>
+    <div class="fade-in">
+      <h2>${config.name}</h2>
+      <div style="margin-bottom: 20px;">
+        <span class="status-indicator status-info">
+          <span class="status-dot"></span>
+          ${config.type.replace('_', ' ')}
+        </span>
+        <span class="badge">${config.original_format}</span>
+      </div>
     </div>
 
     ${isSlashCommand ? `
-      <div style="margin-bottom: 20px; padding: 15px; background-color: var(--background-secondary); border-radius: 4px;">
-        <h3 style="margin-top: 0;">Slash Command Analysis</h3>
-        <ul style="margin-left: 20px;">
-          <li>Requires arguments: ${config.has_arguments ? 'Yes' : 'No'}</li>
-          ${config.argument_hint ? `<li>Argument hint: ${escapeHtml(config.argument_hint)}</li>` : ''}
+      <div class="card slide-up" style="margin-bottom: 20px; padding: 20px;">
+        <h3 style="margin-top: 0;">📋 Slash Command Analysis</h3>
+        <ul style="margin-left: 20px; line-height: 1.8;">
+          <li><strong>Requires arguments:</strong> ${config.has_arguments ? '<span class="status-indicator status-warning">Yes</span>' : '<span class="status-indicator status-success">No</span>'}</li>
+          ${config.argument_hint ? `<li><strong>Argument hint:</strong> <code>${escapeHtml(config.argument_hint)}</code></li>` : ''}
           ${config.agent_references ? `
-            <li>Agent references: ${JSON.parse(config.agent_references).map((a: string) => escapeHtml(a)).join(', ')}</li>
-          ` : '<li>Agent references: None</li>'}
+            <li><strong>Agent references:</strong> ${JSON.parse(config.agent_references).map((a: string) => `<span class="badge">${escapeHtml(a)}</span>`).join(' ')}</li>
+          ` : '<li><strong>Agent references:</strong> <span class="status-indicator status-info">None</span></li>'}
           ${config.skill_references ? `
-            <li>Skill references: ${JSON.parse(config.skill_references).map((s: string) => escapeHtml(s)).join(', ')}</li>
-          ` : '<li>Skill references: None</li>'}
-          ${config.analysis_version ? `<li>Analysis version: ${config.analysis_version}</li>` : ''}
+            <li><strong>Skill references:</strong> ${JSON.parse(config.skill_references).map((s: string) => `<span class="badge">${escapeHtml(s)}</span>`).join(' ')}</li>
+          ` : '<li><strong>Skill references:</strong> <span class="status-indicator status-info">None</span></li>'}
+          ${config.analysis_version ? `<li><strong>Analysis version:</strong> ${config.analysis_version}</li>` : ''}
         </ul>
 
         <button
-          class="btn btn-secondary"
+          id="refresh-analysis-btn"
+          class="btn btn-secondary ripple"
           hx-post="/api/configs/${config.id}/refresh-analysis"
           hx-target="#analysis-status"
           hx-swap="innerHTML"
-          style="margin-top: 10px;">
+          data-success-message="Analysis refreshed successfully"
+          data-error-message="Failed to refresh analysis"
+          style="margin-top: 15px;">
           🔄 Refresh Analysis
         </button>
-        <span style="font-size: 0.875em; color: var(--text-secondary); margin-left: 10px;">
-          (Re-analyzes command for arguments and references)
+        <span class="help-text" style="display: inline-block; margin-left: 10px;">
+          Re-analyzes command for arguments and references
         </span>
 
         <div id="analysis-status" style="margin-top: 10px;"></div>
+        <div id="refresh-progress" class="progress-bar indeterminate" style="margin-top: 10px; display: none;">
+          <div class="progress-bar-fill"></div>
+        </div>
       </div>
     ` : ''}
 
     <h3>Original Content</h3>
     <pre>${escapeHtml(config.content)}</pre>
 
-    <h3>Convert to Different Formats</h3>
+    <h3>🔄 Convert to Different Formats</h3>
     <div style="margin-bottom: 20px;">
-      <button class="btn" hx-get="/api/configs/${config.id}/format/claude_code" hx-target="#converted">
+      <button class="btn ripple" hx-get="/api/configs/${config.id}/format/claude_code" hx-target="#converted" hx-indicator="#convert-spinner">
         Claude Code
       </button>
-      <button class="btn" hx-get="/api/configs/${config.id}/format/codex" hx-target="#converted">
+      <button class="btn ripple" hx-get="/api/configs/${config.id}/format/codex" hx-target="#converted" hx-indicator="#convert-spinner">
         Codex
       </button>
-      <button class="btn" hx-get="/api/configs/${config.id}/format/gemini" hx-target="#converted">
+      <button class="btn ripple" hx-get="/api/configs/${config.id}/format/gemini" hx-target="#converted" hx-indicator="#convert-spinner">
         Gemini
       </button>
+      <span id="convert-spinner" class="htmx-indicator">
+        <span class="spinner"></span>
+      </span>
     </div>
 
-    <div id="converted"></div>
+    <div id="converted" class="fade-in"></div>
 
     <h3>Actions</h3>
     <div style="margin-bottom: 20px;">
@@ -226,16 +256,15 @@ export function configDetailView(config: Config): string {
     </div>
     <div id="cache-status"></div>
 
-    <div style="margin-top: 30px;">
-      <a href="/configs/${config.id}/edit" class="btn">Edit</a>
-      <a href="/configs" class="btn btn-secondary">Back to List</a>
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+      <a href="/configs/${config.id}/edit" class="btn ripple">✏️ Edit</a>
+      <a href="/configs" class="btn btn-secondary">← Back to List</a>
       <button
-        class="btn btn-danger"
-        hx-delete="/api/configs/${config.id}"
-        hx-confirm="Are you sure you want to delete this config?"
-        hx-target="body"
-        hx-swap="outerHTML">
-        Delete
+        class="btn btn-danger ripple"
+        onclick="confirmAction('Are you sure you want to delete this config? This action cannot be undone.', () => {
+          htmx.ajax('DELETE', '/api/configs/${config.id}', {target:'body', swap:'outerHTML'});
+        })">
+        🗑️ Delete
       </button>
     </div>
 
@@ -249,25 +278,49 @@ export function configDetailView(config: Config): string {
           let aiIndicator = '';
           if (data.usedAI) {
             if (data.fallbackUsed) {
-              aiIndicator = '<p style="color: #ff9800; font-size: 0.875em;">⚠ Fallback conversion used</p>';
+              aiIndicator = '<span class="status-indicator status-warning"><span class="status-dot"></span> Fallback conversion used</span>';
             } else {
-              aiIndicator = '<p style="color: #4caf50; font-size: 0.875em;">✓ AI-powered conversion</p>';
+              aiIndicator = '<span class="status-indicator status-success"><span class="status-dot"></span> AI-powered conversion</span>';
             }
           }
 
           evt.detail.target.innerHTML = \`
-            <h3>Converted Content</h3>
-            <pre>\${data.content}</pre>
-            \${aiIndicator}
-            \${data.cached ? '<p style="color: var(--text-secondary); font-size: 0.875em;">From cache</p>' : ''}
+            <div class="card fade-in" style="margin-top: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">✅ Converted Content</h3>
+                <button class="btn btn-secondary copy-btn" onclick="copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this)">
+                  📋 Copy
+                </button>
+              </div>
+              <pre style="margin: 0;">\${data.content}</pre>
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
+                \${aiIndicator}
+                \${data.cached ? '<span class="status-indicator status-info"><span class="status-dot"></span> From cache</span>' : ''}
+              </div>
+            </div>
           \`;
+          window.showToast('Conversion completed successfully', 'success');
         }
 
         // Auto-reload page after analysis refresh for updated metadata
         if (evt.detail.target.id === 'analysis-status' && evt.detail.xhr.status === 200) {
+          window.showToast('Analysis refreshed! Reloading page...', 'success');
           setTimeout(() => {
             window.location.reload();
           }, 2000);
+        }
+      });
+
+      // Show progress bar during analysis refresh
+      document.body.addEventListener('htmx:beforeRequest', function(evt) {
+        if (evt.target.id === 'refresh-analysis-btn') {
+          document.getElementById('refresh-progress').style.display = 'block';
+        }
+      });
+
+      document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.target.id === 'refresh-analysis-btn') {
+          document.getElementById('refresh-progress').style.display = 'none';
         }
       });
     </script>
@@ -277,49 +330,74 @@ export function configDetailView(config: Config): string {
 
 export function configCreateView(): string {
   const content = `
-    <h2>Add New Configuration</h2>
-    <form hx-post="/api/configs" hx-target="body" hx-swap="outerHTML">
-      <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" required>
-      </div>
+    <div class="fade-in">
+      <h2>✨ Add New Configuration</h2>
+      <div class="card" style="margin-top: 20px;">
+        <form id="config-form" hx-post="/api/configs" hx-target="body" hx-swap="outerHTML">
+          <div class="form-group">
+            <label for="name">Name <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="name" name="name" required placeholder="Enter configuration name">
+            <span class="form-error-message"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="type">Type</label>
-        <select id="type" name="type" required>
-          <option value="slash_command">Slash Command</option>
-          <option value="agent_definition">Agent Definition</option>
-          <option value="mcp_config">MCP Config</option>
-          <option value="skill">Skill</option>
-        </select>
-      </div>
+          <div class="form-group">
+            <label for="type">Type <span style="color: var(--danger);">*</span></label>
+            <select id="type" name="type" required>
+              <option value="slash_command">Slash Command</option>
+              <option value="agent_definition">Agent Definition</option>
+              <option value="mcp_config">MCP Config</option>
+              <option value="skill">Skill</option>
+            </select>
+            <span class="form-error-message"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="original_format">Original Format</label>
-        <select id="original_format" name="original_format" required>
-          <option value="claude_code">Claude Code</option>
-          <option value="codex">Codex</option>
-          <option value="gemini">Gemini</option>
-        </select>
-      </div>
+          <div class="form-group">
+            <label for="original_format">Original Format <span style="color: var(--danger);">*</span></label>
+            <select id="original_format" name="original_format" required>
+              <option value="claude_code">Claude Code</option>
+              <option value="codex">Codex</option>
+              <option value="gemini">Gemini</option>
+            </select>
+            <span class="form-error-message"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="content">Content</label>
-        <textarea id="content" name="content" required></textarea>
-      </div>
+          <div class="form-group">
+            <label for="content">Content <span style="color: var(--danger);">*</span></label>
+            <textarea id="content" name="content" required placeholder="Paste your configuration content here..."></textarea>
+            <span class="form-error-message"></span>
+          </div>
 
-      <button type="submit" class="btn">Create Config</button>
-      <a href="/configs" class="btn btn-secondary">Cancel</a>
-    </form>
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <button type="submit" id="submit-btn" class="btn ripple">✓ Create Config</button>
+            <a href="/configs" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script>
+      // Add character counter
+      window.addCharCount('content');
+
+      // Form validation
+      const form = document.getElementById('config-form');
+      form.addEventListener('submit', function(e) {
+        if (!window.validateForm(form)) {
+          e.preventDefault();
+          window.showToast('Please fill in all required fields', 'error');
+        }
+      });
+
       // Handle form submission
       document.body.addEventListener('htmx:afterSwap', function(evt) {
         const response = evt.detail.xhr.responseText;
         try {
           const data = JSON.parse(response);
           if (data.config) {
-            window.location.href = '/configs/' + data.config.id;
+            window.showToast('Configuration created successfully!', 'success');
+            setTimeout(() => {
+              window.location.href = '/configs/' + data.config.id;
+            }, 500);
           }
         } catch(e) {
           // Response is HTML, let it render
@@ -330,7 +408,11 @@ export function configCreateView(): string {
       document.getElementById('type').addEventListener('change', function(e) {
         if (e.target.value === 'skill') {
           // Redirect to skills create page for multi-file support
-          window.location.href = '/skills/new';
+          if (confirm('Skills require multi-file support. Redirect to skills creation page?')) {
+            window.location.href = '/skills/new';
+          } else {
+            e.target.value = 'slash_command';
+          }
         }
       });
     </script>
@@ -340,40 +422,68 @@ export function configCreateView(): string {
 
 export function configEditView(config: Config): string {
   const content = `
-    <h2>Edit Configuration</h2>
-    <form hx-put="/api/configs/${config.id}" hx-target="body" hx-swap="outerHTML">
-      <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="${escapeHtml(config.name)}" required>
-      </div>
+    <div class="fade-in">
+      <h2>✏️ Edit Configuration</h2>
+      <div class="card" style="margin-top: 20px;">
+        <form id="config-form" hx-put="/api/configs/${config.id}" hx-target="body" hx-swap="outerHTML">
+          <div class="form-group">
+            <label for="name">Name <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="name" name="name" value="${escapeHtml(config.name)}" required>
+            <span class="form-error-message"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="type">Type</label>
-        <select id="type" name="type" required>
-          <option value="slash_command" ${config.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
-          <option value="agent_definition" ${config.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
-          <option value="mcp_config" ${config.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
-          <option value="skill" ${config.type === 'skill' ? 'selected' : ''}>Skill</option>
-        </select>
-      </div>
+          <div class="form-group">
+            <label for="type">Type <span style="color: var(--danger);">*</span></label>
+            <select id="type" name="type" required>
+              <option value="slash_command" ${config.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
+              <option value="agent_definition" ${config.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
+              <option value="mcp_config" ${config.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+              <option value="skill" ${config.type === 'skill' ? 'selected' : ''}>Skill</option>
+            </select>
+            <span class="form-error-message"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="original_format">Original Format</label>
-        <select id="original_format" name="original_format" required>
-          <option value="claude_code" ${config.original_format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
-          <option value="codex" ${config.original_format === 'codex' ? 'selected' : ''}>Codex</option>
-          <option value="gemini" ${config.original_format === 'gemini' ? 'selected' : ''}>Gemini</option>
-        </select>
-      </div>
+          <div class="form-group">
+            <label for="original_format">Original Format <span style="color: var(--danger);">*</span></label>
+            <select id="original_format" name="original_format" required>
+              <option value="claude_code" ${config.original_format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+              <option value="codex" ${config.original_format === 'codex' ? 'selected' : ''}>Codex</option>
+              <option value="gemini" ${config.original_format === 'gemini' ? 'selected' : ''}>Gemini</option>
+            </select>
+            <span class="form-error-message"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="content">Content</label>
-        <textarea id="content" name="content" required>${escapeHtml(config.content)}</textarea>
-      </div>
+          <div class="form-group">
+            <label for="content">Content <span style="color: var(--danger);">*</span></label>
+            <textarea id="content" name="content" required>${escapeHtml(config.content)}</textarea>
+            <span class="form-error-message"></span>
+          </div>
 
-      <button type="submit" class="btn">Update Config</button>
-      <a href="/configs/${config.id}" class="btn btn-secondary">Cancel</a>
-    </form>
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <button type="submit" id="submit-btn" class="btn ripple">✓ Update Config</button>
+            <a href="/configs/${config.id}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script>
+      // Add character counter
+      window.addCharCount('content');
+
+      // Form validation
+      const form = document.getElementById('config-form');
+      form.addEventListener('submit', function(e) {
+        if (!window.validateForm(form)) {
+          e.preventDefault();
+          window.showToast('Please fill in all required fields', 'error');
+        }
+      });
+
+      // Handle successful update
+      document.body.addEventListener('htmx:afterSwap', function(evt) {
+        window.showToast('Configuration updated successfully!', 'success');
+      });
+    </script>
   `;
   return layout('Edit Config', content);
 }
