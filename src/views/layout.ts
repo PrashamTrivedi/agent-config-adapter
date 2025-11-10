@@ -33,20 +33,59 @@ export function layout(title: string, content: string): string {
             line-height: 1.6;
             color: var(--text-primary);
             background: var(--bg-primary);
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
           }
 
           header {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+          }
+
+          .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 32px;
+            flex-wrap: wrap;
+          }
+
+          .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: transform 0.2s ease;
+          }
+
+          .header-logo:hover {
+            transform: translateY(-2px);
+          }
+
+          .header-logo-icon {
+            font-size: 28px;
+            line-height: 1;
           }
 
           h1 {
-            color: var(--accent-primary);
-            margin-bottom: 10px;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent-primary), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
           }
 
           h2, h3 {
@@ -55,17 +94,97 @@ export function layout(title: string, content: string): string {
             color: var(--text-primary);
           }
 
+          nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+          }
+
           nav a {
-            display: inline-block;
-            margin-right: 15px;
-            color: var(--accent-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            color: var(--text-secondary);
             text-decoration: none;
-            transition: color 0.2s ease;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 0.95em;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+          }
+
+          nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--accent-primary);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: -1;
           }
 
           nav a:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+          }
+
+          nav a:hover::before {
+            opacity: 0.1;
+          }
+
+          nav a.active {
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.15);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+          }
+
+          nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--accent-primary);
+            border-radius: 2px 2px 0 0;
+          }
+
+          main {
+            padding: 0 32px 32px 32px;
+          }
+
+          @media (max-width: 768px) {
+            header {
+              padding: 16px 20px;
+            }
+
+            .header-container {
+              flex-direction: column;
+              gap: 16px;
+              align-items: flex-start;
+            }
+
+            nav {
+              width: 100%;
+              justify-content: flex-start;
+            }
+
+            nav a {
+              font-size: 0.9em;
+              padding: 6px 12px;
+            }
+
+            main {
+              padding: 0 20px 20px 20px;
+            }
           }
 
           .config-list { list-style: none; }
@@ -874,16 +993,42 @@ export function layout(title: string, content: string): string {
       <body>
         <div id="toast-container" class="toast-container"></div>
         <header>
-          <h1>Agent Config Adapter</h1>
-          <nav>
-            <a href="/">Home</a>
-            <a href="/configs">Configs</a>
-            <a href="/slash-commands/convert">Converter</a>
-            <a href="/skills">Skills</a>
-            <a href="/extensions">Extensions</a>
-            <a href="/marketplaces">Marketplaces</a>
-            <a href="/mcp/info">MCP</a>
-          </nav>
+          <div class="header-container">
+            <a href="/" class="header-logo">
+              <span class="header-logo-icon">🔄</span>
+              <h1>Agent Config Adapter</h1>
+            </a>
+            <nav>
+              <a href="/" class="${title === 'Home' ? 'active' : ''}">
+                <span>🏠</span>
+                <span>Home</span>
+              </a>
+              <a href="/configs" class="${title === 'Configs' || title === 'Config Detail' || title === 'Edit Config' || title === 'New Config' ? 'active' : ''}">
+                <span>📝</span>
+                <span>Configs</span>
+              </a>
+              <a href="/slash-commands/convert" class="${title === 'Slash Command Converter' ? 'active' : ''}">
+                <span>🔄</span>
+                <span>Converter</span>
+              </a>
+              <a href="/skills" class="${title === 'Skills' || title === 'Skill Detail' || title === 'Edit Skill' || title === 'New Skill' ? 'active' : ''}">
+                <span>🎯</span>
+                <span>Skills</span>
+              </a>
+              <a href="/extensions" class="${title === 'Extensions' || title === 'Extension Detail' || title === 'Edit Extension' || title === 'New Extension' ? 'active' : ''}">
+                <span>📦</span>
+                <span>Extensions</span>
+              </a>
+              <a href="/marketplaces" class="${title === 'Marketplaces' || title === 'Marketplace Detail' || title === 'Edit Marketplace' || title === 'New Marketplace' ? 'active' : ''}">
+                <span>🏪</span>
+                <span>Marketplaces</span>
+              </a>
+              <a href="/mcp/info" class="${title === 'MCP Server' || title === 'MCP Info' ? 'active' : ''}">
+                <span>🔌</span>
+                <span>MCP</span>
+              </a>
+            </nav>
+          </div>
         </header>
         <main>
           ${content}

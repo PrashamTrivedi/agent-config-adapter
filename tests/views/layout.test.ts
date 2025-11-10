@@ -37,10 +37,18 @@ describe('Layout View', () => {
       const html = layout('Test', '');
 
       expect(html).toContain('<nav>');
-      expect(html).toContain('<a href="/">Home</a>');
-      expect(html).toContain('<a href="/configs">Configs</a>');
-      expect(html).toContain('<a href="/extensions">Extensions</a>');
-      expect(html).toContain('<a href="/marketplaces">Marketplaces</a>');
+      expect(html).toContain('href="/"');
+      expect(html).toContain('🏠');
+      expect(html).toContain('Home');
+      expect(html).toContain('href="/configs"');
+      expect(html).toContain('📝');
+      expect(html).toContain('Configs');
+      expect(html).toContain('href="/extensions"');
+      expect(html).toContain('📦');
+      expect(html).toContain('Extensions');
+      expect(html).toContain('href="/marketplaces"');
+      expect(html).toContain('🏪');
+      expect(html).toContain('Marketplaces');
     });
 
     it('should include header with site title', () => {
