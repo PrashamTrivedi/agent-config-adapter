@@ -735,7 +735,7 @@ export function extensionEditView(
               icon_url: (form.querySelector('#icon_url') as HTMLInputElement)?.value.trim() || undefined,
             };
 
-            const response = await fetch(`/api/extensions/${extension.id}`, {
+            const response = await fetch('/api/extensions/${extension.id}', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload),
@@ -747,7 +747,7 @@ export function extensionEditView(
             }
 
             window.UI?.showToast('Extension updated', 'success');
-          window.location.href = '/extensions/${extension.id}';
+            window.location.href = '/extensions/${extension.id}';
           } catch (error) {
             window.UI?.showToast(error instanceof Error ? error.message : 'Unable to update extension', 'error');
           } finally {
