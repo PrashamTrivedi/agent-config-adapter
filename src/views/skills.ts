@@ -17,55 +17,90 @@ function escapeHtml(text: string): string {
  */
 export function skillsListView(skills: Config[]): string {
   const content = `
-    <h2>Skills</h2>
-    <div style="margin-bottom: 20px;">
-      <a href="/skills/new" class="btn">Create New Skill</a>
-      <a href="/" class="btn btn-secondary">Back to Home</a>
-    </div>
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+          <h2 style="margin: 0;">🎯 Skills</h2>
+          <p style="margin-top: 8px; color: var(--text-secondary);">
+            Multi-file skills with companion resources
+          </p>
+        </div>
+        <div>
+          <a href="/skills/new" class="btn ripple">
+            <span style="font-size: 1.1em;">+</span> Create New Skill
+          </a>
+          <a href="/" class="btn btn-secondary">← Home</a>
+        </div>
+      </div>
 
-    ${
-      skills.length === 0
-        ? `
-      <p class="no-results">No skills yet. Create your first multi-file skill!</p>
-    `
-        : `
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Format</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      ${
+        skills.length === 0
+          ? `
+        <div class="no-results slide-up">
+          <div style="font-size: 3em; margin-bottom: 10px;">📦</div>
+          <h3 style="margin: 10px 0; color: var(--text-primary);">No skills yet</h3>
+          <p style="margin-bottom: 20px;">Create your first multi-file skill to get started!</p>
+          <a href="/skills/new" class="btn">Create Skill</a>
+        </div>
+      `
+          : `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; margin-top: 20px;">
           ${skills
             .map(
               (skill) => `
-            <tr>
-              <td><a href="/skills/${skill.id}">${escapeHtml(skill.name)}</a></td>
-              <td><span class="badge">${skill.original_format}</span></td>
-              <td>${new Date(skill.created_at).toLocaleDateString()}</td>
-              <td>
-                <a href="/skills/${skill.id}/edit" class="btn btn-sm">Edit</a>
-                <a href="/api/skills/${skill.id}/download" class="btn btn-sm" download>Download ZIP</a>
-                <button
-                  class="btn btn-sm btn-danger"
-                  hx-delete="/api/skills/${skill.id}"
-                  hx-confirm="Are you sure you want to delete this skill and all its files?"
-                  hx-target="closest tr"
-                  hx-swap="delete">
-                  Delete
-                </button>
-              </td>
-            </tr>
+            <div class="card card-hover scale-in" style="position: relative;">
+              <div style="margin-bottom: 12px;">
+                <a href="/skills/${skill.id}" style="color: var(--text-primary); text-decoration: none; font-size: 1.1em; font-weight: 600; display: block; margin-bottom: 8px;">
+                  📄 ${escapeHtml(skill.name)}
+                </a>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <span class="badge">${skill.original_format}</span>
+                  <span class="status-indicator status-info">
+                    <span class="status-dot"></span>
+                    Multi-file
+                  </span>
+                </div>
+              </div>
+
+              <div style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 16px;">
+                <div style="margin-bottom: 4px;">
+                  📅 Created ${new Date(skill.created_at).toLocaleDateString()}
+                </div>
+                <div>
+                  🕐 Updated ${new Date(skill.updated_at).toLocaleDateString()}
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <a href="/skills/${skill.id}" class="btn btn-secondary" style="flex: 1; text-align: center;">
+                  View
+                </a>
+                <a href="/skills/${skill.id}/edit" class="btn btn-secondary" style="flex: 1; text-align: center;">
+                  Edit
+                </a>
+                <a href="/api/skills/${skill.id}/download" class="btn btn-secondary" style="flex: 1; text-align: center;" download>
+                  📥 ZIP
+                </a>
+              </div>
+
+              <button
+                class="btn btn-danger"
+                style="position: absolute; top: 12px; right: 12px; padding: 4px 10px; font-size: 0.85em; margin: 0;"
+                hx-delete="/api/skills/${skill.id}"
+                hx-confirm="Are you sure you want to delete this skill and all its files?"
+                hx-target="closest .card"
+                hx-swap="delete"
+                data-success-message="Skill deleted successfully">
+                ✕
+              </button>
+            </div>
           `
             )
             .join('')}
-        </tbody>
-      </table>
-    `
-    }
+        </div>
+      `
+      }
+    </div>
   `;
 
   return layout('Skills', content);
@@ -76,76 +111,131 @@ export function skillsListView(skills: Config[]): string {
  */
 export function skillDetailView(skill: SkillWithFiles): string {
   const content = `
-    <h2>${escapeHtml(skill.name)}</h2>
-    <div style="margin-bottom: 20px;">
-      <span class="badge">${skill.original_format}</span>
-      <span class="badge" style="background: var(--badge-bg);">${skill.files.length} companion files</span>
-    </div>
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+        <div style="flex: 1;">
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            📄 ${escapeHtml(skill.name)}
+          </h2>
+          <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+            <span class="badge">${skill.original_format}</span>
+            <span class="status-indicator status-${skill.files.length > 0 ? 'success' : 'info'}">
+              <span class="status-dot"></span>
+              ${skill.files.length} companion file${skill.files.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="/skills/${skill.id}/edit" class="btn ripple">✏️ Edit</a>
+          <a href="/api/skills/${skill.id}/download" class="btn ripple" download="${skill.name}.zip">
+            📥 Download ZIP
+          </a>
+          <a href="/skills" class="btn btn-secondary">← Back</a>
+        </div>
+      </div>
 
-    <div style="margin-bottom: 20px;">
-      <a href="/skills/${skill.id}/edit" class="btn">Edit</a>
-      <a href="/api/skills/${skill.id}/download" class="btn" download="${skill.name}.zip">Download ZIP</a>
-      <a href="/skills" class="btn btn-secondary">Back to List</a>
-      <button
-        class="btn btn-danger"
-        hx-delete="/api/skills/${skill.id}"
-        hx-confirm="Are you sure you want to delete this skill and all its files?"
-        hx-swap="outerHTML"
-        hx-target="body">
-        Delete
-      </button>
-    </div>
+      <!-- Main Content Section -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0;">📝 SKILL.md</h3>
+          <button
+            class="btn btn-secondary"
+            style="padding: 6px 12px; font-size: 0.9em;"
+            onclick="copyToClipboard(\`${escapeHtml(skill.content).replace(/`/g, '\\`')}\`, this)">
+            📋 Copy Content
+          </button>
+        </div>
+        <pre style="max-height: 500px; overflow: auto; margin: 0;">${escapeHtml(skill.content)}</pre>
+      </div>
 
-    <h3>SKILL.md</h3>
-    <pre style="max-height: 400px; overflow: auto;">${escapeHtml(skill.content)}</pre>
+      ${
+        skill.files.length > 0
+          ? `
+        <!-- Companion Files Section -->
+        <div class="card slide-up" style="margin-bottom: 24px;">
+          <h3 style="margin: 0 0 16px 0;">📦 Companion Files</h3>
+          <div style="display: grid; gap: 12px;">
+            ${skill.files
+              .map(
+                (file) => `
+              <div class="card" style="background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+                <div style="flex: 1;">
+                  <div style="font-family: 'Courier New', monospace; color: var(--accent-primary); margin-bottom: 4px;">
+                    📄 ${escapeHtml(file.file_path)}
+                  </div>
+                  <div style="font-size: 0.85em; color: var(--text-secondary); display: flex; gap: 16px;">
+                    <span>📊 ${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}</span>
+                    <span>🏷️ ${file.mime_type || 'Unknown'}</span>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <a href="/api/skills/${skill.id}/files/${file.id}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.9em;" target="_blank">
+                    👁️ View
+                  </a>
+                  <button
+                    class="btn btn-danger"
+                    style="padding: 6px 12px; font-size: 0.9em;"
+                    hx-delete="/api/skills/${skill.id}/files/${file.id}"
+                    hx-confirm="Delete this file?"
+                    hx-target="closest .card"
+                    hx-swap="delete"
+                    data-success-message="File deleted successfully">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `
+          : `
+        <div class="card slide-up" style="text-align: center; padding: 40px; margin-bottom: 24px;">
+          <div style="font-size: 3em; margin-bottom: 12px;">📦</div>
+          <h3 style="color: var(--text-primary); margin-bottom: 8px;">No companion files</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">
+            Add companion files to enhance this skill
+          </p>
+          <a href="/skills/${skill.id}/edit" class="btn">Add Files</a>
+        </div>
+      `
+      }
 
-    ${
-      skill.files.length > 0
-        ? `
-      <h3>Companion Files</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>File Path</th>
-            <th>Size</th>
-            <th>Type</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${skill.files
-            .map(
-              (file) => `
-            <tr>
-              <td><code>${escapeHtml(file.file_path)}</code></td>
-              <td>${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}</td>
-              <td>${file.mime_type || 'Unknown'}</td>
-              <td>
-                <a href="/api/skills/${skill.id}/files/${file.id}" class="btn btn-sm" target="_blank">View</a>
-                <button
-                  class="btn btn-sm btn-danger"
-                  hx-delete="/api/skills/${skill.id}/files/${file.id}"
-                  hx-confirm="Delete this file?"
-                  hx-target="closest tr"
-                  hx-swap="delete">
-                  Delete
-                </button>
-              </td>
-            </tr>
-          `
-            )
-            .join('')}
-        </tbody>
-      </table>
-    `
-        : ''
-    }
+      <!-- Danger Zone -->
+      <div class="card" style="border-color: var(--danger); background: rgba(248, 81, 73, 0.05); margin-bottom: 24px;">
+        <h3 style="margin: 0 0 12px 0; color: var(--danger);">⚠️ Danger Zone</h3>
+        <p style="margin-bottom: 16px; color: var(--text-secondary);">
+          Deleting this skill will remove all associated files. This action cannot be undone.
+        </p>
+        <button
+          class="btn btn-danger ripple"
+          hx-delete="/api/skills/${skill.id}"
+          hx-confirm="Are you sure you want to permanently delete this skill and all its files? This cannot be undone."
+          hx-swap="outerHTML"
+          hx-target="body"
+          data-success-message="Skill deleted successfully">
+          🗑️ Delete Skill
+        </button>
+      </div>
 
-    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <small style="color: var(--text-secondary);">
-        Created: ${new Date(skill.created_at).toLocaleString()}<br>
-        Updated: ${new Date(skill.updated_at).toLocaleString()}
-      </small>
+      <!-- Metadata Footer -->
+      <div style="padding: 20px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border-color);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 0.9em;">
+          <div>
+            <div style="color: var(--text-secondary); margin-bottom: 4px;">📅 Created</div>
+            <div style="color: var(--text-primary);">${new Date(skill.created_at).toLocaleString()}</div>
+          </div>
+          <div>
+            <div style="color: var(--text-secondary); margin-bottom: 4px;">🕐 Last Updated</div>
+            <div style="color: var(--text-primary);">${new Date(skill.updated_at).toLocaleString()}</div>
+          </div>
+          <div>
+            <div style="color: var(--text-secondary); margin-bottom: 4px;">🆔 Skill ID</div>
+            <div style="color: var(--text-primary); font-family: 'Courier New', monospace; font-size: 0.85em;">${skill.id}</div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -157,125 +247,184 @@ export function skillDetailView(skill: SkillWithFiles): string {
  */
 export function skillCreateView(): string {
   const content = `
-    <h2>Create New Skill</h2>
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+          <h2 style="margin: 0;">🎯 Create New Skill</h2>
+          <p style="margin-top: 8px; color: var(--text-secondary);">
+            Choose how you want to create your skill
+          </p>
+        </div>
+        <a href="/skills" class="btn btn-secondary">← Back to Skills</a>
+      </div>
 
-    <!-- Tab Navigation -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('form')">Manual Entry</button>
-      <button class="tab-btn" onclick="switchTab('upload')">Upload ZIP</button>
+      <!-- Tab Navigation -->
+      <div class="tabs slide-up">
+        <button class="tab-btn active" onclick="switchTab('form')">
+          ✏️ Manual Entry
+        </button>
+        <button class="tab-btn" onclick="switchTab('upload')">
+          📤 Upload ZIP
+        </button>
+      </div>
+
+      <!-- Manual Entry Tab -->
+      <div id="tab-form" class="tab-content active card scale-in">
+        <form hx-post="/api/skills" hx-encoding="multipart/form-data">
+          <div class="form-group">
+            <label for="name">Skill Name *</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              placeholder="My Awesome Skill">
+            <span class="help-text">Give your skill a descriptive name</span>
+          </div>
+
+          <div class="form-group">
+            <label for="original_format">Format *</label>
+            <select id="original_format" name="original_format" required>
+              <option value="claude_code">Claude Code</option>
+              <option value="gemini">Gemini</option>
+              <option value="codex">Codex</option>
+            </select>
+            <span class="help-text">Choose the target agent format</span>
+          </div>
+
+          <div class="form-group">
+            <label for="content">SKILL.md Content *</label>
+            <textarea
+              id="content"
+              name="content"
+              rows="15"
+              required
+              placeholder="Enter your skill content here...&#10;&#10;This will be the main SKILL.md file."></textarea>
+            <span class="help-text">You can add companion files after creating the skill</span>
+          </div>
+
+          <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <button type="submit" class="btn ripple" data-success-message="Skill created successfully">
+              <span style="font-size: 1.1em;">✓</span> Create Skill
+            </button>
+            <a href="/skills" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- ZIP Upload Tab -->
+      <div id="tab-upload" class="tab-content card scale-in" style="display: none;">
+        <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); padding: 16px; border-radius: 6px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 8px 0; color: var(--accent-primary);">📦 ZIP Upload Requirements</h4>
+          <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary);">
+            <li>ZIP must contain <code>SKILL.md</code> at the root level</li>
+            <li>Companion files will be automatically detected and stored</li>
+            <li>Directory structure will be preserved</li>
+          </ul>
+        </div>
+
+        <form hx-post="/api/skills/upload-zip" hx-encoding="multipart/form-data">
+          <div class="form-group">
+            <label for="zip-name">Skill Name *</label>
+            <input
+              type="text"
+              id="zip-name"
+              name="name"
+              required
+              placeholder="My Awesome Skill">
+            <span class="help-text">This will be the display name for your skill</span>
+          </div>
+
+          <div class="form-group">
+            <label for="zip-format">Format *</label>
+            <select id="zip-format" name="original_format" required>
+              <option value="claude_code">Claude Code</option>
+              <option value="gemini">Gemini</option>
+              <option value="codex">Codex</option>
+            </select>
+            <span class="help-text">Choose the target agent format</span>
+          </div>
+
+          <div class="form-group">
+            <label for="skill_zip">Upload ZIP File *</label>
+            <div style="position: relative;">
+              <input type="file" id="skill_zip" name="skill_zip" accept=".zip" required>
+              <div class="progress-bar indeterminate htmx-indicator" style="margin-top: 10px;">
+                <div class="progress-bar-fill"></div>
+              </div>
+            </div>
+            <span class="help-text">
+              📥 Select a ZIP file containing SKILL.md and optional companion files
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <button type="submit" class="btn ripple" data-success-message="Skill uploaded and created successfully">
+              <span style="font-size: 1.1em;">📤</span> Upload & Create
+            </button>
+            <a href="/skills" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+
+      <style>
+        .tabs {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 24px;
+          border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-btn {
+          padding: 12px 24px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-size: 1rem;
+          color: var(--text-secondary);
+          border-bottom: 3px solid transparent;
+          margin-bottom: -2px;
+          transition: all 0.2s ease;
+          font-weight: 500;
+        }
+
+        .tab-btn:hover {
+          color: var(--text-primary);
+          background: var(--bg-tertiary);
+        }
+
+        .tab-btn.active {
+          color: var(--accent-primary);
+          border-bottom-color: var(--accent-primary);
+        }
+
+        .tab-content {
+          padding-top: 0;
+        }
+      </style>
+
+      <script>
+        function switchTab(tab) {
+          // Update tab buttons
+          document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          event.target.classList.add('active');
+
+          // Update tab content
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = 'none';
+            content.classList.remove('scale-in');
+          });
+
+          const targetTab = document.getElementById('tab-' + tab);
+          targetTab.style.display = 'block';
+          // Trigger reflow to restart animation
+          void targetTab.offsetWidth;
+          targetTab.classList.add('scale-in');
+        }
+      </script>
     </div>
-
-    <!-- Manual Entry Tab -->
-    <div id="tab-form" class="tab-content active">
-      <form hx-post="/api/skills" hx-encoding="multipart/form-data">
-        <div class="form-group">
-          <label for="name">Skill Name *</label>
-          <input type="text" id="name" name="name" required>
-        </div>
-
-        <div class="form-group">
-          <label for="original_format">Format *</label>
-          <select id="original_format" name="original_format" required>
-            <option value="claude_code">Claude Code</option>
-            <option value="gemini">Gemini</option>
-            <option value="codex">Codex</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="content">SKILL.md Content *</label>
-          <textarea
-            id="content"
-            name="content"
-            rows="15"
-            required
-            placeholder="Enter your skill content here..."></textarea>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <button type="submit" class="btn">Create Skill</button>
-          <a href="/skills" class="btn btn-secondary">Cancel</a>
-        </div>
-      </form>
-    </div>
-
-    <!-- ZIP Upload Tab -->
-    <div id="tab-upload" class="tab-content" style="display: none;">
-      <form hx-post="/api/skills/upload-zip" hx-encoding="multipart/form-data">
-        <div class="form-group">
-          <label for="zip-name">Skill Name *</label>
-          <input type="text" id="zip-name" name="name" required>
-        </div>
-
-        <div class="form-group">
-          <label for="zip-format">Format *</label>
-          <select id="zip-format" name="original_format" required>
-            <option value="claude_code">Claude Code</option>
-            <option value="gemini">Gemini</option>
-            <option value="codex">Codex</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="skill_zip">Upload ZIP File *</label>
-          <input type="file" id="skill_zip" name="skill_zip" accept=".zip" required>
-          <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
-            ZIP must contain SKILL.md at root level. Companion files will be preserved.
-          </small>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <button type="submit" class="btn">Upload & Create</button>
-          <a href="/skills" class="btn btn-secondary">Cancel</a>
-        </div>
-      </form>
-    </div>
-
-    <style>
-      .tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        border-bottom: 2px solid var(--border-color);
-      }
-
-      .tab-btn {
-        padding: 10px 20px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-size: 1rem;
-        color: var(--text-secondary);
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
-      }
-
-      .tab-btn.active {
-        color: var(--primary);
-        border-bottom-color: var(--primary);
-        font-weight: 500;
-      }
-
-      .tab-content {
-        padding-top: 20px;
-      }
-    </style>
-
-    <script>
-      function switchTab(tab) {
-        // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-          btn.classList.remove('active');
-        });
-        event.target.classList.add('active');
-
-        // Update tab content
-        document.querySelectorAll('.tab-content').forEach(content => {
-          content.style.display = 'none';
-        });
-        document.getElementById('tab-' + tab).style.display = 'block';
-      }
-    </script>
   `;
 
   return layout('Create Skill', content);
@@ -286,104 +435,149 @@ export function skillCreateView(): string {
  */
 export function skillEditView(skill: SkillWithFiles): string {
   const content = `
-    <h2>Edit Skill: ${escapeHtml(skill.name)}</h2>
-
-    <form id="edit-form" hx-put="/api/skills/${skill.id}" hx-encoding="multipart/form-data">
-      <div class="form-group">
-        <label for="name">Skill Name *</label>
-        <input type="text" id="name" name="name" value="${escapeHtml(skill.name)}" required>
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+          <h2 style="margin: 0;">✏️ Edit Skill</h2>
+          <p style="margin-top: 8px; color: var(--text-secondary);">
+            ${escapeHtml(skill.name)}
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <a href="/skills/${skill.id}" class="btn btn-secondary">← Back to Skill</a>
+          <a href="/skills" class="btn btn-secondary">All Skills</a>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="original_format">Format *</label>
-        <select id="original_format" name="original_format" required>
-          <option value="claude_code" ${skill.original_format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
-          <option value="gemini" ${skill.original_format === 'gemini' ? 'selected' : ''}>Gemini</option>
-          <option value="codex" ${skill.original_format === 'codex' ? 'selected' : ''}>Codex</option>
-        </select>
+      <!-- Main Metadata Form -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0;">📝 Skill Metadata</h3>
+        <form id="edit-form" hx-put="/api/skills/${skill.id}" hx-encoding="multipart/form-data">
+          <div class="form-group">
+            <label for="name">Skill Name *</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value="${escapeHtml(skill.name)}"
+              required
+              placeholder="My Awesome Skill">
+            <span class="help-text">The display name for this skill</span>
+          </div>
+
+          <div class="form-group">
+            <label for="original_format">Format *</label>
+            <select id="original_format" name="original_format" required>
+              <option value="claude_code" ${skill.original_format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+              <option value="gemini" ${skill.original_format === 'gemini' ? 'selected' : ''}>Gemini</option>
+              <option value="codex" ${skill.original_format === 'codex' ? 'selected' : ''}>Codex</option>
+            </select>
+            <span class="help-text">Target agent format for this skill</span>
+          </div>
+
+          <div class="form-group">
+            <label for="content">SKILL.md Content *</label>
+            <textarea
+              id="content"
+              name="content"
+              rows="15"
+              required
+              placeholder="Enter your skill content...">${escapeHtml(skill.content)}</textarea>
+            <span class="help-text">The main skill definition file</span>
+          </div>
+
+          <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <button type="submit" class="btn ripple" data-success-message="Skill updated successfully">
+              <span style="font-size: 1.1em;">✓</span> Save Changes
+            </button>
+            <a href="/skills/${skill.id}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
       </div>
 
-      <div class="form-group">
-        <label for="content">SKILL.md Content *</label>
-        <textarea
-          id="content"
-          name="content"
-          rows="15"
-          required>${escapeHtml(skill.content)}</textarea>
-      </div>
+      <!-- Companion Files Section -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h3 style="margin: 0;">📦 Companion Files</h3>
+            <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.9em;">
+              Additional files that work alongside SKILL.md (e.g., FORMS.md, utils.js)
+            </p>
+          </div>
+          <span class="status-indicator status-${skill.files.length > 0 ? 'success' : 'info'}">
+            <span class="status-dot"></span>
+            ${skill.files.length} file${skill.files.length !== 1 ? 's' : ''}
+          </span>
+        </div>
 
-      <div style="margin-bottom: 20px;">
-        <button type="submit" class="btn">Save Changes</button>
-        <a href="/skills/${skill.id}" class="btn btn-secondary">Cancel</a>
-      </div>
-    </form>
-
-    <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
-
-    <h3>Companion Files</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 15px;">
-      Add additional files that work alongside SKILL.md (e.g., FORMS.md, utils.js).
-    </p>
-
-    ${
-      skill.files.length > 0
-        ? `
-      <table class="table" style="margin-bottom: 20px;">
-        <thead>
-          <tr>
-            <th>File Path</th>
-            <th>Size</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="files-list">
-          ${skill.files
-            .map(
-              (file) => `
-            <tr>
-              <td><code>${escapeHtml(file.file_path)}</code></td>
-              <td>${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}</td>
-              <td>
+        ${
+          skill.files.length > 0
+            ? `
+          <div id="files-list" style="display: grid; gap: 12px; margin-bottom: 24px;">
+            ${skill.files
+              .map(
+                (file) => `
+              <div class="card" style="background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+                <div style="flex: 1;">
+                  <div style="font-family: 'Courier New', monospace; color: var(--accent-primary); margin-bottom: 4px;">
+                    📄 ${escapeHtml(file.file_path)}
+                  </div>
+                  <div style="font-size: 0.85em; color: var(--text-secondary);">
+                    📊 ${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}
+                  </div>
+                </div>
                 <button
-                  class="btn btn-sm btn-danger"
+                  class="btn btn-danger"
+                  style="padding: 6px 12px; font-size: 0.9em;"
                   hx-delete="/api/skills/${skill.id}/files/${file.id}"
                   hx-confirm="Delete this file?"
-                  hx-target="closest tr"
-                  hx-swap="delete">
-                  Delete
+                  hx-target="closest .card"
+                  hx-swap="delete"
+                  data-success-message="File deleted successfully">
+                  🗑️ Delete
                 </button>
-              </td>
-            </tr>
-          `
-            )
-            .join('')}
-        </tbody>
-      </table>
-    `
-        : '<p style="color: var(--text-secondary); font-style: italic;">No companion files yet.</p>'
-    }
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        `
+            : `
+          <div id="files-list" style="text-align: center; padding: 30px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 24px;">
+            <div style="font-size: 2.5em; margin-bottom: 8px;">📁</div>
+            <p style="color: var(--text-secondary); margin: 0;">No companion files yet</p>
+          </div>
+        `
+        }
 
-    <form hx-post="/api/skills/${skill.id}/files" hx-encoding="multipart/form-data" hx-target="#files-list" hx-swap="beforeend">
-      <div class="form-group">
-        <label for="file_path">File Path *</label>
-        <input
-          type="text"
-          id="file_path"
-          name="file_path"
-          placeholder="e.g., FORMS.md or utils/helper.js"
-          required>
-        <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
-          Use forward slashes for subdirectories.
-        </small>
+        <!-- Add File Form -->
+        <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 6px; border: 2px dashed var(--border-color);">
+          <h4 style="margin: 0 0 16px 0; color: var(--text-primary);">➕ Add New File</h4>
+          <form hx-post="/api/skills/${skill.id}/files" hx-encoding="multipart/form-data" hx-target="#files-list" hx-swap="beforeend">
+            <div class="form-group">
+              <label for="file_path">File Path *</label>
+              <input
+                type="text"
+                id="file_path"
+                name="file_path"
+                placeholder="e.g., FORMS.md or utils/helper.js"
+                required>
+              <span class="help-text">📂 Use forward slashes for subdirectories</span>
+            </div>
+
+            <div class="form-group">
+              <label for="file_content">File Content *</label>
+              <input type="file" id="file_content" name="file_content" required>
+              <span class="help-text">📎 Select the file to upload</span>
+            </div>
+
+            <button type="submit" class="btn ripple" data-success-message="File added successfully">
+              <span style="font-size: 1.1em;">+</span> Add File
+            </button>
+          </form>
+        </div>
       </div>
-
-      <div class="form-group">
-        <label for="file_content">File Content *</label>
-        <input type="file" id="file_content" name="file_content" required>
-      </div>
-
-      <button type="submit" class="btn">Add File</button>
-    </form>
+    </div>
   `;
 
   return layout(`Edit Skill: ${skill.name}`, content);
