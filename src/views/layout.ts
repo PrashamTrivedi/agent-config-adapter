@@ -879,8 +879,10 @@ export function layout(title: string, content: string): string {
             <a href="/">Home</a>
             <a href="/configs">Configs</a>
             <a href="/slash-commands/convert">Converter</a>
+            <a href="/skills">Skills</a>
             <a href="/extensions">Extensions</a>
             <a href="/marketplaces">Marketplaces</a>
+            <a href="/mcp/info">MCP</a>
           </nav>
         </header>
         <main>
