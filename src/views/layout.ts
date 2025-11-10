@@ -1,11 +1,22 @@
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function layout(title: string, content: string): string {
+  const safeTitle = title ? escapeHtml(title) : '';
+  const pageTitle = safeTitle ? `${safeTitle} - Agent Config Adapter` : ' - Agent Config Adapter';
   return `
     <!DOCTYPE html>
-    <html lang="en" data-theme="dark">
+    <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title} · Agent Config Adapter</title>
+        <title>${pageTitle}</title>
         <script src="https://unpkg.com/htmx.org@1.9.10"></script>
         <style>
           * { box-sizing: border-box; }
@@ -721,6 +732,10 @@ export function layout(title: string, content: string): string {
             gap: 12px;
           }
 
+          .filter-container { display: flex; flex-wrap: wrap; gap: 12px; }
+          .filter-row { display: flex; flex-wrap: wrap; gap: 12px; width: 100%; }
+          .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+
           .filter-chip {
             display: inline-flex;
             gap: 8px;
@@ -838,35 +853,41 @@ export function layout(title: string, content: string): string {
       </head>
       <body>
         <div class="app-shell">
-          <header class="app-header">
-            <div class="brand">
-              <div class="brand-logo">AC</div>
-              <div>
-                <h1>Agent Config Adapter</h1>
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Modern tooling for multi-agent configuration workflows</p>
+          <header>
+            <div class="app-header">
+              <div class="brand">
+                <div class="brand-logo">AC</div>
+                <div>
+                  <h1>Agent Config Adapter</h1>
+                  <p style="margin: 0; color: var(--text-muted); font-size: 0.9rem;">Modern tooling for multi-agent configuration workflows</p>
+                </div>
               </div>
+              <nav>
+                <div class="primary-nav" aria-label="Primary">
+                  <a href="/">Home</a>
+                  <a href="/configs">Configs</a>
+                  <a href="/slash-commands/convert">Converter</a>
+                  <a href="/extensions">Extensions</a>
+                  <a href="/marketplaces">Marketplaces</a>
+                  <a href="/skills">Skills</a>
+                  <a href="/mcp/info">MCP Info</a>
+                </div>
+              </nav>
             </div>
-            <nav class="primary-nav" aria-label="Primary">
-              <a href="/" data-route="/">Home</a>
-              <a href="/configs" data-route="/configs">Configs</a>
-              <a href="/slash-commands/convert" data-route="/slash-commands/convert">Converter</a>
-              <a href="/extensions" data-route="/extensions">Extensions</a>
-              <a href="/marketplaces" data-route="/marketplaces">Marketplaces</a>
-              <a href="/skills" data-route="/skills">Skills</a>
-              <a href="/plugins" data-route="/plugins">Plugin Browser</a>
-            </nav>
           </header>
-          <main class="page fade-in">
-            ${content}
+          <main>
+            <div class="page fade-in">
+              ${content}
+            </div>
           </main>
         </div>
         <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
         <script>
           (function() {
-            const navLinks = document.querySelectorAll('nav.primary-nav a[data-route]');
+            const navLinks = document.querySelectorAll('.primary-nav a');
             const currentPath = window.location.pathname;
             navLinks.forEach(link => {
-              const route = link.getAttribute('data-route');
+              const route = link.getAttribute('href');
               if (!route) return;
               if (route === '/' && currentPath === '/') {
                 link.classList.add('is-active');
@@ -883,10 +904,9 @@ export function layout(title: string, content: string): string {
               toast.className = 'toast';
               toast.dataset.type = type;
               toast.setAttribute('role', 'status');
-              toast.innerHTML = `
-                <div class="title">${options.title || type.charAt(0).toUpperCase() + type.slice(1)}</div>
-                <div class="message">${message}</div>
-              `;
+              const titleText = options.title || type.charAt(0).toUpperCase() + type.slice(1);
+              toast.innerHTML = '<div class="title">' + titleText + '</div>' +
+                '<div class="message">' + message + '</div>';
 
               toastContainer.appendChild(toast);
               const duration = options.duration ?? 4000;
@@ -958,7 +978,7 @@ export function layout(title: string, content: string): string {
                   btn.dataset.originalLabel = btn.innerHTML;
                 }
                 const label = btn.dataset.busyLabel || 'Working…';
-                btn.innerHTML = `<span class="spinner inline" aria-hidden="true"></span><span>${label}</span>`;
+                btn.innerHTML = '<span class="spinner inline" aria-hidden="true"></span><span>' + label + '</span>';
                 btn.classList.add('is-busy');
                 btn.setAttribute('aria-busy', 'true');
                 btn.disabled = true;

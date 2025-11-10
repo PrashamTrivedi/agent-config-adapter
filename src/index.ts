@@ -34,31 +34,134 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Home page
 app.get('/', (c) => {
   const content = `
-    <h2>Welcome to Agent Config Adapter</h2>
-    <p>
-      Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once,
-      deploy across Codex, Gemini, and other agents.
-    </p>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Unified agent operations</p>
+        <h2>Operate every agent format from one control center</h2>
+        <p class="lead">
+          Build, convert, and ship Claude Code, Codex, and Gemini configurations without context switching. Real-time feedback,
+          rich previews, and HTMX-driven interactivity keep your team in flow.
+        </p>
+        <div class="chip-group" style="margin-top: 18px;">
+          <span class="badge status-success">Live MCP endpoint</span>
+          <span class="badge">Multi-provider AI gateway</span>
+          <span class="badge status-info">HTMX enhanced</span>
+        </div>
+      </div>
+      <div class="action-bar" style="align-self: flex-end;">
+        <a href="/configs" class="btn btn-primary">Launch console</a>
+        <a href="/slash-commands/convert" class="btn btn-secondary">Convert commands</a>
+        <a href="/mcp/info" class="btn btn-tertiary">View MCP contract</a>
+      </div>
+    </section>
 
-    <h3>Features</h3>
-    <ul style="margin-left: 20px; margin-top: 10px;">
-      <li>Store agent configurations (slash commands, agent definitions, MCP configs, skills)</li>
-      <li>Convert between different agent formats</li>
-      <li>Fast retrieval with caching</li>
-      <li><strong>NEW:</strong> Multi-file Skills with ZIP upload/download</li>
-      <li><strong>NEW:</strong> MCP Server support for AI agent integration</li>
-      <li><strong>NEW:</strong> Extension Marketplace - Bundle and share configs</li>
-    </ul>
+    <section class="card-grid" aria-label="Key capabilities">
+      <article class="card">
+        <header class="toolbar" style="justify-content: space-between;">
+          <div>
+            <h3>Configuration vault</h3>
+            <p>Centralize slash commands, MCP configs, and agent definitions with versioned history.</p>
+          </div>
+          <span class="badge">Configs</span>
+        </header>
+        <div class="card-meta">
+          <span class="chip">Instant conversions</span>
+          <span class="chip">AI + rule based</span>
+        </div>
+        <footer class="action-bar" style="margin-top: 18px;">
+          <a href="/configs/new" class="btn btn-sm btn-primary">Create config</a>
+          <button class="btn btn-sm btn-ghost" type="button" data-copy="${escapeHtmlForHome(
+            `${c.req.url.replace(/\/$/, '')}/mcp`
+          )}" title="Copy MCP endpoint">Copy MCP endpoint</button>
+        </footer>
+      </article>
 
-    <div style="margin-top: 30px;">
-      <a href="/configs" class="btn">View All Configs</a>
-      <a href="/configs/new" class="btn">Add New Config</a>
-      <a href="/slash-commands/convert" class="btn">Slash Command Converter</a>
-      <a href="/skills" class="btn">Browse Skills</a>
-      <a href="/extensions" class="btn">Browse Extensions</a>
-      <a href="/marketplaces" class="btn">Browse Marketplaces</a>
-      <a href="/mcp/info" class="btn" style="background: #4f46e5;">MCP Server Info</a>
-    </div>
+      <article class="card">
+        <header class="toolbar" style="justify-content: space-between;">
+          <div>
+            <h3>Modern skill workspace</h3>
+            <p>Tabbed previews, multi-file uploads, and ZIP exports make reusable skills effortless.</p>
+          </div>
+          <span class="badge">Skills</span>
+        </header>
+        <div class="card-meta">
+          <span class="chip">Drag & drop uploads</span>
+          <span class="chip">Companion files</span>
+        </div>
+        <footer class="action-bar" style="margin-top: 18px;">
+          <a href="/skills" class="btn btn-sm btn-secondary">Browse skills</a>
+          <a href="/skills/new" class="btn btn-sm btn-ghost">New skill</a>
+        </footer>
+      </article>
+
+      <article class="card">
+        <header class="toolbar" style="justify-content: space-between;">
+          <div>
+            <h3>Extension marketplaces</h3>
+            <p>Bundle curated plugins, share marketplace manifests, and publish multi-agent collections.</p>
+          </div>
+          <span class="badge">Extensions</span>
+        </header>
+        <div class="card-meta">
+          <span class="chip">Gemini + Claude ready</span>
+          <span class="chip">Automated packaging</span>
+        </div>
+        <footer class="action-bar" style="margin-top: 18px;">
+          <a href="/extensions" class="btn btn-sm btn-secondary">View extensions</a>
+          <a href="/marketplaces" class="btn btn-sm btn-ghost">Explore marketplaces</a>
+        </footer>
+      </article>
+
+      <article class="card">
+        <header class="toolbar" style="justify-content: space-between;">
+          <div>
+            <h3>Plugin file browser</h3>
+            <p>Inspect generated plugin artifacts, copy install URLs, and download bundles instantly.</p>
+          </div>
+          <span class="badge">Plugins</span>
+        </header>
+        <div class="card-meta">
+          <span class="chip">ZIP + JSON outputs</span>
+          <span class="chip">Structure aware</span>
+        </div>
+        <footer class="action-bar" style="margin-top: 18px;">
+          <a href="/extensions" class="btn btn-sm btn-secondary">Open from extension</a>
+          <a href="/marketplaces" class="btn btn-sm btn-ghost">Marketplace assets</a>
+        </footer>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Workflow highlights</h3>
+        <span class="form-helper">Every action streams back progress with HTMX indicators.</span>
+      </div>
+      <div class="resource-grid">
+        <article class="card">
+          <h4>Real-time feedback</h4>
+          <p>Inline skeletons, progress bars, and toast notifications keep operators in sync with conversions and uploads.</p>
+        </article>
+        <article class="card">
+          <h4>Accessible by design</h4>
+          <p>Keyboard-friendly navigation, WCAG AA contrast, and ARIA live regions ship out of the box.</p>
+        </article>
+        <article class="card">
+          <h4>AI assisted conversions</h4>
+          <p>Hybrid AI + deterministic pipelines ensure safe migrations between Claude Code, Codex, and Gemini formats.</p>
+        </article>
+      </div>
+      <div class="divider"></div>
+      <div class="toolbar">
+        <div>
+          <h4 style="margin: 0;">Get started</h4>
+          <p style="margin: 4px 0 0; color: var(--text-muted);">Provision configs, package extensions, and publish marketplaces in minutes.</p>
+        </div>
+        <div class="action-bar">
+          <a href="/configs/new" class="btn btn-primary">Create configuration</a>
+          <a href="/mcp/info" class="btn btn-secondary">Review MCP info</a>
+        </div>
+      </div>
+    </section>
   `;
   return c.html(layout('Home', content));
 });
@@ -139,56 +242,113 @@ app.get('/mcp/info', (c) => {
 
   // HTML view for browser
   const content = `
-    <h2>MCP Server Information</h2>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Machine Coordination Protocol</p>
+        <h2>MCP server capabilities</h2>
+        <p class="lead">Discover tools, resources, and prompts exposed by the adapter's Streamable HTTP endpoint.</p>
+      </div>
+      <div class="action-bar">
+        <button class="btn btn-secondary" type="button" data-copy="${escapeHtmlForHome(
+          `${c.req.url.replace('/mcp/info', '')}/mcp`
+        )}" title="Copy endpoint URL">Copy endpoint</button>
+        <a href="/" class="btn btn-tertiary">Back to home</a>
+      </div>
+    </section>
 
-    <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="margin-top: 0;">Server Details</h3>
-      <p><strong>Name:</strong> ${mcpInfo.name}</p>
-      <p><strong>Version:</strong> ${mcpInfo.version}</p>
-      <p><strong>Transport:</strong> ${mcpInfo.transport}</p>
-      <p><strong>Endpoint:</strong> <code>${mcpInfo.endpoint}</code></p>
-    </div>
+    <section class="panel" data-loading-target>
+      <div class="panel-header">
+        <h3 class="panel-title">Server details</h3>
+        <span class="badge status-success">Online</span>
+      </div>
+      <div class="resource-grid">
+        <article class="card">
+          <h4>Name</h4>
+          <p>${mcpInfo.name}</p>
+        </article>
+        <article class="card">
+          <h4>Version</h4>
+          <p>${mcpInfo.version}</p>
+        </article>
+        <article class="card">
+          <h4>Transport</h4>
+          <p>${mcpInfo.transport}</p>
+        </article>
+        <article class="card">
+          <h4>Endpoint</h4>
+          <p><code>${mcpInfo.endpoint}</code></p>
+        </article>
+      </div>
+      <div class="divider"></div>
+      <div class="resource-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <article class="card">
+          <h4>Tools</h4>
+          <ul style="margin: 0; padding-left: 18px; color: var(--text-muted);">
+            ${mcpInfo.capabilities.tools.map((tool) => `<li><code>${tool}</code></li>`).join('')}
+          </ul>
+        </article>
+        <article class="card">
+          <h4>Resources</h4>
+          <ul style="margin: 0; padding-left: 18px; color: var(--text-muted);">
+            ${mcpInfo.capabilities.resources.map((resource) => `<li><code>${resource}</code></li>`).join('')}
+          </ul>
+        </article>
+        <article class="card">
+          <h4>Prompts</h4>
+          <ul style="margin: 0; padding-left: 18px; color: var(--text-muted);">
+            ${mcpInfo.capabilities.prompts.map((prompt) => `<li><code>${prompt}</code></li>`).join('')}
+          </ul>
+        </article>
+      </div>
+    </section>
 
-    <h3>Tools (Write Operations)</h3>
-    <ul style="margin-left: 20px;">
-      ${mcpInfo.capabilities.tools.map(tool => `<li><code>${tool}</code></li>`).join('')}
-    </ul>
-
-    <h3>Resources (Pure Read Operations)</h3>
-    <ul style="margin-left: 20px;">
-      ${mcpInfo.capabilities.resources.map(res => `<li><code>${res}</code></li>`).join('')}
-    </ul>
-
-    <h3>Prompts (Workflow Automation)</h3>
-    <ul style="margin-left: 20px;">
-      ${mcpInfo.capabilities.prompts.map(prompt => `<li><code>${prompt}</code></li>`).join('')}
-    </ul>
-
-    <h3>Client Connection</h3>
-    <p>Add this to your MCP client configuration:</p>
-    <pre style="background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 8px; overflow-x: auto;"><code>{
-  "mcpServers": {
-    "agent-config-adapter": {
-      "type": "http",
-      "url": "${c.req.url.replace('/mcp/info', '')}/mcp"
-    }
-  }
-}</code></pre>
-
-    <h3>Important Notes</h3>
-    <ul style="margin-left: 20px;">
-      <li><strong>Resources</strong> are pure reads - they never trigger conversions or processing</li>
-      <li><strong>Tools</strong> perform operations with side effects - use them for conversions and updates</li>
-      <li><strong>Prompts</strong> provide guided workflows for complex multi-step operations</li>
-    </ul>
-
-    <div style="margin-top: 30px;">
-      <a href="/" class="btn">Back to Home</a>
-      <a href="/configs" class="btn">View Configs</a>
-    </div>
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Client configuration</h3>
+        <button class="btn btn-ghost btn-sm" type="button" data-copy-target="#mcp-config-snippet">Copy JSON</button>
+      </div>
+      <pre id="mcp-config-snippet" style="margin: 0; max-height: 320px; overflow: auto;">${escapeHtmlForHome(
+        JSON.stringify(mcpInfo.usage.example_client_config, null, 2)
+      )}</pre>
+      <div class="divider"></div>
+      <div class="resource-grid">
+        <article class="card">
+          <h4>Usage notes</h4>
+          <p>${mcpInfo.documentation.resources_behavior}</p>
+        </article>
+        <article class="card">
+          <h4>Side effects</h4>
+          <p>${mcpInfo.documentation.tools_behavior}</p>
+        </article>
+        <article class="card">
+          <h4>Workflow prompts</h4>
+          <p>${mcpInfo.documentation.prompts_workflow}</p>
+        </article>
+      </div>
+      <div class="divider"></div>
+      <div class="toolbar">
+        <div>
+          <h4 style="margin: 0;">Next steps</h4>
+          <p style="margin: 4px 0 0; color: var(--text-muted);">Register the endpoint with your MCP-ready IDE or client.</p>
+        </div>
+        <div class="action-bar">
+          <a href="/configs" class="btn btn-primary">Manage configs</a>
+          <a href="/slash-commands/convert" class="btn btn-secondary">Convert commands</a>
+        </div>
+      </div>
+    </section>
   `;
 
   return c.html(layout('MCP Server Info', content));
 });
 
 export default app;
+
+function escapeHtmlForHome(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}

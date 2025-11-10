@@ -1,197 +1,386 @@
 import { ExtensionWithConfigs, Config } from '../domain/types';
 import { layout } from './layout';
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatDate(date: string | Date): string {
+  return new Date(date).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function pluralize(count: number, singular: string, plural: string): string {
+  return count === 1 ? singular : plural;
+}
+
+function renderExtensionCard(extension: ExtensionWithConfigs): string {
+  const configCount = extension.configs.length;
+  const description = extension.description
+    ? escapeHtml(extension.description)
+    : 'Bundle configs into shareable plugins across Claude Code and Gemini.';
+
+  return `
+    <article class="card fade-in" tabindex="0">
+      <header class="toolbar" style="align-items: flex-start;">
+        <div>
+          <a href="/extensions/${extension.id}" class="stretched-link" style="color: inherit; text-decoration: none;">
+            <h3>${escapeHtml(extension.name)}</h3>
+          </a>
+          <p>${description}</p>
+        </div>
+        <div class="chip-group" style="justify-content: flex-end;">
+          <span class="badge status-info">v${escapeHtml(extension.version)}</span>
+          <span class="badge">${configCount} ${pluralize(configCount, 'config', 'configs')}</span>
+        </div>
+      </header>
+      <div class="card-meta">
+        ${extension.author ? `<span class="chip">Author ${escapeHtml(extension.author)}</span>` : ''}
+        <span class="chip">Created ${formatDate(extension.created_at)}</span>
+        <span class="chip">Updated ${formatDate(extension.updated_at ?? extension.created_at)}</span>
+      </div>
+      <footer class="action-bar" style="margin-top: 18px;">
+        <a href="/extensions/${extension.id}" class="btn btn-primary btn-sm">Open</a>
+        <a href="/extensions/${extension.id}/edit" class="btn btn-secondary btn-sm">Edit</a>
+        <button class="btn btn-ghost btn-sm" type="button" data-copy="${escapeHtml(
+          `${extension.id}`
+        )}" title="Copy extension ID">Copy ID</button>
+      </footer>
+    </article>
+  `;
+}
+
+function renderConfigSelection(
+  configs: Config[],
+  selectedIds: Set<string>,
+  emptyMessage: string
+): string {
+  if (configs.length === 0) {
+    return `
+      <div class="empty-state" role="status">
+        <h3>No configs available</h3>
+        <p>${emptyMessage}</p>
+        <a href="/configs/new" class="btn btn-secondary">Create config</a>
+      </div>
+    `;
+  }
+
+  return `
+    <div id="config-selection" style="display: grid; gap: 12px; max-height: 340px; overflow-y: auto; padding-right: 4px;">
+      ${configs
+        .map((config) => {
+          const isSelected = selectedIds.has(config.id);
+          const background = isSelected ? 'rgba(96, 165, 250, 0.12)' : 'rgba(15, 23, 42, 0.45)';
+          const border = isSelected ? 'rgba(96, 165, 250, 0.45)' : 'rgba(148, 163, 184, 0.18)';
+          return `
+            <label
+              class="config-option"
+              data-config-option
+              data-config-id="${config.id}"
+              style="display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: var(--radius-md); border: 1px solid ${border}; background: ${background}; transition: border var(--transition-fast), background var(--transition-fast); cursor: pointer;">
+              <input
+                type="checkbox"
+                name="config_ids"
+                value="${config.id}"
+                ${isSelected ? 'checked' : ''}
+                style="margin-top: 4px; flex-shrink: 0;" />
+              <div style="flex: 1; display: grid; gap: 8px;">
+                <div class="toolbar" style="align-items: flex-start; gap: 10px;">
+                  <div>
+                    <strong>${escapeHtml(config.name)}</strong>
+                    <p style="margin: 6px 0 0; color: var(--text-muted); font-size: 0.9rem;">
+                      ${escapeHtml(config.description ?? 'Ready for cross-agent conversion.')}
+                    </p>
+                  </div>
+                  <div class="chip-group" style="justify-content: flex-end;">
+                    <span class="badge">${config.type}</span>
+                    <span class="badge status-info">${config.original_format}</span>
+                  </div>
+                </div>
+              </div>
+            </label>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
+}
+
 export function extensionListView(extensions: ExtensionWithConfigs[]): string {
   const content = `
-    <h2>All Extensions</h2>
-    <a href="/extensions/new" class="btn">Create Extension</a>
-    ${extensions.length === 0 ? '<p>No extensions yet. Create your first one!</p>' : `
-      <ul class="config-list">
-        ${extensions.map(ext => `
-          <li>
-            <a href="/extensions/${ext.id}" style="font-weight: 500;">
-              ${escapeHtml(ext.name)}
-            </a>
-            <span class="badge">v${escapeHtml(ext.version)}</span>
-            <span class="badge">${ext.configs.length} config${ext.configs.length !== 1 ? 's' : ''}</span>
-            ${ext.author ? `<div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              Author: ${escapeHtml(ext.author)}
-            </div>` : ''}
-            ${ext.description ? `<div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              ${escapeHtml(ext.description)}
-            </div>` : ''}
-          </li>
-        `).join('')}
-      </ul>
-    `}
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Extension catalog</p>
+        <h2>Extensions</h2>
+        <p class="lead">Package curated configs into distributable plugins ready for Claude Code and Gemini ecosystems.</p>
+      </div>
+      <div class="action-bar">
+        <a href="/extensions/new" class="btn btn-primary">Create extension</a>
+        <a href="/configs" class="btn btn-tertiary">Browse configs</a>
+      </div>
+    </section>
+
+    ${
+      extensions.length === 0
+        ? `
+          <section class="empty-state">
+            <h3>No extensions yet</h3>
+            <p>Bundle related configs to unlock reusable plugin experiences for your teams.</p>
+            <a href="/extensions/new" class="btn btn-primary">Start building</a>
+          </section>
+        `
+        : `
+          <section class="panel">
+            <div class="panel-header">
+              <h3 class="panel-title">Published extensions</h3>
+              <span class="form-helper">${extensions.length} total</span>
+            </div>
+            <div class="card-grid" role="list">
+              ${extensions
+                .map((extension) => `
+                  <div role="listitem">${renderExtensionCard(extension)}</div>
+                `)
+                .join('')}
+            </div>
+          </section>
+        `
+    }
+
+    <script>
+      (function initExtensionList() {
+        if (window.__extensionListBound) return;
+        window.__extensionListBound = true;
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+          if (event.detail?.requestConfig?.verb === 'delete') {
+            window.UI?.showToast('Extension removed', 'success');
+          }
+        });
+      })();
+    </script>
   `;
+
   return layout('Extensions', content);
 }
 
 export function extensionDetailView(extension: ExtensionWithConfigs): string {
+  const configCount = extension.configs.length;
   const content = `
-    <h2>${escapeHtml(extension.name)}</h2>
-    <div style="margin-bottom: 20px;">
-      <span class="badge">v${escapeHtml(extension.version)}</span>
-      <span class="badge">${extension.configs.length} config${extension.configs.length !== 1 ? 's' : ''}</span>
-    </div>
-
-    ${extension.description ? `
-      <h3>Description</h3>
-      <p>${escapeHtml(extension.description)}</p>
-    ` : ''}
-
-    ${extension.author ? `
-      <h3>Author</h3>
-      <p>${escapeHtml(extension.author)}</p>
-    ` : ''}
-
-    <h3>Included Configs</h3>
-    ${extension.configs.length === 0 ? '<p>No configs in this extension yet.</p>' : `
-      <ul class="config-list">
-        ${extension.configs.map(c => `
-          <li>
-            <a href="/configs/${c.id}" style="font-weight: 500;">
-              ${escapeHtml(c.name)}
-            </a>
-            <span class="badge">${c.type}</span>
-            <span class="badge">${c.original_format}</span>
-          </li>
-        `).join('')}
-      </ul>
-    `}
-
-    <h3>Manifest Preview</h3>
-    <div style="margin-bottom: 20px;">
-      <button class="btn" hx-get="/api/extensions/${extension.id}/manifest/gemini" hx-target="#manifest-preview">
-        Gemini Format
-      </button>
-      <button class="btn" hx-get="/api/extensions/${extension.id}/manifest/claude_code" hx-target="#manifest-preview">
-        Claude Code Format
-      </button>
-    </div>
-
-    <div id="manifest-preview"></div>
-
-    <h3>📥 Download Plugin</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
-      <!-- Claude Code Plugin -->
-      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">🔵 Claude Code Plugin</h4>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
-          Full plugin with manifest, commands, agents, and MCP configs
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="/plugins/${extension.id}/claude_code" class="btn" style="text-align: center;">
-            📁 Browse Files
-          </a>
-          <a href="/plugins/${extension.id}/claude_code/download" class="btn btn-primary" style="text-align: center;">
-            📥 Download ZIP
-          </a>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Extension detail</p>
+        <h2>${escapeHtml(extension.name)}</h2>
+        <p class="lead">Review metadata, included configs, and generated plugin artifacts.</p>
+        <div class="chip-group" style="margin-top: 18px;">
+          <span class="badge status-info">v${escapeHtml(extension.version)}</span>
+          <span class="badge">${configCount} ${pluralize(configCount, 'config', 'configs')}</span>
+          <span class="badge">Updated ${formatDate(extension.updated_at ?? extension.created_at)}</span>
         </div>
       </div>
+      <div class="action-bar">
+        <a href="/extensions/${extension.id}/edit" class="btn btn-secondary">Edit</a>
+        <button class="btn btn-primary" type="button" data-manifest-download data-format="claude_code" data-extension="${extension.id}">Download Claude ZIP</button>
+        <a href="/extensions" class="btn btn-tertiary">Back to list</a>
+      </div>
+    </section>
 
-      <!-- Gemini CLI Extension -->
-      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">🔶 Gemini CLI Extension</h4>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
-          JSON definition file - recommended for Gemini extensions
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary" style="text-align: center;">
-            📄 Download JSON Definition
-          </a>
-          <details style="margin-top: 10px;">
-            <summary style="cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); user-select: none;">
-              Advanced: Full Plugin Files
-            </summary>
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-              <a href="/plugins/${extension.id}/gemini" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
-                📁 Browse Files
-              </a>
-              <a href="/plugins/${extension.id}/gemini/download" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
-                📥 Download ZIP
-              </a>
-            </div>
-          </details>
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Overview</h3>
+        <div class="action-bar">
+          <button class="btn btn-ghost btn-sm" type="button" data-copy="${escapeHtml(
+            `${extension.id}`
+          )}">Copy ID</button>
+          <button class="btn btn-ghost btn-sm" type="button" data-copy="${escapeHtml(
+            `/plugins/${extension.id}/claude_code`
+          )}">Copy plugin URL</button>
         </div>
       </div>
-    </div>
-
-    <h3>Installation Instructions</h3>
-    <details open style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔵 Claude Code Installation</summary>
-      <div style="padding-left: 20px;">
-        <p><strong>Option 1: From Marketplace</strong></p>
-        <p style="font-size: 0.875rem; color: var(--text-secondary);">
-          Add this plugin to your marketplace.json for automatic updates
-        </p>
-        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 0.875rem;"><code>{
-  "plugins": [
-    {
-      "source": {
-        "source": "url",
-        "url": "https://your-domain.com/plugins/${extension.id}/claude_code"
+      <div class="resource-grid">
+        <article class="card">
+          <h4>Version</h4>
+          <p>${escapeHtml(extension.version)}</p>
+        </article>
+        <article class="card">
+          <h4>Author</h4>
+          <p>${extension.author ? escapeHtml(extension.author) : '—'}</p>
+        </article>
+        <article class="card">
+          <h4>Created</h4>
+          <p>${new Date(extension.created_at).toLocaleString()}</p>
+        </article>
+        <article class="card">
+          <h4>Updated</h4>
+          <p>${new Date(extension.updated_at ?? extension.created_at).toLocaleString()}</p>
+        </article>
+      </div>
+      ${
+        extension.description
+          ? `
+            <div class="divider"></div>
+            <p style="margin: 0; color: var(--text-muted);">${escapeHtml(extension.description)}</p>
+          `
+          : ''
       }
-    }
-  ]
-}</code></pre>
-
-        <p style="margin-top: 15px;"><strong>Option 2: Manual Installation</strong></p>
-        <ol style="font-size: 0.875rem;">
-          <li>Click "Download ZIP" above</li>
-          <li>Extract to <code>~/.claude/plugins/${escapeHtml(extension.name)}/</code></li>
-          <li>Restart Claude Code</li>
-        </ol>
+      <div class="divider"></div>
+      <div class="action-bar" style="flex-wrap: wrap;">
+        <a href="/plugins/${extension.id}/claude_code" class="btn btn-secondary">Browse Claude files</a>
+        <a href="/plugins/${extension.id}/claude_code/download" class="btn btn-secondary">Download Claude ZIP</a>
+        <a href="/plugins/${extension.id}/gemini" class="btn btn-ghost">Browse Gemini files</a>
+        <a href="/plugins/${extension.id}/gemini/download" class="btn btn-ghost">Download Gemini ZIP</a>
+        <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary">Gemini JSON definition</a>
       </div>
-    </details>
+    </section>
 
-    <details style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔶 Gemini CLI Installation</summary>
-      <div style="padding-left: 20px;">
-        <p><strong>Recommended: JSON Definition</strong></p>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 10px;">
-          Gemini extensions use JSON manifest files that reference command files by path
-        </p>
-        <ol style="font-size: 0.875rem;">
-          <li>Click "Download JSON Definition" above</li>
-          <li>Save to your extensions directory as <code>${escapeHtml(extension.name)}.json</code></li>
-          <li>Run: <code>gemini extension install ${escapeHtml(extension.name)}.json</code></li>
-        </ol>
-
-        <p style="margin-top: 15px; font-size: 0.875rem; color: var(--text-secondary);">
-          <strong>Note:</strong> Command files must be accessible at the paths specified in the JSON manifest
-        </p>
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Included configs</h3>
+        <span class="form-helper">${configCount} ${pluralize(configCount, 'item', 'items')}</span>
       </div>
-    </details>
+      ${
+        configCount === 0
+          ? `
+            <div class="empty-state">
+              <h3>No configs linked</h3>
+              <p>Add configs from the editor to generate plugin content.</p>
+              <a href="/extensions/${extension.id}/edit" class="btn btn-secondary">Manage configs</a>
+            </div>
+          `
+          : `
+            <div class="card-grid" role="list">
+              ${extension.configs
+                .map((config) => `
+                  <article class="card" role="listitem">
+                    <h3 style="font-size: 1rem; margin-bottom: 4px;">${escapeHtml(config.name)}</h3>
+                    <p>${escapeHtml(config.description ?? 'Ready for distribution across agents.')}</p>
+                    <div class="chip-group" style="margin-top: 12px;">
+                      <span class="badge">${config.type}</span>
+                      <span class="badge status-info">${config.original_format}</span>
+                    </div>
+                    <div class="action-bar" style="margin-top: 16px;">
+                      <a href="/configs/${config.id}" class="btn btn-ghost btn-sm">Open config</a>
+                    </div>
+                  </article>
+                `)
+                .join('')}
+            </div>
+          `
+      }
+    </section>
 
-    <h3>Actions</h3>
-    <div style="margin-top: 20px;">
-      <a href="/extensions/${extension.id}/edit" class="btn">Edit</a>
-      <a href="/extensions" class="btn btn-secondary">Back to List</a>
-      <button
-        class="btn btn-danger"
-        hx-delete="/api/extensions/${extension.id}"
-        hx-confirm="Are you sure you want to delete this extension?"
-        hx-target="body"
-        hx-swap="outerHTML">
-        Delete
-      </button>
-    </div>
+    <section class="panel" data-loading-target>
+      <div class="panel-header">
+        <h3 class="panel-title">Manifest preview</h3>
+        <div class="action-bar">
+          <button class="btn btn-secondary btn-sm" type="button" data-manifest-trigger data-format="claude_code">Claude manifest</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-manifest-trigger data-format="gemini">Gemini manifest</button>
+        </div>
+      </div>
+      <div id="manifest-preview" class="skeleton" style="height: 240px; border-radius: var(--radius-md);"></div>
+      <pre id="manifest-output" style="display: none; max-height: 360px; overflow: auto; margin: 0;"></pre>
+    </section>
+
+    <section class="panel" style="border: 1px solid rgba(248, 113, 113, 0.35);">
+      <div class="panel-header">
+        <h3 class="panel-title">Danger zone</h3>
+        <span class="form-helper" style="color: #fecaca;">Deletes the extension and cached plugin artifacts.</span>
+      </div>
+      <button class="btn btn-danger" type="button" data-delete-extension data-extension-id="${extension.id}">Delete extension</button>
+    </section>
 
     <script>
-      // Handle manifest preview display
-      document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'manifest-preview') {
-          const data = JSON.parse(evt.detail.xhr.responseText);
-          evt.detail.target.innerHTML = \`
-            <h4>Manifest Content</h4>
-            <pre>\${JSON.stringify(data, null, 2)}</pre>
-          \`;
+      (function initExtensionDetail() {
+        if (window.__extensionDetailBound) return;
+        window.__extensionDetailBound = true;
+        const manifestButtons = document.querySelectorAll('[data-manifest-trigger]');
+        const manifestPreview = document.getElementById('manifest-preview');
+        const manifestOutput = document.getElementById('manifest-output');
+
+        function setManifestLoading(isLoading) {
+          if (!manifestPreview || !manifestOutput) return;
+          if (isLoading) {
+            manifestPreview.style.display = 'block';
+            manifestOutput.style.display = 'none';
+            manifestPreview.classList.add('skeleton');
+          } else {
+            manifestPreview.classList.remove('skeleton');
+          }
         }
-      });
+
+        manifestButtons.forEach((button) => {
+          button.addEventListener('click', async () => {
+            if (!(button instanceof HTMLButtonElement)) return;
+            const format = button.getAttribute('data-format');
+            if (!format) return;
+            window.UI?.setBusyButton(button, true);
+            setManifestLoading(true);
+            try {
+              const response = await fetch('/api/extensions/${extension.id}/manifest/' + format);
+              if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Unable to load manifest' }));
+                throw new Error(error.error || 'Unable to load manifest');
+              }
+              const manifest = await response.json();
+              if (manifestPreview && manifestOutput) {
+                manifestPreview.style.display = 'none';
+                manifestOutput.style.display = 'block';
+                manifestOutput.textContent = JSON.stringify(manifest, null, 2);
+              }
+              window.UI?.showToast((format === 'gemini' ? 'Gemini' : 'Claude') + ' manifest ready', 'success');
+            } catch (error) {
+              setManifestLoading(false);
+              window.UI?.showToast(error instanceof Error ? error.message : 'Manifest request failed', 'error');
+            } finally {
+              window.UI?.setBusyButton(button, false);
+            }
+          });
+        });
+
+        const downloadButtons = document.querySelectorAll('[data-manifest-download]');
+        downloadButtons.forEach((button) => {
+          button.addEventListener('click', (event) => {
+            if (!(button instanceof HTMLButtonElement)) return;
+            const format = button.getAttribute('data-format');
+            const id = button.getAttribute('data-extension');
+            if (!format || !id) return;
+            const url = '/plugins/' + id + '/' + format + '/download';
+            window.location.href = url;
+            window.UI?.showToast('Download started', 'info');
+          });
+        });
+
+        const deleteTrigger = document.querySelector('[data-delete-extension]');
+        if (deleteTrigger) {
+          deleteTrigger.addEventListener('click', async () => {
+            if (!(deleteTrigger instanceof HTMLButtonElement)) return;
+            if (!confirm('Delete this extension and generated files?')) return;
+            window.UI?.setBusyButton(deleteTrigger, true);
+            try {
+              const response = await fetch('/api/extensions/${extension.id}', { method: 'DELETE' });
+              if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Failed to delete extension' }));
+                throw new Error(error.error || 'Failed to delete extension');
+              }
+              window.UI?.showToast('Extension deleted', 'success');
+              window.location.href = '/extensions';
+            } catch (error) {
+              window.UI?.showToast(error instanceof Error ? error.message : 'Unable to delete extension', 'error');
+            } finally {
+              window.UI?.setBusyButton(deleteTrigger, false);
+            }
+          });
+        }
+      })();
     </script>
   `;
+
   return layout(extension.name, content);
 }
 
@@ -199,189 +388,219 @@ export function extensionCreateView(
   availableConfigs: Config[],
   currentFilters?: { type?: string; format?: string; search?: string }
 ): string {
-  const activeFilters = currentFilters || {};
-  const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
+  const filters = currentFilters || {};
+  const selectedIds = new Set<string>();
 
   const content = `
-    <h2>Create Extension</h2>
-    <form id="create-extension-form">
-      <div class="form-group">
-        <label for="name">Name *</label>
-        <input type="text" id="name" name="name" required>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">New extension</p>
+        <h2>Create extension</h2>
+        <p class="lead">Bundle configs, author metadata, and generate plugins for your teams.</p>
       </div>
-
-      <div class="form-group">
-        <label for="version">Version *</label>
-        <input type="text" id="version" name="version" value="1.0.0" required>
+      <div class="action-bar">
+        <a href="/extensions" class="btn btn-tertiary">Cancel</a>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="author">Author</label>
-        <input type="text" id="author" name="author">
+    <form id="create-extension-form" class="panel" novalidate>
+      <div class="panel-header">
+        <h3 class="panel-title">Metadata</h3>
+        <span class="form-helper">Fields marked * are required.</span>
       </div>
-
-      <div class="form-group">
-        <label for="description">Description</label>
-        <textarea id="description" name="description" style="min-height: 100px;"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label for="icon_url">Icon URL</label>
-        <input type="url" id="icon_url" name="icon_url" placeholder="https://example.com/icon.png">
-      </div>
-
-      <div class="form-group">
-        <label>Select Configs</label>
-
-        <!-- Filter Controls -->
-        <div class="filter-container" style="margin-bottom: 15px;">
-          <div class="filter-row">
-            <div class="filter-group" style="flex: 1; min-width: 150px;">
-              <label for="filter-type">Type:</label>
-              <select
-                id="filter-type"
-                name="type"
-                onchange="applyConfigFilters()">
-                <option value="">All</option>
-                <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
-                <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
-                <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
-              </select>
-            </div>
-
-            <div class="filter-group" style="flex: 1; min-width: 150px;">
-              <label for="filter-format">Format:</label>
-              <select
-                id="filter-format"
-                name="format"
-                onchange="applyConfigFilters()">
-                <option value="">All</option>
-                <option value="claude_code" ${activeFilters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
-                <option value="codex" ${activeFilters.format === 'codex' ? 'selected' : ''}>Codex</option>
-                <option value="gemini" ${activeFilters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
-              </select>
-            </div>
-
-            <div class="filter-group" style="flex: 2; min-width: 200px;">
-              <label for="filter-search">Search:</label>
-              <input
-                type="text"
-                id="filter-search"
-                name="search"
-                placeholder="Search by name..."
-                value="${activeFilters.search || ''}"
-                onkeyup="applyConfigFiltersDebounced()">
-            </div>
-
-            ${hasActiveFilters ? `
-              <div class="filter-group" style="flex: 0; min-width: auto;">
-                <label style="opacity: 0; user-select: none;">.</label>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  onclick="clearConfigFilters()">
-                  Clear
-                </button>
-              </div>
-            ` : ''}
+      <div class="form-section">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input id="name" name="name" type="text" required placeholder="Gemini snippets" />
+          </div>
+          <div class="form-group">
+            <label for="version">Version *</label>
+            <input id="version" name="version" type="text" value="1.0.0" required />
           </div>
         </div>
-
-        ${availableConfigs.length === 0 ?
-          `<p style="color: var(--text-secondary);">${hasActiveFilters ? 'No configs match your filters.' : 'No configs available.'} <a href="/configs/new">Create a config first</a>.</p>`
-          : `
-          <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; background: var(--bg-secondary);">
-            ${availableConfigs.map(c => `
-              <label style="display: block; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s;">
-                <input type="checkbox" name="config_ids" value="${c.id}" style="width: auto; margin-right: 8px;">
-                <span style="font-weight: 500;">${escapeHtml(c.name)}</span>
-                <span class="badge">${c.type}</span>
-                <span class="badge">${c.original_format}</span>
-              </label>
-            `).join('')}
+        <div class="form-row">
+          <div class="form-group">
+            <label for="author">Author</label>
+            <input id="author" name="author" type="text" placeholder="Acme AI" />
           </div>
-        `}
+          <div class="form-group">
+            <label for="icon_url">Icon URL</label>
+            <input id="icon_url" name="icon_url" type="url" placeholder="https://example.com/icon.png" />
+            <span class="form-helper">Optional square image displayed in galleries.</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="3" placeholder="What does this extension offer?"></textarea>
+        </div>
       </div>
 
-      <button type="submit" class="btn">Create Extension</button>
-      <a href="/extensions" class="btn btn-secondary">Cancel</a>
+      <div class="divider"></div>
+
+      <div class="panel-header" style="margin-bottom: 0;">
+        <h3 class="panel-title">Select configs</h3>
+        <span class="form-helper" id="config-selected-count">0 selected</span>
+      </div>
+      <div class="form-row" style="margin-bottom: 12px;">
+        <div class="form-group">
+          <label for="filter-type">Type filter</label>
+          <select id="filter-type" data-extension-filter="type">
+            <option value="">All types</option>
+            <option value="slash_command" ${filters.type === 'slash_command' ? 'selected' : ''}>Slash command</option>
+            <option value="agent_definition" ${filters.type === 'agent_definition' ? 'selected' : ''}>Agent definition</option>
+            <option value="mcp_config" ${filters.type === 'mcp_config' ? 'selected' : ''}>MCP config</option>
+            <option value="skill" ${filters.type === 'skill' ? 'selected' : ''}>Skill</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-format">Format filter</label>
+          <select id="filter-format" data-extension-filter="format">
+            <option value="">All formats</option>
+            <option value="claude_code" ${filters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+            <option value="codex" ${filters.format === 'codex' ? 'selected' : ''}>Codex</option>
+            <option value="gemini" ${filters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-search">Search</label>
+          <input id="filter-search" type="search" data-extension-filter="search" placeholder="Search configs" value="${escapeHtml(
+            filters.search || ''
+          )}" />
+        </div>
+        ${
+          filters.type || filters.format || filters.search
+            ? `
+              <div class="form-group" style="align-self: flex-end;">
+                <button class="btn btn-tertiary btn-sm" type="button" data-extension-clear>Clear filters</button>
+              </div>
+            `
+            : ''
+        }
+      </div>
+
+      ${renderConfigSelection(availableConfigs, selectedIds, 'Create a config first, then return to package it here.')}
+
+      <div class="divider"></div>
+      <div class="action-bar" style="justify-content: flex-end;">
+        <button class="btn btn-secondary" type="button" onclick="window.history.back()">Cancel</button>
+        <button class="btn btn-primary" type="submit" data-submit>Create extension</button>
+      </div>
     </form>
 
     <script>
-      let debounceTimer;
+      (function initExtensionCreate() {
+        if (window.__extensionCreateBound) return;
+        window.__extensionCreateBound = true;
+        const form = document.getElementById('create-extension-form');
+        const countLabel = document.getElementById('config-selected-count');
+        const filterInputs = document.querySelectorAll('[data-extension-filter]');
+        const clearFilters = document.querySelector('[data-extension-clear]');
 
-      function applyConfigFilters() {
-        const type = document.getElementById('filter-type').value;
-        const format = document.getElementById('filter-format').value;
-        const search = document.getElementById('filter-search').value;
-
-        const params = new URLSearchParams();
-        if (type) params.set('type', type);
-        if (format) params.set('format', format);
-        if (search) params.set('search', search);
-
-        const newUrl = params.toString() ? '/extensions/new?' + params.toString() : '/extensions/new';
-        window.location.href = newUrl;
-      }
-
-      function applyConfigFiltersDebounced() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyConfigFilters, 500);
-      }
-
-      function clearConfigFilters() {
-        window.location.href = '/extensions/new';
-      }
-
-      // Handle form submission
-      document.getElementById('create-extension-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-        const configIds = [];
-
-        // Collect all checked checkboxes
-        document.querySelectorAll('input[name="config_ids"]:checked').forEach(cb => {
-          configIds.push(cb.value);
-        });
-
-        const body = {
-          name: formData.get('name'),
-          version: formData.get('version'),
-          author: formData.get('author') || undefined,
-          description: formData.get('description') || undefined,
-          icon_url: formData.get('icon_url') || undefined,
-          config_ids: configIds.length > 0 ? configIds : undefined
-        };
-
-        try {
-          const response = await fetch('/api/extensions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            window.location.href = '/extensions/' + data.extension.id;
-          } else {
-            const error = await response.json();
-            alert('Error: ' + (error.error || 'Failed to create extension'));
+        function updateSelectedCount() {
+          const count = form ? form.querySelectorAll('input[name="config_ids"]:checked').length : 0;
+          if (countLabel) {
+            countLabel.textContent = count + ' ' + (count === 1 ? 'selected' : 'selected');
           }
-        } catch (error) {
-          alert('Failed to create extension. Please try again.');
-          console.error('Extension creation error:', error);
         }
-      });
 
-      // Highlight selected checkboxes
-      document.querySelectorAll('input[name="config_ids"]').forEach(cb => {
-        cb.addEventListener('change', function() {
-          this.parentElement.style.background = this.checked ? 'var(--bg-tertiary)' : '';
+        function updateVisuals(target) {
+          const label = target.closest('[data-config-option]');
+          if (!label) return;
+          const isChecked = target.checked;
+          label.style.background = isChecked ? 'rgba(96, 165, 250, 0.12)' : 'rgba(15, 23, 42, 0.45)';
+          label.style.borderColor = isChecked ? 'rgba(96, 165, 250, 0.45)' : 'rgba(148, 163, 184, 0.18)';
+        }
+
+        form?.querySelectorAll('input[name="config_ids"]').forEach((input) => {
+          if (input instanceof HTMLInputElement) {
+            updateVisuals(input);
+            input.addEventListener('change', (event) => {
+              updateVisuals(event.target as HTMLInputElement);
+              updateSelectedCount();
+            });
+          }
         });
-      });
+
+        updateSelectedCount();
+
+        filterInputs.forEach((input) => {
+          if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement)) return;
+          if (input.type === 'search') {
+            let debounce;
+            input.addEventListener('input', () => {
+              clearTimeout(debounce);
+              debounce = setTimeout(applyFilters, 400);
+            });
+          } else {
+            input.addEventListener('change', applyFilters);
+          }
+        });
+
+        clearFilters?.addEventListener('click', () => {
+          window.location.href = '/extensions/new';
+        });
+
+        function applyFilters() {
+          const params = new URLSearchParams();
+          const type = (document.getElementById('filter-type') as HTMLSelectElement | null)?.value || '';
+          const format = (document.getElementById('filter-format') as HTMLSelectElement | null)?.value || '';
+          const search = (document.getElementById('filter-search') as HTMLInputElement | null)?.value || '';
+          if (type) params.set('type', type);
+          if (format) params.set('format', format);
+          if (search) params.set('search', search);
+          const query = params.toString();
+          window.location.href = query ? '/extensions/new?' + query : '/extensions/new';
+        }
+
+        form?.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (!(form instanceof HTMLFormElement)) return;
+          if (window.UI && !window.UI.validateForm(form)) {
+            return;
+          }
+          const submitButton = form.querySelector('[data-submit]');
+          if (submitButton instanceof HTMLButtonElement) {
+            window.UI?.setBusyButton(submitButton, true);
+          }
+          try {
+            const payload = {
+              name: (form.querySelector('#name') as HTMLInputElement)?.value.trim(),
+              version: (form.querySelector('#version') as HTMLInputElement)?.value.trim(),
+              author: (form.querySelector('#author') as HTMLInputElement)?.value.trim() || undefined,
+              description: (form.querySelector('#description') as HTMLTextAreaElement)?.value.trim() || undefined,
+              icon_url: (form.querySelector('#icon_url') as HTMLInputElement)?.value.trim() || undefined,
+              config_ids: Array.from(form.querySelectorAll('input[name="config_ids"]:checked')).map((input) => (
+                input instanceof HTMLInputElement ? input.value : ''
+              )).filter(Boolean),
+            };
+
+            const response = await fetch('/api/extensions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({ error: 'Failed to create extension' }));
+              throw new Error(error.error || 'Failed to create extension');
+            }
+
+            const data = await response.json();
+            window.UI?.showToast('Extension created', 'success');
+            window.location.href = '/extensions/' + data.extension.id;
+          } catch (error) {
+            window.UI?.showToast(error instanceof Error ? error.message : 'Unable to create extension', 'error');
+          } finally {
+            if (submitButton instanceof HTMLButtonElement) {
+              window.UI?.setBusyButton(submitButton, false);
+            }
+          }
+        });
+      })();
     </script>
   `;
+
   return layout('Create Extension', content);
 }
 
@@ -390,206 +609,231 @@ export function extensionEditView(
   availableConfigs: Config[],
   currentFilters?: { type?: string; format?: string; search?: string }
 ): string {
-  const selectedConfigIds = new Set(extension.configs.map(c => c.id));
-  const activeFilters = currentFilters || {};
-  const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
+  const filters = currentFilters || {};
+  const selectedIds = new Set(extension.configs.map((config) => config.id));
 
   const content = `
-    <h2>Edit Extension</h2>
-    <form hx-put="/api/extensions/${extension.id}" hx-target="body" hx-swap="outerHTML">
-      <div class="form-group">
-        <label for="name">Name *</label>
-        <input type="text" id="name" name="name" value="${escapeHtml(extension.name)}" required>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Extension editor</p>
+        <h2>Edit ${escapeHtml(extension.name)}</h2>
+        <p class="lead">Update metadata and curate the configs bundled into this extension.</p>
       </div>
-
-      <div class="form-group">
-        <label for="version">Version *</label>
-        <input type="text" id="version" name="version" value="${escapeHtml(extension.version)}" required>
+      <div class="action-bar">
+        <a href="/extensions/${extension.id}" class="btn btn-tertiary">Back to detail</a>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="author">Author</label>
-        <input type="text" id="author" name="author" value="${extension.author ? escapeHtml(extension.author) : ''}">
+    <form id="extension-metadata-form" class="panel" novalidate>
+      <div class="panel-header">
+        <h3 class="panel-title">Metadata</h3>
+        <span class="form-helper">Changes apply to generated manifests instantly.</span>
       </div>
-
-      <div class="form-group">
-        <label for="description">Description</label>
-        <textarea id="description" name="description" style="min-height: 100px;">${extension.description ? escapeHtml(extension.description) : ''}</textarea>
+      <div class="form-section">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input id="name" name="name" type="text" required value="${escapeHtml(extension.name)}" />
+          </div>
+          <div class="form-group">
+            <label for="version">Version *</label>
+            <input id="version" name="version" type="text" required value="${escapeHtml(extension.version)}" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="author">Author</label>
+            <input id="author" name="author" type="text" value="${extension.author ? escapeHtml(extension.author) : ''}" />
+          </div>
+          <div class="form-group">
+            <label for="icon_url">Icon URL</label>
+            <input id="icon_url" name="icon_url" type="url" value="${extension.icon_url ? escapeHtml(extension.icon_url) : ''}" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="3">${extension.description ? escapeHtml(extension.description) : ''}</textarea>
+        </div>
       </div>
-
-      <div class="form-group">
-        <label for="icon_url">Icon URL</label>
-        <input type="url" id="icon_url" name="icon_url" value="${extension.icon_url ? escapeHtml(extension.icon_url) : ''}" placeholder="https://example.com/icon.png">
+      <div class="divider"></div>
+      <div class="action-bar" style="justify-content: flex-end;">
+        <a href="/extensions/${extension.id}" class="btn btn-secondary">Cancel</a>
+        <button class="btn btn-primary" type="submit" data-submit>Save changes</button>
       </div>
-
-      <button type="submit" class="btn">Update Extension</button>
-      <a href="/extensions/${extension.id}" class="btn btn-secondary">Cancel</a>
     </form>
 
-    <h3 style="margin-top: 30px;">Manage Configs</h3>
-    <p style="color: var(--text-secondary); margin-bottom: 15px;">
-      Add or remove configs from this extension. Changes are applied immediately.
-    </p>
-
-    <!-- Filter Controls -->
-    <div class="filter-container" style="margin-bottom: 15px;">
-      <div class="filter-row">
-        <div class="filter-group" style="flex: 1; min-width: 150px;">
-          <label for="filter-type">Type:</label>
-          <select
-            id="filter-type"
-            name="type"
-            onchange="applyConfigFilters()">
-            <option value="">All</option>
-            <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
-            <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
-            <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+    <section class="panel" id="config-management-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Manage configs</h3>
+        <span class="form-helper" id="edit-config-count">${selectedIds.size} selected</span>
+      </div>
+      <div class="form-row" style="margin-bottom: 12px;">
+        <div class="form-group">
+          <label for="filter-type">Type filter</label>
+          <select id="filter-type" data-extension-filter="type">
+            <option value="">All types</option>
+            <option value="slash_command" ${filters.type === 'slash_command' ? 'selected' : ''}>Slash command</option>
+            <option value="agent_definition" ${filters.type === 'agent_definition' ? 'selected' : ''}>Agent definition</option>
+            <option value="mcp_config" ${filters.type === 'mcp_config' ? 'selected' : ''}>MCP config</option>
+            <option value="skill" ${filters.type === 'skill' ? 'selected' : ''}>Skill</option>
           </select>
         </div>
-
-        <div class="filter-group" style="flex: 1; min-width: 150px;">
-          <label for="filter-format">Format:</label>
-          <select
-            id="filter-format"
-            name="format"
-            onchange="applyConfigFilters()">
-            <option value="">All</option>
-            <option value="claude_code" ${activeFilters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
-            <option value="codex" ${activeFilters.format === 'codex' ? 'selected' : ''}>Codex</option>
-            <option value="gemini" ${activeFilters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
+        <div class="form-group">
+          <label for="filter-format">Format filter</label>
+          <select id="filter-format" data-extension-filter="format">
+            <option value="">All formats</option>
+            <option value="claude_code" ${filters.format === 'claude_code' ? 'selected' : ''}>Claude Code</option>
+            <option value="codex" ${filters.format === 'codex' ? 'selected' : ''}>Codex</option>
+            <option value="gemini" ${filters.format === 'gemini' ? 'selected' : ''}>Gemini</option>
           </select>
         </div>
-
-        <div class="filter-group" style="flex: 2; min-width: 200px;">
-          <label for="filter-search">Search:</label>
-          <input
-            type="text"
-            id="filter-search"
-            name="search"
-            placeholder="Search by name..."
-            value="${activeFilters.search || ''}"
-            onkeyup="applyConfigFiltersDebounced()">
+        <div class="form-group">
+          <label for="filter-search">Search</label>
+          <input id="filter-search" type="search" data-extension-filter="search" placeholder="Search configs" value="${escapeHtml(
+            filters.search || ''
+          )}" />
         </div>
-
-        ${hasActiveFilters ? `
-          <div class="filter-group" style="flex: 0; min-width: auto;">
-            <label style="opacity: 0; user-select: none;">.</label>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onclick="clearConfigFilters()">
-              Clear
-            </button>
-          </div>
-        ` : ''}
+        ${
+          filters.type || filters.format || filters.search
+            ? `
+              <div class="form-group" style="align-self: flex-end;">
+                <button class="btn btn-tertiary btn-sm" type="button" data-extension-clear>Clear filters</button>
+              </div>
+            `
+            : ''
+        }
       </div>
-    </div>
-
-    ${availableConfigs.length === 0 ?
-      `<p style="color: var(--text-secondary);">${hasActiveFilters ? 'No configs match your filters.' : 'No configs available.'}</p>`
-      : `
-      <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; background: var(--bg-secondary);">
-        ${availableConfigs.map(c => {
-          const isSelected = selectedConfigIds.has(c.id);
-          return `
-            <div style="display: flex; align-items: center; padding: 8px; border-radius: 4px; margin-bottom: 5px; background: ${isSelected ? 'var(--bg-tertiary)' : 'transparent'};">
-              <label style="flex: 1; cursor: pointer; display: flex; align-items: center;">
-                <input
-                  type="checkbox"
-                  data-config-id="${c.id}"
-                  ${isSelected ? 'checked' : ''}
-                  style="width: auto; margin-right: 8px;"
-                  hx-post="/api/extensions/${extension.id}/configs/${c.id}"
-                  hx-trigger="change"
-                  hx-swap="none">
-                <span style="font-weight: 500;">${escapeHtml(c.name)}</span>
-                <span class="badge">${c.type}</span>
-                <span class="badge">${c.original_format}</span>
-              </label>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `}
+      ${renderConfigSelection(availableConfigs, selectedIds, 'No configs match your filters. Adjust the filters or add new configs.')}
+    </section>
 
     <script>
-      let debounceTimer;
+      (function initExtensionEdit() {
+        if (window.__extensionEditBound) return;
+        window.__extensionEditBound = true;
+        const form = document.getElementById('extension-metadata-form');
+        const configPanel = document.getElementById('config-management-panel');
+        const countLabel = document.getElementById('edit-config-count');
+        const filterInputs = document.querySelectorAll('[data-extension-filter]');
+        const clearFilters = document.querySelector('[data-extension-clear]');
 
-      function applyConfigFilters() {
-        const type = document.getElementById('filter-type').value;
-        const format = document.getElementById('filter-format').value;
-        const search = document.getElementById('filter-search').value;
-
-        const params = new URLSearchParams();
-        if (type) params.set('type', type);
-        if (format) params.set('format', format);
-        if (search) params.set('search', search);
-
-        const newUrl = params.toString() ? '/extensions/${extension.id}/edit?' + params.toString() : '/extensions/${extension.id}/edit';
-        window.location.href = newUrl;
-      }
-
-      function applyConfigFiltersDebounced() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyConfigFilters, 500);
-      }
-
-      function clearConfigFilters() {
-        window.location.href = '/extensions/${extension.id}/edit';
-      }
-
-      // Handle metadata form submission
-      document.body.addEventListener('htmx:afterSwap', function(evt) {
-        const response = evt.detail.xhr.responseText;
-        try {
-          const data = JSON.parse(response);
-          if (data.extension) {
-            window.location.href = '/extensions/' + data.extension.id;
+        form?.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (!(form instanceof HTMLFormElement)) return;
+          if (window.UI && !window.UI.validateForm(form)) {
+            return;
           }
-        } catch(e) {
-          // Response is HTML, let it render
-        }
-      });
-
-      // Handle config checkbox changes
-      document.querySelectorAll('input[type="checkbox"][data-config-id]').forEach(cb => {
-        cb.addEventListener('change', async function(e) {
-          const configId = this.getAttribute('data-config-id');
-          const isChecked = this.checked;
-          const method = isChecked ? 'POST' : 'DELETE';
-
+          const submitButton = form.querySelector('[data-submit]');
+          if (submitButton instanceof HTMLButtonElement) {
+            window.UI?.setBusyButton(submitButton, true);
+          }
           try {
-            const response = await fetch('/api/extensions/${extension.id}/configs/' + configId, {
-              method: method,
-              headers: { 'Content-Type': 'application/json' }
+            const payload = {
+              name: (form.querySelector('#name') as HTMLInputElement)?.value.trim(),
+              version: (form.querySelector('#version') as HTMLInputElement)?.value.trim(),
+              author: (form.querySelector('#author') as HTMLInputElement)?.value.trim() || undefined,
+              description: (form.querySelector('#description') as HTMLTextAreaElement)?.value.trim() || undefined,
+              icon_url: (form.querySelector('#icon_url') as HTMLInputElement)?.value.trim() || undefined,
+            };
+
+            const response = await fetch(`/api/extensions/${extension.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
             });
 
-            if (response.ok) {
-              // Update visual feedback
-              this.parentElement.parentElement.style.background = isChecked ? 'var(--bg-tertiary)' : 'transparent';
-            } else {
-              // Revert checkbox on error
-              this.checked = !isChecked;
-              alert('Failed to update config association');
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({ error: 'Failed to update extension' }));
+              throw new Error(error.error || 'Failed to update extension');
             }
+
+            window.UI?.showToast('Extension updated', 'success');
+          window.location.href = '/extensions/${extension.id}';
           } catch (error) {
-            this.checked = !isChecked;
-            alert('Error updating config association');
+            window.UI?.showToast(error instanceof Error ? error.message : 'Unable to update extension', 'error');
+          } finally {
+            if (submitButton instanceof HTMLButtonElement) {
+              window.UI?.setBusyButton(submitButton, false);
+            }
           }
         });
-      });
+
+        function updateSelectedCount() {
+          if (!configPanel || !countLabel) return;
+          const count = configPanel.querySelectorAll('input[name="config_ids"]:checked').length;
+          countLabel.textContent = count + ' ' + (count === 1 ? 'selected' : 'selected');
+        }
+
+        function updateVisuals(target) {
+          const label = target.closest('[data-config-option]');
+          if (!label) return;
+          const isChecked = target.checked;
+          label.style.background = isChecked ? 'rgba(96, 165, 250, 0.12)' : 'rgba(15, 23, 42, 0.45)';
+          label.style.borderColor = isChecked ? 'rgba(96, 165, 250, 0.45)' : 'rgba(148, 163, 184, 0.18)';
+        }
+
+        configPanel?.querySelectorAll('input[name="config_ids"]').forEach((input) => {
+          if (!(input instanceof HTMLInputElement)) return;
+          updateVisuals(input);
+          input.addEventListener('change', async () => {
+            const configId = input.value;
+            const isChecked = input.checked;
+            const method = isChecked ? 'POST' : 'DELETE';
+            try {
+            const response = await fetch('/api/extensions/${extension.id}/configs/' + configId, { method });
+              if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Failed to update config association' }));
+                throw new Error(error.error || 'Failed to update config association');
+              }
+              updateVisuals(input);
+              updateSelectedCount();
+              window.UI?.showToast(
+                isChecked ? 'Config added to extension' : 'Config removed from extension',
+                'success'
+              );
+            } catch (error) {
+              input.checked = !isChecked;
+              updateVisuals(input);
+              window.UI?.showToast(
+                error instanceof Error ? error.message : 'Unable to update config association',
+                'error'
+              );
+            }
+          });
+        });
+
+        updateSelectedCount();
+
+        filterInputs.forEach((input) => {
+          if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement)) return;
+          if (input.type === 'search') {
+            let debounce;
+            input.addEventListener('input', () => {
+              clearTimeout(debounce);
+              debounce = setTimeout(applyFilters, 400);
+            });
+          } else {
+            input.addEventListener('change', applyFilters);
+          }
+        });
+
+        clearFilters?.addEventListener('click', () => {
+          window.location.href = '/extensions/${extension.id}/edit';
+        });
+
+        function applyFilters() {
+          const params = new URLSearchParams();
+          const type = (document.getElementById('filter-type') as HTMLSelectElement | null)?.value || '';
+          const format = (document.getElementById('filter-format') as HTMLSelectElement | null)?.value || '';
+          const search = (document.getElementById('filter-search') as HTMLInputElement | null)?.value || '';
+          if (type) params.set('type', type);
+          if (format) params.set('format', format);
+          if (search) params.set('search', search);
+          const query = params.toString();
+          window.location.href = query ? '/extensions/${extension.id}/edit?' + query : '/extensions/${extension.id}/edit';
+        }
+      })();
     </script>
   `;
-  return layout('Edit Extension', content);
-}
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
+  return layout('Edit Extension', content);
 }

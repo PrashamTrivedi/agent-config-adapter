@@ -1,7 +1,6 @@
 import { Config } from '../domain/types';
 import { layout } from './layout';
 
-// Helper to escape HTML
 function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (m: string) => {
     const escapeMap: Record<string, string> = {
@@ -9,87 +8,94 @@ function escapeHtml(text: string): string {
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
-      "'": '&#039;'
+      "'": '&#039;',
     };
     return escapeMap[m];
   });
 }
 
-// Main converter page - shows command selection with search
 export function slashCommandConverterView(commands: Config[], searchQuery?: string): string {
   const content = `
-    <h2>Slash Command Converter</h2>
-    <p style="color: var(--text-secondary); margin-bottom: 20px;">
-      Convert Claude Code slash commands for use in other AI agents (Claude Code Web, Codex, Gemini).
-      Select a command below to analyze and convert it.
-    </p>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Conversion toolkit</p>
+        <h2>Slash command converter</h2>
+        <p class="lead">Search commands, review analysis, and convert between Claude Code, Codex, and Gemini formats.</p>
+      </div>
+      <div class="action-bar">
+        <a href="/configs" class="btn btn-tertiary">Back to configs</a>
+      </div>
+    </section>
 
-    <div class="form-group">
-      <label for="command-search">Search Commands</label>
-      <input
-        type="text"
-        id="command-search"
-        name="search"
-        placeholder="Search by name..."
-        value="${searchQuery || ''}"
-        hx-get="/slash-commands/convert"
-        hx-trigger="keyup changed delay:500ms"
-        hx-target="#command-select-container"
-        hx-swap="innerHTML"
-        style="margin-bottom: 10px;"
-      />
-    </div>
+    <section class="panel" id="command-search-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Find a slash command</h3>
+        <span class="form-helper">Type to filter commands instantly.</span>
+      </div>
+      <div class="form-section">
+        <div class="form-group">
+          <label for="command-search">Search commands</label>
+          <input
+            type="search"
+            id="command-search"
+            name="search"
+            placeholder="Search by name"
+            value="${escapeHtml(searchQuery || '')}"
+            hx-get="/slash-commands/convert"
+            hx-trigger="keyup changed delay:400ms"
+            hx-target="#command-select-container"
+            hx-include="this"
+            aria-label="Search slash commands" />
+        </div>
+      </div>
+      <div id="command-select-container">
+        ${slashCommandConverterDropdownPartial(commands, searchQuery)}
+      </div>
+    </section>
 
-    <div id="command-select-container">
-      ${slashCommandConverterDropdownPartial(commands, searchQuery)}
-    </div>
+    <div id="converter-form-section"></div>
 
-    <!-- Dynamic form section (loaded via HTMX when command selected) -->
-    <div id="converter-form-section" style="margin-top: 30px;">
-      <!-- Form will be loaded here based on selected command -->
-    </div>
+    <script>
+      (function initConverterPage() {
+        if (window.__converterInitBound) return;
+        window.__converterInitBound = true;
+        document.addEventListener('htmx:afterSwap', (event) => {
+          if (event.detail?.target?.id === 'result-section' && event.detail?.xhr?.status === 200) {
+            window.UI?.showToast('Conversion complete', 'success');
+          }
+        });
+      })();
+    </script>
   `;
 
   return layout('Slash Command Converter', content);
 }
 
-// Partial for dropdown options (for HTMX updates)
 export function slashCommandConverterDropdownPartial(commands: Config[], searchQuery?: string): string {
-  // Auto-select if there's exactly one result from search
-  const autoSelect = searchQuery && commands.length === 1;
-
+  const autoSelect = Boolean(searchQuery) && commands.length === 1;
   return `
     <div class="form-group">
-      <label for="command-select">Select Slash Command</label>
+      <label for="command-select">Select a command</label>
       <select
         id="command-select"
         name="configId"
+        aria-label="Select slash command"
         hx-get="/slash-commands/converter-form"
         hx-target="#converter-form-section"
         hx-swap="innerHTML"
         hx-trigger="change">
-        <option value="">-- Select a command to convert --</option>
-        ${commands.map(c => `
-          <option value="${c.id}" ${autoSelect ? 'selected' : ''}>${escapeHtml(c.name)}</option>
+        <option value="">${commands.length ? 'Choose a command to convert' : 'No commands found'}</option>
+        ${commands.map((command) => `
+          <option value="${command.id}" ${autoSelect ? 'selected' : ''}>${escapeHtml(command.name)}</option>
         `).join('')}
       </select>
-      ${commands.length === 0 ? `
-        <small class="help-text" style="color: var(--text-secondary);">
-          ${searchQuery ? `No commands match "${escapeHtml(searchQuery)}"` : 'No slash commands available'}
-        </small>
-      ` : `
-        <small class="help-text" style="color: var(--text-secondary);">
-          ${commands.length} command${commands.length === 1 ? '' : 's'} available
-        </small>
-      `}
+      <span class="form-helper">${commands.length} command${commands.length === 1 ? '' : 's'} available.</span>
     </div>
-
     ${autoSelect ? `
       <script>
-        // Auto-trigger form load when single result is auto-selected
-        (function() {
+        (function autoSelectCommand() {
           const select = document.getElementById('command-select');
-          if (select && select.value) {
+          if (select && select instanceof HTMLSelectElement && select.value) {
             htmx.trigger(select, 'change');
           }
         })();
@@ -98,106 +104,87 @@ export function slashCommandConverterDropdownPartial(commands: Config[], searchQ
   `;
 }
 
-// Dynamic form loaded when a command is selected
 export function slashCommandConverterFormPartial(config: Config): string {
-  // Parse analysis metadata
-  const hasArguments = !!config.has_arguments;
+  const hasArguments = Boolean(config.has_arguments);
   const argumentHint = config.argument_hint;
   const agentReferences = config.agent_references ? JSON.parse(config.agent_references) : [];
   const skillReferences = config.skill_references ? JSON.parse(config.skill_references) : [];
 
   return `
-    <div class="converter-form">
-      <h3>${escapeHtml(config.name)}</h3>
-
-      <!-- Analysis info box -->
-      <div class="analysis-info">
-        <p><strong>Analysis Results:</strong></p>
-        <ul style="margin-left: 20px; margin-top: 10px;">
-          <li>Requires arguments: ${hasArguments ? 'Yes' : 'No'}</li>
-          ${agentReferences.length > 0 ? `
-            <li>Agent references detected: ${agentReferences.map((a: string) => escapeHtml(a)).join(', ')}</li>
-          ` : ''}
-          ${skillReferences.length > 0 ? `
-            <li>Skill references detected: ${skillReferences.map((s: string) => escapeHtml(s)).join(', ')}</li>
-          ` : ''}
-          ${!hasArguments && agentReferences.length === 0 && skillReferences.length === 0 ? `
-            <li>No special processing needed - simple command</li>
-          ` : ''}
-        </ul>
-
-        <button
-          class="btn btn-secondary"
-          hx-post="/api/configs/${config.id}/refresh-analysis"
-          hx-target="#refresh-status"
-          hx-swap="innerHTML"
-          style="margin-top: 10px;">
-          🔄 Refresh Analysis
-        </button>
-        <span style="font-size: 0.875em; color: var(--text-secondary); margin-left: 10px;">
-          (Re-detect arguments and references)
-        </span>
-
-        <div id="refresh-status" style="margin-top: 10px;"></div>
+    <section class="panel fade-in">
+      <div class="panel-header">
+        <h3 class="panel-title">${escapeHtml(config.name)}</h3>
+        <div class="action-bar">
+          <button class="btn btn-ghost btn-sm" type="button" data-copy="${escapeHtml(config.id)}">Copy ID</button>
+          <button
+            class="btn btn-secondary btn-sm"
+            type="button"
+            hx-post="/api/configs/${config.id}/refresh-analysis"
+            hx-target="#analysis-refresh-status"
+            hx-swap="innerHTML">
+            Refresh analysis
+          </button>
+        </div>
       </div>
-
+      <div class="resource-grid">
+        <article class="card">
+          <h4>Arguments required</h4>
+          <p>${hasArguments ? 'Yes' : 'No'}</p>
+        </article>
+        <article class="card">
+          <h4>Agent references</h4>
+          <p>${agentReferences.length ? escapeHtml(agentReferences.join(', ')) : 'None detected'}</p>
+        </article>
+        <article class="card">
+          <h4>Skill references</h4>
+          <p>${skillReferences.length ? escapeHtml(skillReferences.join(', ')) : 'None detected'}</p>
+        </article>
+      </div>
+      <div id="analysis-refresh-status" style="min-height: 20px; color: var(--text-muted);"></div>
+      <div class="divider"></div>
       <form
+        class="form-section"
         hx-post="/api/slash-commands/${config.id}/convert"
         hx-target="#result-section"
         hx-swap="innerHTML"
         hx-ext="json-enc">
-
-        <!-- Conditionally show argument input if has_arguments=true -->
         ${hasArguments ? `
           <div class="form-group">
-            <label for="userArguments">Arguments <span style="color: var(--danger);">*</span></label>
+            <label for="userArguments">Arguments *</label>
             <input
-              type="text"
               id="userArguments"
               name="userArguments"
+              type="text"
               required
-              placeholder="${argumentHint ? escapeHtml(argumentHint) : 'Enter arguments here...'}"
-            />
-            ${argumentHint ? `
-              <small class="help-text">
-                Hint: ${escapeHtml(argumentHint)}
-              </small>
-            ` : `
-              <small class="help-text">
-                This command requires arguments to function properly
-              </small>
-            `}
+              placeholder="${escapeHtml(argumentHint || 'Comma separated arguments')}" />
+            <span class="form-helper">${argumentHint ? escapeHtml(argumentHint) : 'Provide command arguments for accurate conversion.'}</span>
           </div>
         ` : ''}
-
-        <button type="submit" class="btn">Convert Command</button>
+        <div class="action-bar" style="justify-content: flex-end;">
+          <button class="btn btn-primary" type="submit">Convert command</button>
+        </div>
       </form>
+      <div id="result-section" style="margin-top: 18px;"></div>
+    </section>
 
-      <!-- Result section -->
-      <div id="result-section" style="margin-top: 2rem">
-        <!-- Results will be inserted here via HTMX -->
-      </div>
-
-      <script>
-        // Auto-reload form after analysis refresh to show updated metadata
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-          if (evt.detail.target.id === 'refresh-status' && evt.detail.xhr.status === 200) {
+    <script>
+      (function initRefreshListener() {
+        if (window.__converterRefreshBound) return;
+        window.__converterRefreshBound = true;
+        document.addEventListener('htmx:afterSwap', (event) => {
+          if (event.detail?.target?.id === 'analysis-refresh-status') {
+            window.UI?.showToast('Analysis refreshed. Reloading…', 'info');
+            const commandId = '${config.id}';
             setTimeout(() => {
-              // Reload the form partial
-              const configId = '${config.id}';
-              htmx.ajax('GET', '/slash-commands/converter-form?configId=' + configId, {
-                target: '#converter-form-section',
-                swap: 'innerHTML'
-              });
-            }, 2000);
+              htmx.ajax('GET', '/slash-commands/converter-form?configId=' + commandId, { target: '#converter-form-section', swap: 'innerHTML' });
+            }, 1200);
           }
         });
-      </script>
-    </div>
+      })();
+    </script>
   `;
 }
 
-// Success result display
 export function slashCommandConversionResultPartial(
   convertedContent: string,
   analysis: {
@@ -211,59 +198,37 @@ export function slashCommandConversionResultPartial(
   const skillRefs = analysis.skillReferences || [];
 
   return `
-    <div class="result-success">
-      <h3>✓ Conversion Complete</h3>
-
-      <div class="analysis-info" style="margin-top: 15px;">
-        <p><strong>Processing Summary:</strong></p>
-        <ul style="margin-left: 20px; margin-top: 10px;">
-          <li>Arguments processed: ${analysis.hasArguments ? 'Yes' : 'No'}</li>
-          <li>Agent references: ${agentRefs.length > 0 ? agentRefs.join(', ') : 'None'}</li>
-          <li>Skill references: ${skillRefs.length > 0 ? skillRefs.join(', ') : 'None'}</li>
-          <li>Frontmatter removed: Yes</li>
-        </ul>
+    <section class="panel fade-in">
+      <div class="panel-header">
+        <h3 class="panel-title">Conversion complete</h3>
+        <span class="badge status-success">Ready to copy</span>
       </div>
-
-      <div class="converted-content">
-        <label for="output-textarea"><strong>Converted Command (Ready to Copy):</strong></label>
-        <textarea
-          readonly
-          id="output-textarea"
-          class="output-textarea"
-          rows="20"
-          onclick="this.select()"
-        >${escapeHtml(convertedContent)}</textarea>
-        <button
-          class="btn btn-secondary"
-          onclick="copyToClipboard()"
-          style="margin-top: 10px;">
-          📋 Copy to Clipboard
-        </button>
+      <div class="resource-grid">
+        <article class="card">
+          <h4>Arguments processed</h4>
+          <p>${analysis.hasArguments ? 'Yes' : 'No'}</p>
+        </article>
+        <article class="card">
+          <h4>Agent references</h4>
+          <p>${agentRefs.length ? escapeHtml(agentRefs.join(', ')) : 'None'}</p>
+        </article>
+        <article class="card">
+          <h4>Skill references</h4>
+          <p>${skillRefs.length ? escapeHtml(skillRefs.join(', ')) : 'None'}</p>
+        </article>
       </div>
-    </div>
-
-    <script>
-      function copyToClipboard() {
-        const textarea = document.getElementById('output-textarea');
-        textarea.select();
-        document.execCommand('copy');
-
-        // Show feedback
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        btn.style.background = '#238636';
-
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.style.background = '';
-        }, 2000);
-      }
-    </script>
+      <div class="divider"></div>
+      <div class="form-group">
+        <label for="converted-output">Converted command</label>
+        <textarea id="converted-output" readonly rows="12" style="width: 100%; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.25); color: var(--text-primary);">${escapeHtml(convertedContent)}</textarea>
+        <div class="action-bar" style="justify-content: flex-end; margin-top: 12px;">
+          <button class="btn btn-secondary" type="button" data-copy-target="#converted-output">Copy to clipboard</button>
+        </div>
+      </div>
+    </section>
   `;
 }
 
-// Needs user input result display
 export function slashCommandNeedsInputPartial(
   analysis: {
     hasArguments: boolean | null;
@@ -273,11 +238,13 @@ export function slashCommandNeedsInputPartial(
   }
 ): string {
   return `
-    <div class="result-needs-input">
-      <p class="warning">⚠️ This command requires arguments. Please provide them in the form above and convert again.</p>
-      ${analysis.argumentHint ? `
-        <p><strong>Hint:</strong> ${escapeHtml(analysis.argumentHint)}</p>
-      ` : ''}
-    </div>
+    <section class="panel" style="border: 1px solid rgba(251, 191, 36, 0.35);">
+      <div class="panel-header">
+        <h3 class="panel-title">Arguments required</h3>
+        <span class="badge status-warning">Action needed</span>
+      </div>
+      <p style="margin: 0; color: var(--text-muted);">Provide arguments in the form above and run the conversion again.</p>
+      ${analysis.argumentHint ? `<p style="margin: 12px 0 0; color: var(--text-muted);"><strong>Hint:</strong> ${escapeHtml(analysis.argumentHint)}</p>` : ''}
+    </section>
   `;
 }

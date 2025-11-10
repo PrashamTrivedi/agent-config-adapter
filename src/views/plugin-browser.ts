@@ -8,9 +8,126 @@ interface FileInfo {
   mimeType: string | null;
 }
 
-/**
- * Plugin file browser view - shows directory tree and file links
- */
+interface FileNode {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+  children?: FileNode[];
+  file?: FileInfo;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatSize(bytes: number | null): string {
+  if (bytes === null) return '—';
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / Math.pow(1024, exponent);
+  return `${value.toFixed(exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+}
+
+function buildFileTree(files: FileInfo[]): FileNode[] {
+  const root: Record<string, FileNode> = {};
+
+  files.forEach((file) => {
+    const segments = file.path.split('/');
+    let currentLevel = root;
+    let currentPath = '';
+
+    segments.forEach((segment, index) => {
+      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+      if (!currentLevel[segment]) {
+        currentLevel[segment] = {
+          name: segment,
+          path: currentPath,
+          isDirectory: index < segments.length - 1,
+          children: {},
+        } as FileNode & { children: Record<string, FileNode> };
+      }
+
+      const node = currentLevel[segment] as FileNode & { children: Record<string, FileNode> };
+      if (index === segments.length - 1) {
+        node.isDirectory = false;
+        node.file = file;
+      }
+
+      currentLevel = node.children || {};
+      node.children = currentLevel;
+    });
+  });
+
+  const convert = (nodes: Record<string, FileNode>): FileNode[] =>
+    Object.values(nodes)
+      .map((node) => {
+        const converted: FileNode = {
+          name: node.name,
+          path: node.path,
+          isDirectory: node.isDirectory,
+          file: node.file,
+        };
+        if (node.children) {
+          converted.children = convert(node.children as Record<string, FileNode>);
+        }
+        return converted;
+      })
+      .sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) {
+          return a.isDirectory ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+  return convert(root);
+}
+
+function renderFileTree(nodes: FileNode[], baseUrl: string): string {
+  if (!nodes.length) {
+    return '<p style="color: var(--text-muted);">No files generated yet.</p>';
+  }
+
+  return `
+    <div class="file-tree">
+      ${renderNodes(nodes, baseUrl)}
+    </div>
+  `;
+}
+
+function renderNodes(nodes: FileNode[], baseUrl: string): string {
+  return `
+    <ul>
+      ${nodes
+        .map((node) => {
+          if (node.isDirectory) {
+            return `
+              <li>
+                <strong>${escapeHtml(node.name)}/</strong>
+                ${node.children ? renderNodes(node.children, baseUrl) : ''}
+              </li>
+            `;
+          }
+
+          const file = node.file!;
+          const href = `${baseUrl}/${encodeURI(file.path)}`;
+          return `
+            <li>
+              <a href="${href}" class="link-muted" target="_blank">${escapeHtml(node.name)}</a>
+              <span style="color: var(--text-muted); font-size: 0.85rem;">${formatSize(file.size)}</span>
+            </li>
+          `;
+        })
+        .join('')}
+    </ul>
+  `;
+}
+
 export function pluginBrowserView(
   extension: ExtensionWithConfigs,
   format: 'claude_code' | 'gemini',
@@ -19,298 +136,85 @@ export function pluginBrowserView(
 ): string {
   const formatDisplay = format === 'claude_code' ? 'Claude Code' : 'Gemini CLI';
   const pluginUrl = `${baseUrl}/plugins/${extension.id}/${format}`;
-
-  // Organize files by directory
   const fileTree = buildFileTree(files);
+  const totalSize = files.reduce((sum, file) => sum + (file.size ?? 0), 0);
 
   const content = `
-    <div class="container">
-      <div class="header">
-        <h1>📦 ${escapeHtml(extension.name)}</h1>
-        <p class="subtitle">${formatDisplay} Plugin Files</p>
-      </div>
-
-      <div class="plugin-info">
-        <div class="info-grid">
-          <div class="info-item">
-            <strong>Version:</strong> ${escapeHtml(extension.version)}
-          </div>
-          ${extension.author ? `<div class="info-item"><strong>Author:</strong> ${escapeHtml(extension.author)}</div>` : ''}
-          <div class="info-item">
-            <strong>Files:</strong> ${files.length}
-          </div>
-          <div class="info-item">
-            <strong>Total Size:</strong> ${formatSize(files.reduce((sum, f) => sum + (f.size || 0), 0))}
-          </div>
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Plugin files</p>
+        <h2>${escapeHtml(extension.name)} · ${formatDisplay}</h2>
+        <p class="lead">Inspect generated artifacts, copy install URLs, and download bundles.</p>
+        <div class="chip-group" style="margin-top: 18px;">
+          <span class="badge status-info">v${escapeHtml(extension.version)}</span>
+          <span class="badge">${files.length} ${files.length === 1 ? 'file' : 'files'}</span>
+          <span class="badge">${formatSize(totalSize)} total</span>
         </div>
       </div>
-
-      <div class="actions-bar">
-        ${format === 'claude_code' ? `
-          <a href="${pluginUrl}/download" class="btn btn-primary">
-            📥 Download Complete Plugin (ZIP)
-          </a>
-          <button onclick="copyToClipboard('${pluginUrl}')" class="btn">
-            📋 Copy Plugin URL
-          </button>
-        ` : `
-          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary">
-            📄 Download JSON Definition (Recommended)
-          </a>
-          <details style="display: inline-block; position: relative;">
-            <summary class="btn btn-secondary" style="list-style: none; cursor: pointer;">
-              Advanced Options ▼
-            </summary>
-            <div style="position: absolute; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-top: 5px; z-index: 10; min-width: 200px;">
-              <a href="${pluginUrl}/download" class="btn btn-secondary" style="display: block; margin-bottom: 8px; text-align: center;">
-                📥 Download Full ZIP
-              </a>
-              <button onclick="copyToClipboard('${pluginUrl}')" class="btn btn-secondary" style="display: block; width: 100%;">
-                📋 Copy Plugin URL
-              </button>
-            </div>
-          </details>
-        `}
-        <a href="/extensions/${extension.id}" class="btn btn-secondary">
-          ← Back to Extension
-        </a>
+      <div class="action-bar">
+        <a href="/extensions/${extension.id}" class="btn btn-tertiary">Back to extension</a>
       </div>
+    </section>
 
-      <div class="file-browser">
-        <h2>📁 File Structure</h2>
-        <div class="file-tree">
-          ${renderFileTree(fileTree, pluginUrl)}
-        </div>
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Quick actions</h3>
+        <span class="form-helper">Use these shortcuts to distribute the plugin.</span>
       </div>
-
-      <div class="installation-guide">
-        <h2>📖 Installation Instructions</h2>
-        ${format === 'claude_code' ? renderClaudeCodeInstructions(pluginUrl, extension) : renderGeminiInstructions(extension)}
+      <div class="action-bar" style="flex-wrap: wrap;">
+        <button class="btn btn-primary" type="button" data-plugin-copy="${pluginUrl}">Copy plugin URL</button>
+        <a href="${pluginUrl}/download" class="btn btn-secondary">Download ZIP</a>
+        ${
+          format === 'claude_code'
+            ? `<a href="/plugins/${extension.id}/gemini/definition" class="btn btn-ghost">Gemini JSON definition</a>`
+            : `<a href="/plugins/${extension.id}/claude_code" class="btn btn-ghost">Browse Claude files</a>`
+        }
       </div>
-    </div>
+    </section>
 
-    <style>
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-      }
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">File structure</h3>
+        <span class="form-helper">Click any file to open it in a new tab.</span>
+      </div>
+      ${renderFileTree(fileTree, pluginUrl)}
+    </section>
 
-      .header {
-        margin-bottom: 2rem;
-      }
-
-      .subtitle {
-        color: var(--text-secondary);
-        font-size: 1.1rem;
-        margin-top: 0.5rem;
-      }
-
-      .plugin-info {
-        background: var(--bg-secondary);
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-      }
-
-      .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-      }
-
-      .info-item {
-        padding: 0.5rem;
-      }
-
-      .actions-bar {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-      }
-
-      .file-browser {
-        background: var(--bg-secondary);
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-      }
-
-      .file-tree {
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        font-size: 0.9rem;
-      }
-
-      .file-tree ul {
-        list-style: none;
-        padding-left: 1.5rem;
-        margin: 0.5rem 0;
-      }
-
-      .file-tree li {
-        margin: 0.25rem 0;
-      }
-
-      .file-tree a {
-        color: var(--text-link);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-      }
-
-      .file-tree a:hover {
-        background: var(--bg-hover);
-      }
-
-      .directory-name {
-        color: var(--text-primary);
-        font-weight: 600;
-        margin: 0.5rem 0 0.25rem 0;
-      }
-
-      .installation-guide {
-        background: var(--bg-secondary);
-        border-radius: 8px;
-        padding: 1.5rem;
-      }
-
-      .installation-guide pre {
-        background: var(--bg-primary);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 1rem;
-        overflow-x: auto;
-        margin: 1rem 0;
-      }
-
-      .installation-guide code {
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        font-size: 0.875rem;
-      }
-
-      .installation-step {
-        margin: 1.5rem 0;
-      }
-
-      .installation-step h4 {
-        margin-bottom: 0.5rem;
-        color: var(--text-primary);
-      }
-    </style>
+    <section class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Installation guide</h3>
+        <span class="form-helper">Follow these steps to install the plugin.</span>
+      </div>
+      ${format === 'claude_code' ? renderClaudeInstructions(pluginUrl, extension) : renderGeminiInstructions(pluginUrl, extension)}
+    </section>
 
     <script>
-      function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-          alert('Plugin URL copied to clipboard!');
-        }).catch(err => {
-          console.error('Failed to copy:', err);
+      (function initPluginBrowser() {
+        if (window.__pluginBrowserBound) return;
+        window.__pluginBrowserBound = true;
+        const copyButtons = document.querySelectorAll('[data-plugin-copy]');
+        copyButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            if (!(button instanceof HTMLElement)) return;
+            const url = button.getAttribute('data-plugin-copy');
+            if (!url) return;
+            window.UI?.copyWithFeedback(url, button, 'Plugin URL copied');
+          });
         });
-      }
+      })();
     </script>
   `;
 
-  return layout('Plugin Browser', content);
+  return layout(`${extension.name} · Plugin Files`, content);
 }
 
-interface FileTreeNode {
-  [key: string]: FileTreeNode | FileInfo;
-}
-
-function buildFileTree(files: FileInfo[]): FileTreeNode {
-  const tree: FileTreeNode = {};
-
-  for (const file of files) {
-    const parts = file.path.split('/');
-    let current = tree;
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (i === parts.length - 1) {
-        // Leaf node (file)
-        current[part] = file;
-      } else {
-        // Directory node
-        if (!current[part] || typeof current[part] !== 'object' || 'path' in current[part]) {
-          current[part] = {};
-        }
-        current = current[part] as FileTreeNode;
-      }
-    }
-  }
-
-  return tree;
-}
-
-function renderFileTree(tree: FileTreeNode, baseUrl: string, depth: number = 0): string {
-  let html = '<ul>';
-
-  const entries = Object.entries(tree).sort(([aKey], [bKey]) => {
-    // Sort directories first, then files
-    const aNode = tree[aKey];
-    const bNode = tree[bKey];
-    const aIsDir = typeof aNode === 'object' && !('path' in aNode);
-    const bIsDir = typeof bNode === 'object' && !('path' in bNode);
-    if (aIsDir && !bIsDir) return -1;
-    if (!aIsDir && bIsDir) return 1;
-    return aKey.localeCompare(bKey);
-  });
-
-  for (const [name, node] of entries) {
-    if (typeof node === 'object' && 'path' in node) {
-      // File - node is FileInfo
-      const fileNode = node as FileInfo;
-      const icon = getFileIcon(name);
-      const size = fileNode.size ? ` (${formatSize(fileNode.size)})` : '';
-      html += `
-        <li>
-          <a href="${baseUrl}/${escapeHtml(fileNode.path)}" target="_blank">
-            <span>${icon}</span>
-            <span>${escapeHtml(name)}${size}</span>
-          </a>
-        </li>
-      `;
-    } else {
-      // Directory - node is FileTreeNode
-      html += `
-        <li>
-          <div class="directory-name">
-            <span>📁</span>
-            <span>${escapeHtml(name)}/</span>
-          </div>
-          ${renderFileTree(node as FileTreeNode, baseUrl, depth + 1)}
-        </li>
-      `;
-    }
-  }
-
-  html += '</ul>';
-  return html;
-}
-
-function getFileIcon(filename: string): string {
-  if (filename.endsWith('.json')) return '📄';
-  if (filename.endsWith('.md')) return '📝';
-  if (filename.endsWith('.toml')) return '⚙️';
-  return '📄';
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function renderClaudeCodeInstructions(pluginUrl: string, extension: ExtensionWithConfigs): string {
+function renderClaudeInstructions(pluginUrl: string, extension: ExtensionWithConfigs): string {
   return `
-    <div class="installation-step">
-      <h4>Option 1: Install from Marketplace</h4>
-      <p>Add to your <code>marketplace.json</code>:</p>
-      <pre><code>{
+    <details open>
+      <summary>Claude Code setup</summary>
+      <div style="padding-top: 12px; display: grid; gap: 12px;">
+        <p><strong>Install via marketplace:</strong></p>
+        <pre style="margin: 0; max-height: 240px; overflow: auto;">${escapeHtml(`{
   "plugins": [
     {
       "source": {
@@ -319,74 +223,36 @@ function renderClaudeCodeInstructions(pluginUrl: string, extension: ExtensionWit
       }
     }
   ]
-}</code></pre>
-    </div>
-
-    <div class="installation-step">
-      <h4>Option 2: Manual Installation</h4>
-      <ol>
-        <li>Download the ZIP file using the button above</li>
-        <li>Extract to <code>~/.claude/plugins/${escapeHtml(extension.name)}/</code></li>
-        <li>Restart Claude Code</li>
-      </ol>
-    </div>
-
-    <div class="installation-step">
-      <h4>Option 3: Direct HTTP Source</h4>
-      <p>Claude Code will automatically discover and load files from:</p>
-      <pre><code>${pluginUrl}</code></pre>
-      <p>The plugin includes:</p>
-      <ul>
-        ${extension.configs.filter((c) => c.type === 'slash_command').length > 0 ? `<li>Commands: ${extension.configs.filter((c) => c.type === 'slash_command').length}</li>` : ''}
-        ${extension.configs.filter((c) => c.type === 'agent_definition').length > 0 ? `<li>Agents: ${extension.configs.filter((c) => c.type === 'agent_definition').length}</li>` : ''}
-        ${extension.configs.filter((c) => c.type === 'mcp_config').length > 0 ? `<li>MCP Servers: ${extension.configs.filter((c) => c.type === 'mcp_config').length}</li>` : ''}
-      </ul>
-    </div>
+}`)}</pre>
+        <p style="color: var(--text-muted);">Add the snippet to <code>marketplace.json</code> and restart Claude Code.</p>
+        <p><strong>Manual installation:</strong></p>
+        <ol style="margin: 0 0 0 18px; color: var(--text-muted);">
+          <li>Download the ZIP using the button above.</li>
+          <li>Extract into <code>~/.claude/plugins/${escapeHtml(extension.name)}</code>.</li>
+          <li>Restart Claude Code to load the plugin.</li>
+        </ol>
+      </div>
+    </details>
   `;
 }
 
-function renderGeminiInstructions(extension: ExtensionWithConfigs): string {
+function renderGeminiInstructions(pluginUrl: string, extension: ExtensionWithConfigs): string {
   return `
-    <div class="installation-step">
-      <h4>📄 JSON Definition Installation (Recommended)</h4>
-      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px;">
-        Gemini extensions work best with JSON manifest files
-      </p>
-      <ol>
-        <li>Download the JSON definition file using the button above</li>
-        <li>Save to your extensions directory</li>
-        <li>Run: <code>gemini extension install /path/to/${escapeHtml(extension.name)}.json</code></li>
-      </ol>
-    </div>
-
-    <div class="installation-step">
-      <h4>📦 Full Plugin Installation (Advanced)</h4>
-      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px;">
-        Only needed if you want to inspect or modify individual files
-      </p>
-      <ol>
-        <li>Download the ZIP file using the button above (under Advanced Options)</li>
-        <li>Extract to your Gemini extensions directory</li>
-        <li>Run: <code>gemini extension install /path/to/${escapeHtml(extension.name)}/</code></li>
-      </ol>
-    </div>
-
-    <div class="installation-step">
-      <h4>What's Included</h4>
-      <ul>
-        <li><strong>JSON Definition:</strong> References ${extension.configs.filter((c) => c.type === 'slash_command').length} command file(s)</li>
-        ${extension.configs.filter((c) => c.type === 'mcp_config').length > 0 ? `<li><strong>MCP Servers:</strong> ${extension.configs.filter((c) => c.type === 'mcp_config').length} server(s) configured</li>` : ''}
-        ${extension.description ? `<li><strong>Context:</strong> GEMINI.md file with extension info</li>` : ''}
-      </ul>
-    </div>
+    <details open>
+      <summary>Gemini CLI setup</summary>
+      <div style="padding-top: 12px; display: grid; gap: 12px;">
+        <p><strong>Recommended:</strong> Use the JSON definition.</p>
+        <div class="action-bar" style="margin-top: 4px;">
+          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary">Download JSON definition</a>
+        </div>
+        <p style="color: var(--text-muted);">Install with <code>gemini extension install ${escapeHtml(extension.name)}.json</code>.</p>
+        <p><strong>Advanced:</strong> Work with the full file set.</p>
+        <ol style="margin: 0 0 0 18px; color: var(--text-muted);">
+          <li>Download the ZIP using the button above.</li>
+          <li>Extract the files to your Gemini extensions directory.</li>
+          <li>Reference them from your CLI configuration.</li>
+        </ol>
+      </div>
+    </details>
   `;
-}
-
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
