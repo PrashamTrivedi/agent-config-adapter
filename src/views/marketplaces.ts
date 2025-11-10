@@ -3,27 +3,62 @@ import { layout } from './layout';
 
 export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): string {
   const content = `
-    <h2>All Marketplaces</h2>
-    <a href="/marketplaces/new" class="btn">Create Marketplace</a>
-    ${marketplaces.length === 0 ? '<p>No marketplaces yet. Create your first one!</p>' : `
-      <ul class="config-list">
-        ${marketplaces.map(market => `
-          <li>
-            <a href="/marketplaces/${market.id}" style="font-weight: 500;">
-              ${escapeHtml(market.name)}
-            </a>
-            <span class="badge">v${escapeHtml(market.version)}</span>
-            <span class="badge">${market.extensions.length} extension${market.extensions.length !== 1 ? 's' : ''}</span>
-            <div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              Owner: ${escapeHtml(market.owner_name)}
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+          <h2 style="margin: 0;">🏪 Marketplaces</h2>
+          <p style="margin-top: 8px; color: var(--text-secondary);">
+            Curated collections of extensions for distribution
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <a href="/marketplaces/new" class="btn ripple">
+            <span style="font-size: 1.1em;">+</span> Create Marketplace
+          </a>
+          <a href="/" class="btn btn-secondary">← Home</a>
+        </div>
+      </div>
+
+      ${marketplaces.length === 0 ? `
+        <div class="no-results slide-up">
+          <div style="font-size: 3em; margin-bottom: 10px;">🏪</div>
+          <h3 style="margin: 10px 0; color: var(--text-primary);">No marketplaces yet</h3>
+          <p style="margin-bottom: 20px;">Create your first marketplace to distribute extension collections!</p>
+          <a href="/marketplaces/new" class="btn">Create Marketplace</a>
+        </div>
+      ` : `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px; margin-top: 20px;">
+          ${marketplaces.map(market => `
+            <div class="card card-hover scale-in" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
+              <div style="margin-bottom: 16px;">
+                <a href="/marketplaces/${market.id}" style="color: var(--text-primary); text-decoration: none; font-size: 1.2em; font-weight: 600; display: block; margin-bottom: 10px;">
+                  🏪 ${escapeHtml(market.name)}
+                </a>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                  <span class="badge">v${escapeHtml(market.version)}</span>
+                  <span class="status-indicator status-success">
+                    <span class="status-dot"></span>
+                    ${market.extensions.length} extension${market.extensions.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                ${market.description ? `
+                  <p style="color: var(--text-secondary); font-size: 0.9em; line-height: 1.5; margin: 0;">
+                    ${escapeHtml(market.description)}
+                  </p>
+                ` : ''}
+              </div>
+
+              <div style="padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <div style="color: var(--text-secondary); font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
+                  <span>👤</span>
+                  <span>${escapeHtml(market.owner_name)}</span>
+                </div>
+              </div>
             </div>
-            ${market.description ? `<div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              ${escapeHtml(market.description)}
-            </div>` : ''}
-          </li>
-        `).join('')}
-      </ul>
-    `}
+          `).join('')}
+        </div>
+      `}
+    </div>
   `;
   return layout('Marketplaces', content);
 }
@@ -32,149 +67,212 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions): s
   const totalConfigs = marketplace.extensions.reduce((sum, ext) => sum + ext.configs.length, 0);
 
   const content = `
-    <h2>${escapeHtml(marketplace.name)}</h2>
-    <div style="margin-bottom: 20px;">
-      <span class="badge">v${escapeHtml(marketplace.version)}</span>
-      <span class="badge">${marketplace.extensions.length} extension${marketplace.extensions.length !== 1 ? 's' : ''}</span>
-      <span class="badge">${totalConfigs} total config${totalConfigs !== 1 ? 's' : ''}</span>
-    </div>
-
-    ${marketplace.description ? `
-      <h3>Description</h3>
-      <p>${escapeHtml(marketplace.description)}</p>
-    ` : ''}
-
-    <h3>Owner</h3>
-    <p>
-      ${escapeHtml(marketplace.owner_name)}
-      ${marketplace.owner_email ? ` &lt;${escapeHtml(marketplace.owner_email)}&gt;` : ''}
-    </p>
-
-    ${marketplace.homepage || marketplace.repository ? `
-      <h3>Links</h3>
-      <p>
-        ${marketplace.homepage ? `<a href="${escapeHtml(marketplace.homepage)}" target="_blank" style="color: var(--accent-primary); margin-right: 15px;">Homepage</a>` : ''}
-        ${marketplace.repository ? `<a href="${escapeHtml(marketplace.repository)}" target="_blank" style="color: var(--accent-primary);">Repository</a>` : ''}
-      </p>
-    ` : ''}
-
-    <h3>Extensions</h3>
-    ${marketplace.extensions.length === 0 ? '<p>No extensions in this marketplace yet.</p>' : `
-      <ul class="config-list">
-        ${marketplace.extensions.map(ext => `
-          <li>
-            <a href="/extensions/${ext.id}" style="font-weight: 500;">
-              ${escapeHtml(ext.name)}
-            </a>
-            <span class="badge">v${escapeHtml(ext.version)}</span>
-            <span class="badge">${ext.configs.length} config${ext.configs.length !== 1 ? 's' : ''}</span>
-            ${ext.description ? `<div style="font-size: 0.875em; margin-top: 5px; color: var(--text-secondary);">
-              ${escapeHtml(ext.description)}
-            </div>` : ''}
-          </li>
-        `).join('')}
-      </ul>
-    `}
-
-    <h3>📥 Download Marketplace</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
-      <!-- Claude Code Marketplace -->
-      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">🔵 Claude Code Marketplace</h4>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
-          marketplace.json with plugin references
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <button onclick="copyMarketplaceUrl()" class="btn btn-primary" style="text-align: center;">
-            📋 Copy Marketplace URL
-          </button>
-          <a href="/api/marketplaces/${marketplace.id}/manifest?format=text" target="_blank" class="btn" style="text-align: center;">
-            📄 View JSON
-          </a>
-          <a href="/plugins/marketplaces/${marketplace.id}/download?format=claude_code" class="btn" style="text-align: center;">
-            📦 Download All Plugins (ZIP)
-          </a>
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+        <div style="flex: 1;">
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            🏪 ${escapeHtml(marketplace.name)}
+          </h2>
+          <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+            <span class="badge">v${escapeHtml(marketplace.version)}</span>
+            <span class="status-indicator status-success">
+              <span class="status-dot"></span>
+              ${marketplace.extensions.length} extension${marketplace.extensions.length !== 1 ? 's' : ''}
+            </span>
+            <span class="status-indicator status-info">
+              <span class="status-dot"></span>
+              ${totalConfigs} total config${totalConfigs !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="/marketplaces/${marketplace.id}/edit" class="btn ripple">✏️ Edit</a>
+          <a href="/marketplaces" class="btn btn-secondary">← Back</a>
         </div>
       </div>
 
-      <!-- Gemini Marketplace -->
-      <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">🔶 Gemini Marketplace</h4>
-        <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
-          Collection of JSON definitions for all extensions
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <a href="/plugins/marketplaces/${marketplace.id}/gemini/definition" class="btn btn-primary" style="text-align: center;">
-            📄 Download JSON Collection
-          </a>
-          <details style="margin-top: 10px;">
-            <summary style="cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); user-select: none;">
-              Advanced: Full Plugin Files
-            </summary>
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-              <a href="/plugins/marketplaces/${marketplace.id}/download?format=gemini" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
+      ${marketplace.description ? `
+        <div class="card slide-up" style="margin-bottom: 24px;">
+          <h3 style="margin: 0 0 12px 0;">📄 Description</h3>
+          <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(marketplace.description)}</p>
+        </div>
+      ` : ''}
+
+      <!-- Metadata -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+          <div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 0.9em;">👤 Owner</h4>
+            <div style="color: var(--text-primary);">
+              ${escapeHtml(marketplace.owner_name)}
+              ${marketplace.owner_email ? `<br><span style="color: var(--text-secondary); font-size: 0.9em;">${escapeHtml(marketplace.owner_email)}</span>` : ''}
+            </div>
+          </div>
+          ${marketplace.homepage || marketplace.repository ? `
+            <div>
+              <h4 style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 0.9em;">🔗 Links</h4>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${marketplace.homepage ? `<a href="${escapeHtml(marketplace.homepage)}" target="_blank" style="color: var(--accent-primary);">🏠 Homepage</a>` : ''}
+                ${marketplace.repository ? `<a href="${escapeHtml(marketplace.repository)}" target="_blank" style="color: var(--accent-primary);">📦 Repository</a>` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- Extensions Grid -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 16px 0;">📦 Extensions (${marketplace.extensions.length})</h3>
+        ${marketplace.extensions.length === 0 ? `
+          <div style="text-align: center; padding: 40px; background: var(--bg-tertiary); border-radius: 6px;">
+            <div style="font-size: 3em; margin-bottom: 12px;">📦</div>
+            <p style="color: var(--text-secondary); margin: 0;">No extensions in this marketplace yet</p>
+          </div>
+        ` : `
+          <div style="display: grid; gap: 12px;">
+            ${marketplace.extensions.map(ext => `
+              <div class="card" style="background: var(--bg-primary); display: flex; justify-content: space-between; align-items: flex-start; padding: 16px;">
+                <div style="flex: 1;">
+                  <a href="/extensions/${ext.id}" style="color: var(--accent-primary); font-weight: 600; font-size: 1.05em; text-decoration: none; display: block; margin-bottom: 8px;">
+                    📦 ${escapeHtml(ext.name)}
+                  </a>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                    <span class="badge">v${escapeHtml(ext.version)}</span>
+                    <span class="status-indicator status-info" style="font-size: 0.85em;">
+                      <span class="status-dot"></span>
+                      ${ext.configs.length} config${ext.configs.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  ${ext.description ? `
+                    <p style="font-size: 0.9em; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+                      ${escapeHtml(ext.description)}
+                    </p>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+
+      <!-- Download Options -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0;">📥 Download Marketplace</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+          <!-- Claude Code -->
+          <div class="card card-hover" style="background: rgba(37, 99, 235, 0.05); border: 2px solid rgba(37, 99, 235, 0.2);">
+            <h4 style="margin: 0 0 8px 0; color: var(--accent-primary);">🔵 Claude Code Marketplace</h4>
+            <p style="font-size: 0.875em; color: var(--text-secondary); margin: 0 0 16px 0;">
+              marketplace.json with plugin references
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button
+                onclick="copyMarketplaceUrl()"
+                class="btn ripple copy-btn"
+                style="width: 100%; text-align: center;">
+                📋 Copy Marketplace URL
+              </button>
+              <a href="/api/marketplaces/${marketplace.id}/manifest?format=text" target="_blank" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                📄 View JSON
+              </a>
+              <a href="/plugins/marketplaces/${marketplace.id}/download?format=claude_code" class="btn btn-secondary" style="width: 100%; text-align: center;">
                 📦 Download All Plugins (ZIP)
               </a>
             </div>
-          </details>
+          </div>
+
+          <!-- Gemini -->
+          <div class="card card-hover" style="background: rgba(234, 179, 8, 0.05); border: 2px solid rgba(234, 179, 8, 0.2);">
+            <h4 style="margin: 0 0 8px 0; color: #eab308;">🔶 Gemini Marketplace</h4>
+            <p style="font-size: 0.875em; color: var(--text-secondary); margin: 0 0 16px 0;">
+              Collection of JSON definitions for all extensions
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <a href="/plugins/marketplaces/${marketplace.id}/gemini/definition" class="btn ripple" style="width: 100%; text-align: center; background: #eab308;">
+                📄 Download JSON Collection
+              </a>
+              <details style="margin-top: 8px;">
+                <summary style="cursor: pointer; font-size: 0.875em; color: var(--text-secondary); user-select: none; padding: 8px; border-radius: 4px; background: var(--bg-tertiary);">
+                  ⚙️ Advanced: Full Plugin Files
+                </summary>
+                <div style="padding-top: 10px;">
+                  <a href="/plugins/marketplaces/${marketplace.id}/download?format=gemini" class="btn btn-secondary" style="width: 100%; text-align: center; font-size: 0.9em;">
+                    📦 Download All Plugins (ZIP)
+                  </a>
+                </div>
+              </details>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <h3>Installation Instructions</h3>
+      <!-- Installation Instructions -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 20px 0;">📖 Installation Instructions</h3>
 
-    <details open style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔵 Claude Code Setup</summary>
-      <div style="padding-left: 20px;">
-        <p><strong>Add to Claude Code settings:</strong></p>
-        <pre style="background: var(--bg-primary); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 0.875rem;"><code>{
+        <details open class="card" style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); margin-bottom: 16px; padding: 16px;">
+          <summary style="cursor: pointer; font-weight: 600; color: var(--accent-primary); user-select: none; display: flex; align-items: center; gap: 8px;">
+            <span>🔵</span>
+            <span>Claude Code Setup</span>
+          </summary>
+          <div style="padding: 16px 0 0 0;">
+            <p style="margin-bottom: 12px; font-weight: 500;">Add to Claude Code settings:</p>
+            <pre style="background: var(--bg-primary); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.875em; border: 1px solid var(--border-color);"><code>{
   "marketplaces": [
-    "https://your-domain.com/api/marketplaces/${marketplace.id}/manifest"
+    "${window.location.origin}/api/marketplaces/${marketplace.id}/manifest"
   ]
 }</code></pre>
-        <p style="margin-top: 10px; font-size: 0.875rem; color: var(--text-secondary);">
-          Claude Code will automatically discover and load all ${marketplace.extensions.length} plugin(s)
-        </p>
-      </div>
-    </details>
+            <div style="background: rgba(88, 166, 255, 0.1); padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid var(--accent-primary);">
+              <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+                ✨ Claude Code will automatically discover and load all ${marketplace.extensions.length} plugin(s)
+              </p>
+            </div>
+          </div>
+        </details>
 
-    <details style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔶 Gemini CLI Setup</summary>
-      <div style="padding-left: 20px;">
-        <p><strong>Download and install all extensions:</strong></p>
-        <ol style="font-size: 0.875rem;">
-          <li>Click "Download JSON Collection" above</li>
-          <li>Extract JSON files to your extensions directory</li>
-          <li>Run: <code>gemini extension install /path/to/extensions/*.json</code></li>
-        </ol>
-        <p style="margin-top: 15px; font-size: 0.875rem; color: var(--text-secondary);">
-          <strong>Note:</strong> This marketplace contains ${marketplace.extensions.length} extension(s) with ${totalConfigs} total config(s)
-        </p>
+        <details class="card" style="background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.2); padding: 16px;">
+          <summary style="cursor: pointer; font-weight: 600; color: #eab308; user-select: none; display: flex; align-items: center; gap: 8px;">
+            <span>🔶</span>
+            <span>Gemini CLI Setup</span>
+          </summary>
+          <div style="padding: 16px 0 0 0;">
+            <p style="margin-bottom: 12px; font-weight: 500;">Download and install all extensions:</p>
+            <ol style="font-size: 0.9em; line-height: 1.8; padding-left: 20px; color: var(--text-secondary);">
+              <li>Click "Download JSON Collection" above</li>
+              <li>Extract JSON files to your extensions directory</li>
+              <li>Run: <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 3px;">gemini extension install /path/to/extensions/*.json</code></li>
+            </ol>
+            <div style="background: rgba(234, 179, 8, 0.1); padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid #eab308;">
+              <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+                📊 This marketplace contains ${marketplace.extensions.length} extension(s) with ${totalConfigs} total config(s)
+              </p>
+            </div>
+          </div>
+        </details>
       </div>
-    </details>
 
-    <h3>Actions</h3>
-    <div style="margin-top: 20px;">
-      <a href="/marketplaces/${marketplace.id}/edit" class="btn">Edit</a>
-      <a href="/marketplaces" class="btn btn-secondary">Back to List</a>
-      <button
-        class="btn btn-danger"
-        hx-delete="/api/marketplaces/${marketplace.id}"
-        hx-confirm="Are you sure you want to delete this marketplace?"
-        hx-target="body"
-        hx-swap="outerHTML">
-        Delete
-      </button>
+      <!-- Danger Zone -->
+      <div class="card" style="border-color: var(--danger); background: rgba(248, 81, 73, 0.05); margin-bottom: 24px;">
+        <h3 style="margin: 0 0 12px 0; color: var(--danger);">⚠️ Danger Zone</h3>
+        <p style="margin-bottom: 16px; color: var(--text-secondary);">
+          Deleting this marketplace will only remove the marketplace record. Extensions will not be affected.
+        </p>
+        <button
+          class="btn btn-danger ripple"
+          hx-delete="/api/marketplaces/${marketplace.id}"
+          hx-confirm="Are you sure you want to delete this marketplace?"
+          hx-target="body"
+          hx-swap="outerHTML"
+          data-success-message="Marketplace deleted successfully">
+          🗑️ Delete Marketplace
+        </button>
+      </div>
     </div>
 
     <script>
       function copyMarketplaceUrl() {
         const url = window.location.origin + '/api/marketplaces/${marketplace.id}/manifest';
-        navigator.clipboard.writeText(url).then(() => {
-          alert('Marketplace URL copied to clipboard!');
-        }).catch(err => {
-          console.error('Failed to copy:', err);
-        });
+        copyToClipboard(url);
       }
     </script>
   `;
