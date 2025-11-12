@@ -33,20 +33,59 @@ export function layout(title: string, content: string): string {
             line-height: 1.6;
             color: var(--text-primary);
             background: var(--bg-primary);
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
           }
 
           header {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+          }
+
+          .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 32px;
+            flex-wrap: wrap;
+          }
+
+          .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: transform 0.2s ease;
+          }
+
+          .header-logo:hover {
+            transform: translateY(-2px);
+          }
+
+          .header-logo-icon {
+            font-size: 28px;
+            line-height: 1;
           }
 
           h1 {
-            color: var(--accent-primary);
-            margin-bottom: 10px;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent-primary), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
           }
 
           h2, h3 {
@@ -55,17 +94,97 @@ export function layout(title: string, content: string): string {
             color: var(--text-primary);
           }
 
+          nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+          }
+
           nav a {
-            display: inline-block;
-            margin-right: 15px;
-            color: var(--accent-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            color: var(--text-secondary);
             text-decoration: none;
-            transition: color 0.2s ease;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 0.95em;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+          }
+
+          nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--accent-primary);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: -1;
           }
 
           nav a:hover {
-            color: var(--accent-hover);
-            text-decoration: underline;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            transform: translateY(-2px);
+          }
+
+          nav a:hover::before {
+            opacity: 0.1;
+          }
+
+          nav a.active {
+            color: var(--accent-primary);
+            background: rgba(88, 166, 255, 0.15);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+          }
+
+          nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: var(--accent-primary);
+            border-radius: 2px 2px 0 0;
+          }
+
+          main {
+            padding: 0 32px 32px 32px;
+          }
+
+          @media (max-width: 768px) {
+            header {
+              padding: 16px 20px;
+            }
+
+            .header-container {
+              flex-direction: column;
+              gap: 16px;
+              align-items: flex-start;
+            }
+
+            nav {
+              width: 100%;
+              justify-content: flex-start;
+            }
+
+            nav a {
+              font-size: 0.9em;
+              padding: 6px 12px;
+            }
+
+            main {
+              padding: 0 20px 20px 20px;
+            }
           }
 
           .config-list { list-style: none; }
@@ -371,22 +490,807 @@ export function layout(title: string, content: string): string {
             color: var(--text-secondary);
             font-style: italic;
           }
+
+          /* ===== LOADING STATES ===== */
+          .skeleton {
+            background: linear-gradient(
+              90deg,
+              var(--bg-secondary) 25%,
+              var(--bg-tertiary) 50%,
+              var(--bg-secondary) 75%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: 6px;
+            min-height: 20px;
+          }
+
+          .skeleton-card {
+            height: 100px;
+            margin-bottom: 10px;
+          }
+
+          .skeleton-text {
+            height: 16px;
+            margin-bottom: 8px;
+            width: 100%;
+          }
+
+          .skeleton-text.short {
+            width: 60%;
+          }
+
+          @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+          }
+
+          .spinner {
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid var(--accent-primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+          }
+
+          .spinner-large {
+            width: 48px;
+            height: 48px;
+            border-width: 4px;
+          }
+
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+
+          .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+          }
+
+          .progress-bar-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            transition: width 0.3s ease;
+          }
+
+          .progress-bar.indeterminate .progress-bar-fill {
+            width: 30%;
+            animation: indeterminate-progress 1.5s ease-in-out infinite;
+          }
+
+          @keyframes indeterminate-progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+          }
+
+          .btn-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            position: relative;
+          }
+
+          .btn-loading::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 0.8s linear infinite;
+          }
+
+          .htmx-request .htmx-indicator {
+            display: inline-block !important;
+          }
+
+          .htmx-indicator {
+            display: none;
+          }
+
+          /* ===== TOAST NOTIFICATIONS ===== */
+          .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+          }
+
+          .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: toast-in 0.3s ease-out;
+            position: relative;
+            min-width: 300px;
+          }
+
+          .toast.toast-out {
+            animation: toast-out 0.3s ease-in forwards;
+          }
+
+          .toast-success {
+            border-left: 4px solid #3fb950;
+          }
+
+          .toast-error {
+            border-left: 4px solid var(--danger);
+          }
+
+          .toast-warning {
+            border-left: 4px solid #d29922;
+          }
+
+          .toast-info {
+            border-left: 4px solid var(--accent-primary);
+          }
+
+          .toast-icon {
+            font-size: 20px;
+            line-height: 1;
+            flex-shrink: 0;
+          }
+
+          .toast-content {
+            flex: 1;
+          }
+
+          .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+          }
+
+          .toast-message {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin: 0;
+          }
+
+          .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+            padding: 0;
+            margin-left: auto;
+            flex-shrink: 0;
+          }
+
+          .toast-close:hover {
+            color: var(--text-primary);
+          }
+
+          @keyframes toast-in {
+            from {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+
+          @keyframes toast-out {
+            from {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            to {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+          }
+
+          /* ===== ANIMATIONS & TRANSITIONS ===== */
+          .fade-in {
+            animation: fade-in 0.3s ease-out;
+          }
+
+          @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
+          .slide-up {
+            animation: slide-up 0.4s ease-out;
+          }
+
+          @keyframes slide-up {
+            from {
+              transform: translateY(20px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
+
+          .scale-in {
+            animation: scale-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          }
+
+          @keyframes scale-in {
+            from {
+              transform: scale(0.9);
+              opacity: 0;
+            }
+            to {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+
+          /* ===== CARD ENHANCEMENTS ===== */
+          .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-primary);
+          }
+
+          .card-interactive {
+            cursor: pointer;
+          }
+
+          .card-interactive:active {
+            transform: translateY(0);
+          }
+
+          /* ===== STATUS INDICATORS ===== */
+          .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.875em;
+            font-weight: 500;
+          }
+
+          .status-success {
+            background: rgba(63, 185, 80, 0.15);
+            color: #3fb950;
+            border: 1px solid rgba(63, 185, 80, 0.3);
+          }
+
+          .status-error {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+          }
+
+          .status-warning {
+            background: rgba(210, 153, 34, 0.15);
+            color: #d29922;
+            border: 1px solid rgba(210, 153, 34, 0.3);
+          }
+
+          .status-info {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-primary);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+          }
+
+          .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+          }
+
+          .status-success .status-dot {
+            background: #3fb950;
+          }
+
+          .status-error .status-dot {
+            background: var(--danger);
+          }
+
+          .status-warning .status-dot {
+            background: #d29922;
+          }
+
+          .status-info .status-dot {
+            background: var(--accent-primary);
+          }
+
+          /* ===== MICRO-INTERACTIONS ===== */
+          .ripple {
+            position: relative;
+            overflow: hidden;
+          }
+
+          .ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+          }
+
+          .ripple:active::after {
+            width: 300px;
+            height: 300px;
+          }
+
+          .copy-btn {
+            position: relative;
+            transition: all 0.2s ease;
+          }
+
+          .copy-btn.copied {
+            background: #3fb950 !important;
+          }
+
+          .copy-btn.copied::after {
+            content: '✓ Copied!';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            animation: fade-in 0.2s ease-out;
+          }
+
+          /* ===== ENHANCED FORMS ===== */
+          .form-field-error {
+            border-color: var(--danger) !important;
+          }
+
+          .form-error-message {
+            color: var(--danger);
+            font-size: 0.875em;
+            margin-top: 4px;
+            display: none;
+          }
+
+          .form-field-error + .form-error-message {
+            display: block;
+            animation: slide-up 0.2s ease-out;
+          }
+
+          .char-count {
+            font-size: 0.875em;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 4px;
+          }
+
+          .char-count.limit-warning {
+            color: #d29922;
+          }
+
+          .char-count.limit-exceeded {
+            color: var(--danger);
+          }
+
+          /* ===== RESPONSIVE ENHANCEMENTS ===== */
+          @media (max-width: 640px) {
+            .toast-container {
+              right: 10px;
+              left: 10px;
+              max-width: none;
+            }
+
+            .toast {
+              min-width: unset;
+            }
+          }
+
+          /* ===== ACCESSIBILITY ===== */
+          .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+          }
+
+          *:focus-visible {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+          }
+
+          /* ===== MODAL/OVERLAY ===== */
+          .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            animation: fade-in 0.2s ease-out;
+          }
+
+          .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: scale-in 0.3s ease-out;
+          }
+
+          .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          }
+
+          .modal-title {
+            margin: 0;
+            color: var(--text-primary);
+          }
+
+          .modal-body {
+            padding: 20px;
+          }
+
+          .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+          }
         </style>
       </head>
       <body>
+        <div id="toast-container" class="toast-container"></div>
         <header>
-          <h1>Agent Config Adapter</h1>
-          <nav>
-            <a href="/">Home</a>
-            <a href="/configs">Configs</a>
-            <a href="/slash-commands/convert">Converter</a>
-            <a href="/extensions">Extensions</a>
-            <a href="/marketplaces">Marketplaces</a>
-          </nav>
+          <div class="header-container">
+            <a href="/" class="header-logo">
+              <span class="header-logo-icon">🔄</span>
+              <h1>Agent Config Adapter</h1>
+            </a>
+            <nav>
+              <a href="/" class="${title === 'Home' ? 'active' : ''}">
+                <span>🏠</span>
+                <span>Home</span>
+              </a>
+              <a href="/configs" class="${title === 'Configs' || title === 'Config Detail' || title === 'Edit Config' || title === 'New Config' ? 'active' : ''}">
+                <span>📝</span>
+                <span>Configs</span>
+              </a>
+              <a href="/slash-commands/convert" class="${title === 'Slash Command Converter' ? 'active' : ''}">
+                <span>🔄</span>
+                <span>Converter</span>
+              </a>
+              <a href="/skills" class="${title === 'Skills' || title === 'Skill Detail' || title === 'Edit Skill' || title === 'New Skill' ? 'active' : ''}">
+                <span>🎯</span>
+                <span>Skills</span>
+              </a>
+              <a href="/extensions" class="${title === 'Extensions' || title === 'Extension Detail' || title === 'Edit Extension' || title === 'New Extension' ? 'active' : ''}">
+                <span>📦</span>
+                <span>Extensions</span>
+              </a>
+              <a href="/marketplaces" class="${title === 'Marketplaces' || title === 'Marketplace Detail' || title === 'Edit Marketplace' || title === 'New Marketplace' ? 'active' : ''}">
+                <span>🏪</span>
+                <span>Marketplaces</span>
+              </a>
+              <a href="/mcp/info" class="${title === 'MCP Server' || title === 'MCP Info' ? 'active' : ''}">
+                <span>🔌</span>
+                <span>MCP</span>
+              </a>
+            </nav>
+          </div>
         </header>
         <main>
           ${content}
         </main>
+        <script>
+          // ===== TOAST NOTIFICATION SYSTEM =====
+          window.showToast = function(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = \`toast toast-\${type}\`;
+
+            const icons = {
+              success: '✓',
+              error: '✗',
+              warning: '⚠',
+              info: 'ℹ'
+            };
+
+            const titles = {
+              success: 'Success',
+              error: 'Error',
+              warning: 'Warning',
+              info: 'Info'
+            };
+
+            toast.innerHTML = \`
+              <span class="toast-icon" role="img" aria-label="\${type}">\${icons[type] || 'ℹ'}</span>
+              <div class="toast-content">
+                <div class="toast-title">\${titles[type]}</div>
+                <p class="toast-message">\${message}</p>
+              </div>
+              <button class="toast-close" aria-label="Close" onclick="this.parentElement.remove()">×</button>
+            \`;
+
+            container.appendChild(toast);
+
+            if (duration > 0) {
+              setTimeout(() => {
+                toast.classList.add('toast-out');
+                setTimeout(() => toast.remove(), 300);
+              }, duration);
+            }
+          };
+
+          // ===== LOADING STATE MANAGEMENT =====
+          window.setLoading = function(elementId, isLoading) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            if (isLoading) {
+              element.classList.add('btn-loading');
+              element.disabled = true;
+            } else {
+              element.classList.remove('btn-loading');
+              element.disabled = false;
+            }
+          };
+
+          // ===== FORM VALIDATION =====
+          window.validateForm = function(formElement) {
+            const inputs = formElement.querySelectorAll('input[required], textarea[required], select[required]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+              const errorMsg = input.nextElementSibling;
+
+              if (!input.value.trim()) {
+                input.classList.add('form-field-error');
+                if (errorMsg && errorMsg.classList.contains('form-error-message')) {
+                  errorMsg.textContent = 'This field is required';
+                }
+                isValid = false;
+              } else {
+                input.classList.remove('form-field-error');
+              }
+            });
+
+            return isValid;
+          };
+
+          // Clear validation errors on input
+          document.addEventListener('input', function(e) {
+            if (e.target.matches('input, textarea, select')) {
+              e.target.classList.remove('form-field-error');
+            }
+          });
+
+          // ===== COPY TO CLIPBOARD WITH FEEDBACK =====
+          window.copyToClipboard = async function(text, button) {
+            try {
+              await navigator.clipboard.writeText(text);
+
+              if (button) {
+                const originalText = button.textContent;
+                button.classList.add('copied');
+                button.textContent = '✓ Copied!';
+
+                setTimeout(() => {
+                  button.classList.remove('copied');
+                  button.textContent = originalText;
+                }, 2000);
+              }
+
+              window.showToast('Copied to clipboard', 'success', 2000);
+            } catch (err) {
+              window.showToast('Failed to copy to clipboard', 'error');
+            }
+          };
+
+          // ===== CHARACTER COUNT FOR TEXTAREAS =====
+          window.addCharCount = function(textareaId, maxLength) {
+            const textarea = document.getElementById(textareaId);
+            if (!textarea) return;
+
+            const counter = document.createElement('div');
+            counter.className = 'char-count';
+            counter.id = textareaId + '-count';
+            textarea.parentNode.insertBefore(counter, textarea.nextSibling);
+
+            const updateCount = () => {
+              const length = textarea.value.length;
+              counter.textContent = \`\${length}\${maxLength ? ' / ' + maxLength : ''} characters\`;
+
+              if (maxLength) {
+                counter.classList.toggle('limit-warning', length > maxLength * 0.9);
+                counter.classList.toggle('limit-exceeded', length > maxLength);
+              }
+            };
+
+            textarea.addEventListener('input', updateCount);
+            updateCount();
+          };
+
+          // ===== HTMX EVENT HANDLERS =====
+          document.addEventListener('htmx:beforeRequest', function(evt) {
+            // Show loading indicator for the element making the request
+            const target = evt.target;
+            if (target.classList.contains('btn')) {
+              target.classList.add('btn-loading');
+              target.disabled = true;
+            }
+          });
+
+          document.addEventListener('htmx:afterRequest', function(evt) {
+            // Hide loading indicator
+            const target = evt.target;
+            if (target.classList.contains('btn')) {
+              target.classList.remove('btn-loading');
+              target.disabled = false;
+            }
+
+            // Show success/error toasts based on response
+            if (evt.detail.successful) {
+              const successMsg = target.getAttribute('data-success-message');
+              if (successMsg) {
+                window.showToast(successMsg, 'success');
+              }
+            } else {
+              const errorMsg = target.getAttribute('data-error-message') || 'Request failed';
+              window.showToast(errorMsg, 'error');
+            }
+          });
+
+          document.addEventListener('htmx:afterSettle', function(evt) {
+            // Add fade-in animation to newly loaded content
+            const newContent = evt.target;
+            if (newContent && newContent.children.length > 0) {
+              Array.from(newContent.children).forEach(child => {
+                if (child.classList.contains('config-list') || child.classList.contains('card')) {
+                  child.classList.add('fade-in');
+                }
+              });
+            }
+          });
+
+          // ===== KEYBOARD SHORTCUTS =====
+          document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K: Focus search input
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+              e.preventDefault();
+              const searchInput = document.querySelector('input[type="search"], input[name="name"]');
+              if (searchInput) searchInput.focus();
+            }
+
+            // Escape: Close modals
+            if (e.key === 'Escape') {
+              const modals = document.querySelectorAll('.modal-overlay');
+              modals.forEach(modal => modal.remove());
+            }
+          });
+
+          // ===== DEBOUNCE UTILITY =====
+          window.debounce = function(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+              const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+              };
+              clearTimeout(timeout);
+              timeout = setTimeout(later, wait);
+            };
+          };
+
+          // ===== AUTO-SAVE INDICATOR =====
+          window.showAutoSaving = function() {
+            const indicator = document.getElementById('autosave-indicator') || (() => {
+              const div = document.createElement('div');
+              div.id = 'autosave-indicator';
+              div.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999;';
+              document.body.appendChild(div);
+              return div;
+            })();
+
+            indicator.innerHTML = '<span class="status-indicator status-info"><span class="spinner"></span> Saving...</span>';
+            indicator.style.display = 'block';
+          };
+
+          window.showAutoSaved = function() {
+            const indicator = document.getElementById('autosave-indicator');
+            if (!indicator) return;
+
+            indicator.innerHTML = '<span class="status-indicator status-success"><span class="status-dot"></span> Saved</span>';
+
+            setTimeout(() => {
+              indicator.style.display = 'none';
+            }, 2000);
+          };
+
+          // ===== CONFIRMATION DIALOGS =====
+          window.confirmAction = function(message, onConfirm) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = \`
+              <div class="modal">
+                <div class="modal-header">
+                  <h3 class="modal-title">Confirm Action</h3>
+                </div>
+                <div class="modal-body">
+                  <p>\${message}</p>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                  <button class="btn btn-danger" id="confirm-btn">Confirm</button>
+                </div>
+              </div>
+            \`;
+
+            document.body.appendChild(overlay);
+
+            overlay.querySelector('#confirm-btn').addEventListener('click', function() {
+              overlay.remove();
+              onConfirm();
+            });
+
+            overlay.addEventListener('click', function(e) {
+              if (e.target === overlay) {
+                overlay.remove();
+              }
+            });
+          };
+        </script>
       </body>
     </html>
   `;

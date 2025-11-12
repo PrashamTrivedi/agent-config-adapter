@@ -34,30 +34,93 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Home page
 app.get('/', (c) => {
   const content = `
-    <h2>Welcome to Agent Config Adapter</h2>
-    <p>
-      Universal adapter for AI coding agent configurations. Store Claude Code commands and MCP configs once,
-      deploy across Codex, Gemini, and other agents.
-    </p>
+    <div class="fade-in">
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h2 style="font-size: 2.5em; margin: 0 0 16px 0; background: linear-gradient(135deg, var(--accent-primary), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+          🔄 Agent Config Adapter
+        </h2>
+        <p style="font-size: 1.15em; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6;">
+          Universal adapter for AI coding agent configurations. Store once, deploy everywhere.
+        </p>
+      </div>
 
-    <h3>Features</h3>
-    <ul style="margin-left: 20px; margin-top: 10px;">
-      <li>Store agent configurations (slash commands, agent definitions, MCP configs, skills)</li>
-      <li>Convert between different agent formats</li>
-      <li>Fast retrieval with caching</li>
-      <li><strong>NEW:</strong> Multi-file Skills with ZIP upload/download</li>
-      <li><strong>NEW:</strong> MCP Server support for AI agent integration</li>
-      <li><strong>NEW:</strong> Extension Marketplace - Bundle and share configs</li>
-    </ul>
+      <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
+        <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+          <span>✨</span>
+          <span>Features</span>
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          <div class="card" style="background: var(--bg-primary); padding: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">📝</div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Config Management</h4>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+              Store slash commands, agents, and MCP configs
+            </p>
+          </div>
+          <div class="card" style="background: var(--bg-primary); padding: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">🔄</div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Format Conversion</h4>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+              Convert between Claude Code, Codex, and Gemini
+            </p>
+          </div>
+          <div class="card" style="background: var(--bg-primary); padding: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">🎯</div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Multi-file Skills</h4>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+              Skills with ZIP upload/download support
+            </p>
+          </div>
+          <div class="card" style="background: var(--bg-primary); padding: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">🏪</div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Marketplace</h4>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+              Bundle and share extension collections
+            </p>
+          </div>
+          <div class="card" style="background: var(--bg-primary); padding: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">⚡</div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Fast Caching</h4>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+              Optimized retrieval with KV caching
+            </p>
+          </div>
+          <div class="card" style="background: var(--bg-primary); padding: 16px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">🔌</div>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">MCP Server</h4>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
+              AI agent integration via MCP protocol
+            </p>
+          </div>
+        </div>
+      </div>
 
-    <div style="margin-top: 30px;">
-      <a href="/configs" class="btn">View All Configs</a>
-      <a href="/configs/new" class="btn">Add New Config</a>
-      <a href="/slash-commands/convert" class="btn">Slash Command Converter</a>
-      <a href="/skills" class="btn">Browse Skills</a>
-      <a href="/extensions" class="btn">Browse Extensions</a>
-      <a href="/marketplaces" class="btn">Browse Marketplaces</a>
-      <a href="/mcp/info" class="btn" style="background: #4f46e5;">MCP Server Info</a>
+      <div class="card slide-up">
+        <h3 style="margin: 0 0 20px 0;">🚀 Quick Actions</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+          <a href="/configs" class="btn ripple" style="text-align: center; padding: 16px;">
+            📝 View Configs
+          </a>
+          <a href="/configs/new" class="btn ripple" style="text-align: center; padding: 16px;">
+            ➕ New Config
+          </a>
+          <a href="/slash-commands/convert" class="btn ripple" style="text-align: center; padding: 16px;">
+            🔄 Converter
+          </a>
+          <a href="/skills" class="btn ripple" style="text-align: center; padding: 16px;">
+            🎯 Skills
+          </a>
+          <a href="/extensions" class="btn ripple" style="text-align: center; padding: 16px;">
+            📦 Extensions
+          </a>
+          <a href="/marketplaces" class="btn ripple" style="text-align: center; padding: 16px;">
+            🏪 Marketplaces
+          </a>
+          <a href="/mcp/info" class="btn ripple" style="text-align: center; padding: 16px; background: #6366f1;">
+            🔌 MCP Server
+          </a>
+        </div>
+      </div>
     </div>
   `;
   return c.html(layout('Home', content));
@@ -139,34 +202,96 @@ app.get('/mcp/info', (c) => {
 
   // HTML view for browser
   const content = `
-    <h2>MCP Server Information</h2>
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div>
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            🔌 MCP Server Information
+          </h2>
+          <p style="margin-top: 8px; color: var(--text-secondary);">
+            Model Context Protocol server for AI agent integration
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <a href="/" class="btn btn-secondary">← Home</a>
+        </div>
+      </div>
 
-    <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="margin-top: 0;">Server Details</h3>
-      <p><strong>Name:</strong> ${mcpInfo.name}</p>
-      <p><strong>Version:</strong> ${mcpInfo.version}</p>
-      <p><strong>Transport:</strong> ${mcpInfo.transport}</p>
-      <p><strong>Endpoint:</strong> <code>${mcpInfo.endpoint}</code></p>
-    </div>
+      <!-- Server Details -->
+      <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white;">
+        <h3 style="margin: 0 0 16px 0; color: white;">📊 Server Details</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div>
+            <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Name</div>
+            <div style="font-weight: 600;">${mcpInfo.name}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Version</div>
+            <div style="font-weight: 600;">${mcpInfo.version}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Transport</div>
+            <div style="font-weight: 600;">${mcpInfo.transport}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Endpoint</div>
+            <div style="font-family: 'Courier New', monospace; font-weight: 600;">${mcpInfo.endpoint}</div>
+          </div>
+        </div>
+      </div>
 
-    <h3>Tools (Write Operations)</h3>
-    <ul style="margin-left: 20px;">
-      ${mcpInfo.capabilities.tools.map(tool => `<li><code>${tool}</code></li>`).join('')}
-    </ul>
+      <!-- Tools -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <span>🛠️</span>
+          <span>Tools (Write Operations)</span>
+        </h3>
+        <div style="display: grid; gap: 8px;">
+          ${mcpInfo.capabilities.tools.map(tool => `
+            <div class="card" style="background: var(--bg-tertiary); padding: 12px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent-primary);">
+              ${tool}
+            </div>
+          `).join('')}
+        </div>
+      </div>
 
-    <h3>Resources (Pure Read Operations)</h3>
-    <ul style="margin-left: 20px;">
-      ${mcpInfo.capabilities.resources.map(res => `<li><code>${res}</code></li>`).join('')}
-    </ul>
+      <!-- Resources -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <span>📚</span>
+          <span>Resources (Pure Read Operations)</span>
+        </h3>
+        <div style="display: grid; gap: 8px;">
+          ${mcpInfo.capabilities.resources.map(res => `
+            <div class="card" style="background: var(--bg-tertiary); padding: 12px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent-primary);">
+              ${res}
+            </div>
+          `).join('')}
+        </div>
+      </div>
 
-    <h3>Prompts (Workflow Automation)</h3>
-    <ul style="margin-left: 20px;">
-      ${mcpInfo.capabilities.prompts.map(prompt => `<li><code>${prompt}</code></li>`).join('')}
-    </ul>
+      <!-- Prompts -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          <span>⚡</span>
+          <span>Prompts (Workflow Automation)</span>
+        </h3>
+        <div style="display: grid; gap: 8px;">
+          ${mcpInfo.capabilities.prompts.map(prompt => `
+            <div class="card" style="background: var(--bg-tertiary); padding: 12px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent-primary);">
+              ${prompt}
+            </div>
+          `).join('')}
+        </div>
+      </div>
 
-    <h3>Client Connection</h3>
-    <p>Add this to your MCP client configuration:</p>
-    <pre style="background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 8px; overflow-x: auto;"><code>{
+      <!-- Client Connection -->
+      <div class="card slide-up" style="margin-bottom: 24px;">
+        <h3 style="margin: 0 0 16px 0;">🔗 Client Connection</h3>
+        <p style="margin-bottom: 12px; color: var(--text-secondary);">
+          Add this to your MCP client configuration:
+        </p>
+        <pre style="background: var(--bg-primary); padding: 16px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border-color); position: relative;"><code>{
   "mcpServers": {
     "agent-config-adapter": {
       "type": "http",
@@ -174,17 +299,54 @@ app.get('/mcp/info', (c) => {
     }
   }
 }</code></pre>
+        <button
+          class="btn btn-secondary ripple copy-btn"
+          style="margin-top: 12px;"
+          onclick="copyToClipboard(\`${`{
+  "mcpServers": {
+    "agent-config-adapter": {
+      "type": "http",
+      "url": "${c.req.url.replace('/mcp/info', '')}/mcp"
+    }
+  }
+}`}\`, this)">
+          📋 Copy Configuration
+        </button>
+      </div>
 
-    <h3>Important Notes</h3>
-    <ul style="margin-left: 20px;">
-      <li><strong>Resources</strong> are pure reads - they never trigger conversions or processing</li>
-      <li><strong>Tools</strong> perform operations with side effects - use them for conversions and updates</li>
-      <li><strong>Prompts</strong> provide guided workflows for complex multi-step operations</li>
-    </ul>
-
-    <div style="margin-top: 30px;">
-      <a href="/" class="btn">Back to Home</a>
-      <a href="/configs" class="btn">View Configs</a>
+      <!-- Important Notes -->
+      <div class="card slide-up" style="background: rgba(88, 166, 255, 0.05); border: 2px solid rgba(88, 166, 255, 0.2);">
+        <h3 style="margin: 0 0 16px 0; color: var(--accent-primary);">💡 Important Notes</h3>
+        <div style="display: grid; gap: 12px;">
+          <div style="display: flex; gap: 12px;">
+            <div style="font-size: 1.5em;">📚</div>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Resources</div>
+              <div style="font-size: 0.9em; color: var(--text-secondary);">
+                Pure reads - never trigger conversions or processing
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="font-size: 1.5em;">🛠️</div>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Tools</div>
+              <div style="font-size: 0.9em; color: var(--text-secondary);">
+                Perform operations with side effects - use for conversions and updates
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="font-size: 1.5em;">⚡</div>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Prompts</div>
+              <div style="font-size: 0.9em; color: var(--text-secondary);">
+                Guided workflows for complex multi-step operations
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
