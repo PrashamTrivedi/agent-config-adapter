@@ -1,5 +1,6 @@
 import { SlashCommandAnalysis } from '../domain/types'
 import type { AIProvider } from '../infrastructure/ai/types'
+import { buildReferenceDetectionPrompt } from '../prompts'
 
 export class SlashCommandAnalyzerService {
   constructor(private aiConverter: AIProvider) {}
@@ -84,28 +85,7 @@ export class SlashCommandAnalyzerService {
   private async detectReferences(
     content: string
   ): Promise<{ agents: string[]; skills: string[] }> {
-    const prompt = `Analyze this Claude Code slash command and detect references to agents and skills.
-
-Slash command content:
-${content}
-
-Look for:
-1. Agent references (usually mentioned as **agent-name** or explicitly like "use the triage agent")
-2. Skill references (usually mentioned as **skill-name** or explicitly like "use the conventional-commit skill")
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
-{
-  "agents": ["agent-name-1", "agent-name-2"],
-  "skills": ["skill-name-1"]
-}
-
-If no agents or skills are found, use empty arrays. Example:
-{
-  "agents": [],
-  "skills": []
-}
-
-IMPORTANT: Output only the JSON object, nothing else.`
+    const prompt = buildReferenceDetectionPrompt(content)
 
     try {
       const response = await this.aiConverter.convert(
