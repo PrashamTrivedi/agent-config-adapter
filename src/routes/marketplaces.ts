@@ -74,7 +74,11 @@ marketplacesRouter.get('/:id', async (c) => {
     return c.json({ marketplace });
   }
 
-  const view = marketplaceDetailView(marketplace);
+  // Extract origin from request URL for server-side rendering
+  const url = new URL(c.req.url);
+  const origin = `${url.protocol}//${url.host}`;
+
+  const view = marketplaceDetailView(marketplace, origin);
   return c.html(view);
 });
 

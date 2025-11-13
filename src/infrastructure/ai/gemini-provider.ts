@@ -195,6 +195,9 @@ export class GeminiProvider implements AIProvider {
 							'cf-aig-authorization': `Bearer ${this.gatewayToken}`, // Authenticate to Gateway
 						},
 					},
+					thinkingConfig: {
+						thinkingBudget: THINKING_PRESETS.medium
+					},
 					systemInstruction: systemMessage?.content
 						? {
 							role: 'user',

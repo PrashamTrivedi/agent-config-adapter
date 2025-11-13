@@ -2,13 +2,16 @@ import { AgentFormat, ConfigType } from '../domain/types';
 import { FormatAdapter } from './types';
 import { SlashCommandAdapter } from './slash-command-adapter';
 import { MCPConfigAdapter } from './mcp-config-adapter';
-import { AIConverterService, AIConversionResult } from '../infrastructure/ai-converter';
+import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provider-factory';
+import type { AIProvider, AIConversionResult } from '../infrastructure/ai/types';
+import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
+import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 
 // AI-enhanced adapter that wraps rule-based adapters with AI conversion
 class AIEnhancedAdapter implements FormatAdapter {
   constructor(
     private baseAdapter: FormatAdapter,
-    private aiService: AIConverterService
+    private aiProvider: AIProvider
   ) {}
 
   async convertWithMetadata(
@@ -35,7 +38,7 @@ class AIEnhancedAdapter implements FormatAdapter {
 
     // Try AI conversion first for other types (slash_command, agent_definition)
     try {
-      const aiResult = await this.aiService.convert(
+      const aiResult = await this.aiProvider.convert(
         content,
         sourceFormat,
         targetFormat,
@@ -43,8 +46,8 @@ class AIEnhancedAdapter implements FormatAdapter {
       );
       return {
         content: aiResult.content,
-        usedAI: true,
-        fallbackUsed: false,
+        usedAI: aiResult.usedAI,
+        fallbackUsed: aiResult.fallbackUsed,
       };
     } catch (error) {
       console.warn('AI conversion failed, using rule-based fallback:', error);
@@ -57,7 +60,7 @@ class AIEnhancedAdapter implements FormatAdapter {
       );
       return {
         content: fallbackResult,
-        usedAI: true,
+        usedAI: false,
         fallbackUsed: true,
       };
     }
@@ -81,18 +84,33 @@ class AIEnhancedAdapter implements FormatAdapter {
 // Factory to get appropriate adapter based on config type
 export function getAdapter(
   type: ConfigType,
-  env?: { OPENAI_API_KEY?: string; ACCOUNT_ID?: string; GATEWAY_ID?: string; AI_GATEWAY_TOKEN?: string }
+  env?: {
+    ACCOUNT_ID?: string;
+    GATEWAY_ID?: string;
+    AI_GATEWAY_TOKEN?: string;
+    AI_PROVIDER?: ProviderType;
+    OPENAI_REASONING_MODE?: OpenAIReasoningMode;
+    GEMINI_THINKING_BUDGET?: GeminiThinkingBudget;
+    OPENAI_API_KEY?: string;
+    GEMINI_API_KEY?: string;
+  }
 ): FormatAdapter | AIEnhancedAdapter {
   const baseAdapter = getBaseAdapter(type);
 
-  if (env?.ACCOUNT_ID && env?.GATEWAY_ID) {
-    const aiService = new AIConverterService(
-      env.OPENAI_API_KEY || '',
-      env.ACCOUNT_ID,
-      env.GATEWAY_ID,
-      env.AI_GATEWAY_TOKEN
-    );
-    return new AIEnhancedAdapter(baseAdapter, aiService);
+  // Initialize provider factory if credentials are available
+  if (env?.ACCOUNT_ID && env?.GATEWAY_ID && env?.AI_GATEWAY_TOKEN) {
+    const factory = new ProviderFactory({
+      ACCOUNT_ID: env.ACCOUNT_ID,
+      GATEWAY_ID: env.GATEWAY_ID,
+      GATEWAY_TOKEN: env.AI_GATEWAY_TOKEN,
+      AI_PROVIDER: env.AI_PROVIDER,
+      OPENAI_REASONING_MODE: env.OPENAI_REASONING_MODE,
+      GEMINI_THINKING_BUDGET: env.GEMINI_THINKING_BUDGET,
+      OPENAI_API_KEY: env.OPENAI_API_KEY,
+      GEMINI_API_KEY: env.GEMINI_API_KEY,
+    });
+    const provider = factory.createProvider();
+    return new AIEnhancedAdapter(baseAdapter, provider);
   }
 
   return baseAdapter;
@@ -131,4 +149,4 @@ class PassthroughAdapter implements FormatAdapter {
 export { FormatAdapter } from './types';
 export { SlashCommandAdapter } from './slash-command-adapter';
 export { MCPConfigAdapter } from './mcp-config-adapter';
-export { AIConversionResult } from '../infrastructure/ai-converter';
+export type { AIConversionResult } from '../infrastructure/ai/types';

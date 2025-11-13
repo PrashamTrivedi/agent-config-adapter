@@ -180,13 +180,14 @@ The converted output will run in sandboxed environments that:
 
 Use this context and use these rules to generate outputs:
 - Remove any Github references.
-- Remove any checks/conditions/metions that says \`if (not) in git repository\`.
-- Remove any user prompts or user input requirement to confirm or checking out branches.
-- Remove any references from external websites.
-
-- Instead of asking the user to read file, push those file and ask user to refer that in the branch
-
+- Remove any content that deals with checking if the codebase is git repository and is clean. 
+    - Assume it will always be a clean git repository
+- Remove any content that asks user to checkout a branch, it will always be a new branch.
+- Remove any content that asks the user to read, review or doing anything where reading the generated file is requirement.
+    - Instead replace it with instructions to push the file and then asking user with mentioning the generated file is pushed for the user to review
+- Remove any references of accessing/reading external websites.
 </sandbox_environment_context>
+
 <available_agents_skills>
 
 **Available References in Database:**
@@ -271,8 +272,6 @@ CRITICAL: Keep original command as much as possible
 - Preserve all procedural content and structure
 - Trim code examples to command syntax only
 - Keep all behavioral guidance and output formats
-
-Quality check: < 5% of main prompt content should change (excluding frontmatter)
 </preservation_rules>
 
 <tool_usage_instructions>

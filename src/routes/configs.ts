@@ -2,17 +2,22 @@ import { Hono } from 'hono';
 import { ConfigService, ConversionService } from '../services';
 import { AgentFormat, CreateConfigInput } from '../domain/types';
 import { configListView, configListContainerPartial, configDetailView, configCreateView, configEditView } from '../views/configs';
-import { AIConverterService } from '../infrastructure/ai-converter';
+import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provider-factory';
+import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
+import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
-  OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
   AI_GATEWAY_TOKEN?: string; // BYOK gateway token
-  AI_PROVIDER?: 'openai' | 'gemini' | 'auto';
+  AI_PROVIDER?: ProviderType;
+  OPENAI_REASONING_MODE?: OpenAIReasoningMode;
+  GEMINI_THINKING_BUDGET?: string; // String because env vars are strings
+  OPENAI_API_KEY?: string; // For local dev
+  GEMINI_API_KEY?: string; // For local dev
 };
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
@@ -218,14 +223,24 @@ configsRouter.post('/:id/invalidate', async (c) => {
 configsRouter.post('/:id/refresh-analysis', async (c) => {
   const id = c.req.param('id');
 
-  // Initialize analyzer
-  const apiKey = c.env.OPENAI_API_KEY || '';
-  const accountId = c.env.ACCOUNT_ID;
-  const gatewayId = c.env.GATEWAY_ID;
+  // Initialize analyzer with ProviderFactory
   const gatewayToken = c.env.AI_GATEWAY_TOKEN;
+  if (!gatewayToken) {
+    return c.json({ error: 'AI Gateway not configured' }, 500);
+  }
 
-  const aiConverter = new AIConverterService(apiKey, accountId, gatewayId, gatewayToken);
-  const analyzer = new SlashCommandAnalyzerService(aiConverter);
+  const factory = new ProviderFactory({
+    ACCOUNT_ID: c.env.ACCOUNT_ID,
+    GATEWAY_ID: c.env.GATEWAY_ID,
+    GATEWAY_TOKEN: gatewayToken,
+    AI_PROVIDER: c.env.AI_PROVIDER,
+    OPENAI_REASONING_MODE: c.env.OPENAI_REASONING_MODE,
+    GEMINI_THINKING_BUDGET: c.env.GEMINI_THINKING_BUDGET ? parseInt(c.env.GEMINI_THINKING_BUDGET) : undefined,
+    OPENAI_API_KEY: c.env.OPENAI_API_KEY,
+    GEMINI_API_KEY: c.env.GEMINI_API_KEY,
+  });
+  const provider = factory.createProvider();
+  const analyzer = new SlashCommandAnalyzerService(provider);
   const configService = new ConfigService(c.env, analyzer);
 
   const config = await configService.getConfig(id);

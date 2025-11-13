@@ -63,8 +63,9 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
   return layout('Marketplaces', content);
 }
 
-export function marketplaceDetailView(marketplace: MarketplaceWithExtensions): string {
+export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, origin?: string): string {
   const totalConfigs = marketplace.extensions.reduce((sum, ext) => sum + ext.configs.length, 0);
+  const baseUrl = origin || '';
 
   const content = `
     <div class="fade-in">
@@ -219,7 +220,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions): s
             <p style="margin-bottom: 12px; font-weight: 500;">Add to Claude Code settings:</p>
             <pre style="background: var(--bg-primary); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.875em; border: 1px solid var(--border-color);"><code>{
   "marketplaces": [
-    "${window.location.origin}/api/marketplaces/${marketplace.id}/manifest"
+    "${baseUrl}/api/marketplaces/${marketplace.id}/manifest"
   ]
 }</code></pre>
             <div style="background: rgba(88, 166, 255, 0.1); padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid var(--accent-primary);">
