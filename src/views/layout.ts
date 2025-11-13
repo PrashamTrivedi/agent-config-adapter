@@ -11,43 +11,63 @@ export function layout(title: string, content: string): string {
           * { margin: 0; padding: 0; box-sizing: border-box; }
 
           :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --border-color: #30363d;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --accent-primary: #58a6ff;
-            --accent-hover: #79c0ff;
+            --bg-primary: #0a0e14;
+            --bg-secondary: #13171e;
+            --bg-tertiary: #1c2128;
+            --bg-elevated: #252b35;
+            --border-color: #2d333b;
+            --border-light: #3d444d;
+            --text-primary: #f0f3f6;
+            --text-secondary: #9198a1;
+            --text-tertiary: #6e7681;
+            --accent-primary: #4c9eff;
+            --accent-secondary: #a78bfa;
+            --accent-hover: #69b4ff;
+            --accent-glow: rgba(76, 158, 255, 0.15);
             --badge-bg: #1f6feb;
             --badge-text: #ffffff;
-            --pre-bg: #161b22;
+            --pre-bg: #0d1117;
             --input-bg: #0d1117;
-            --input-border: #30363d;
-            --danger: #f85149;
-            --danger-hover: #da3633;
+            --input-border: #2d333b;
+            --input-focus: #4c9eff;
+            --danger: #ff6b6b;
+            --danger-hover: #ff5252;
+            --success: #51cf66;
+            --warning: #ffa94d;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
+            --glow-blue: 0 0 20px rgba(76, 158, 255, 0.3);
+            --glow-purple: 0 0 20px rgba(167, 139, 250, 0.3);
           }
 
           body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.65;
             color: var(--text-primary);
             background: var(--bg-primary);
             max-width: 1400px;
             margin: 0 auto;
             padding: 0;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
           }
 
           header {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-            border-bottom: 1px solid var(--border-color);
-            padding: 20px 32px;
-            margin-bottom: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, rgba(19, 23, 30, 0.95) 0%, rgba(28, 33, 40, 0.95) 100%);
+            border-bottom: 1px solid var(--border-light);
+            padding: 24px 40px;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow-md);
             position: sticky;
             top: 0;
             z-index: 1000;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
           }
 
           .header-container {
@@ -63,41 +83,56 @@ export function layout(title: string, content: string): string {
           .header-logo {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             text-decoration: none;
             color: var(--text-primary);
-            transition: transform 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
 
           .header-logo:hover {
             transform: translateY(-2px);
+            filter: drop-shadow(var(--glow-blue));
           }
 
           .header-logo-icon {
-            font-size: 28px;
+            font-size: 32px;
             line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
           }
 
           h1 {
-            font-size: 1.4em;
-            font-weight: 600;
+            font-size: 1.5em;
+            font-weight: 700;
             margin: 0;
-            background: linear-gradient(135deg, var(--accent-primary), #a78bfa);
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            letter-spacing: -0.02em;
           }
 
           h2, h3 {
             margin-top: 20px;
             margin-bottom: 10px;
             color: var(--text-primary);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+          }
+
+          h2 {
+            font-size: 1.75em;
+            line-height: 1.3;
+          }
+
+          h3 {
+            font-size: 1.25em;
+            line-height: 1.4;
           }
 
           nav {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             flex-wrap: wrap;
           }
 
@@ -105,15 +140,16 @@ export function layout(title: string, content: string): string {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
+            padding: 10px 18px;
             color: var(--text-secondary);
             text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.2s ease;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 0.95em;
             font-weight: 500;
             position: relative;
             overflow: hidden;
+            border: 1px solid transparent;
           }
 
           nav a::before {
@@ -123,26 +159,29 @@ export function layout(title: string, content: string): string {
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--accent-primary);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.3s ease;
             z-index: -1;
+            border-radius: 10px;
           }
 
           nav a:hover {
             color: var(--text-primary);
-            background: var(--bg-tertiary);
+            background: var(--bg-elevated);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
           }
 
           nav a:hover::before {
-            opacity: 0.1;
+            opacity: 0.08;
           }
 
           nav a.active {
             color: var(--accent-primary);
-            background: rgba(88, 166, 255, 0.15);
-            border: 1px solid rgba(88, 166, 255, 0.3);
+            background: var(--accent-glow);
+            border: 1px solid rgba(76, 158, 255, 0.4);
+            box-shadow: var(--glow-blue);
           }
 
           nav a.active::after {
@@ -151,14 +190,15 @@ export function layout(title: string, content: string): string {
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 20px;
-            height: 2px;
-            background: var(--accent-primary);
-            border-radius: 2px 2px 0 0;
+            width: 24px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 3px 3px 0 0;
+            box-shadow: 0 -2px 8px rgba(76, 158, 255, 0.5);
           }
 
           main {
-            padding: 0 32px 32px 32px;
+            padding: 0 40px 40px 40px;
           }
 
           @media (max-width: 768px) {
@@ -187,24 +227,30 @@ export function layout(title: string, content: string): string {
             }
           }
 
-          .config-list { list-style: none; }
+          .config-list {
+            list-style: none;
+          }
 
           .config-list li {
             border: 1px solid var(--border-color);
             background: var(--bg-secondary);
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 6px;
-            transition: background 0.2s ease;
+            margin-bottom: 14px;
+            padding: 20px;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           }
 
           .config-list li:hover {
             background: var(--bg-tertiary);
+            border-color: var(--border-light);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
           }
 
           .config-list a {
             color: var(--accent-primary);
             text-decoration: none;
+            transition: color 0.2s ease;
           }
 
           .config-list a:hover {
@@ -213,111 +259,162 @@ export function layout(title: string, content: string): string {
 
           .btn {
             display: inline-block;
-            padding: 8px 16px;
-            background: var(--accent-primary);
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
             color: var(--badge-text);
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
             margin-right: 10px;
             margin-bottom: 10px;
-            transition: background 0.2s ease;
-            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 0.95em;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+          }
+
+          .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
           }
 
           .btn:hover {
-            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md), var(--glow-blue);
+          }
+
+          .btn:hover::before {
+            left: 100%;
+          }
+
+          .btn:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-sm);
           }
 
           .btn-secondary {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
           }
 
           .btn-secondary:hover {
-            background: var(--border-color);
+            background: var(--bg-tertiary);
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
           }
 
           .btn-danger {
-            background: var(--danger);
+            background: linear-gradient(135deg, var(--danger) 0%, #ff5252 100%);
           }
 
           .btn-danger:hover {
-            background: var(--danger-hover);
+            box-shadow: var(--shadow-md), 0 0 20px rgba(255, 107, 107, 0.3);
           }
 
-          form { margin-top: 20px; }
+          form {
+            margin-top: 20px;
+          }
 
           .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
           }
 
           label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
+            margin-bottom: 8px;
+            font-weight: 600;
             color: var(--text-primary);
+            font-size: 0.95em;
+            letter-spacing: -0.01em;
           }
 
           input, select, textarea {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--input-border);
-            border-radius: 6px;
+            padding: 12px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 10px;
             font-family: inherit;
             background: var(--input-bg);
             color: var(--text-primary);
-            transition: border-color 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95em;
+          }
+
+          input:hover, select:hover, textarea:hover {
+            border-color: var(--border-light);
           }
 
           input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: var(--accent-primary);
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 4px var(--accent-glow), var(--shadow-sm);
+            background: var(--bg-secondary);
           }
 
           textarea {
             min-height: 200px;
-            font-family: 'Courier New', monospace;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
             font-size: 0.9em;
+            line-height: 1.6;
+            resize: vertical;
           }
 
           pre {
             background: var(--pre-bg);
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 6px;
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            border-radius: 12px;
             overflow-x: auto;
             margin: 10px 0;
             color: var(--text-primary);
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            box-shadow: var(--shadow-sm);
           }
 
           .badge {
             display: inline-block;
-            padding: 3px 8px;
-            background: var(--badge-bg);
+            padding: 4px 10px;
+            background: linear-gradient(135deg, var(--badge-bg), #1557c0);
             color: var(--badge-text);
-            border-radius: 3px;
-            font-size: 0.875em;
+            border-radius: 6px;
+            font-size: 0.85em;
             margin-left: 8px;
-            font-weight: 500;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(255, 255, 255, 0.1);
           }
 
           p {
             color: var(--text-secondary);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            line-height: 1.7;
           }
 
           ul {
             color: var(--text-secondary);
+            line-height: 1.7;
           }
 
           code {
-            background: var(--bg-secondary);
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            background: var(--bg-tertiary);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 0.88em;
+            border: 1px solid var(--border-color);
+            color: var(--accent-primary);
           }
 
           /* Filter Controls Styling */
