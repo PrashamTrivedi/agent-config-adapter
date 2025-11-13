@@ -176,7 +176,7 @@ export function slashCommandConverterFormPartial(config: Config): string {
         id="convert-form"
         hx-post="/api/slash-commands/${config.id}/convert"
         hx-target="#result-section"
-        hx-swap="innerHTML"
+        hx-swap="innerHTML transition:true"
         hx-indicator="#convert-progress"
         hx-ext="json-enc">
 
@@ -205,10 +205,18 @@ export function slashCommandConverterFormPartial(config: Config): string {
         ` : ''}
 
         <div style="padding-top: 15px; border-top: 1px solid var(--border-color);">
-          <button type="submit" id="convert-btn" class="btn ripple">✨ Convert Command</button>
-          <span id="convert-progress" class="htmx-indicator" style="margin-left: 10px;">
-            <span class="spinner"></span> Converting...
-          </span>
+          <button
+            type="submit"
+            id="convert-btn"
+            class="btn ripple"
+            hx-disabled-elt="this"
+            data-loading-text="⏳ Converting...">
+            ✨ Convert Command
+          </button>
+          <div id="convert-progress" class="htmx-indicator" style="margin-left: 10px; display: inline-flex; align-items: center; gap: 8px;">
+            <span class="spinner"></span>
+            <span>Analyzing and converting your command...</span>
+          </div>
         </div>
       </form>
 
@@ -225,7 +233,27 @@ export function slashCommandConverterFormPartial(config: Config): string {
             if (!window.validateForm(form)) {
               e.preventDefault();
               window.showToast('Please fill in all required fields', 'error');
+              return;
             }
+
+            // Clear previous results and show loading state
+            const resultSection = document.getElementById('result-section');
+            resultSection.innerHTML = \`
+              <div class="card scale-in" style="padding: 30px; text-align: center;">
+                <div class="spinner spinner-large" style="margin: 0 auto 15px;"></div>
+                <p style="color: var(--text-secondary); margin: 0;">
+                  🔄 Converting your slash command...
+                </p>
+                <p style="color: var(--text-tertiary); font-size: 0.875em; margin-top: 5px;">
+                  This may take a few seconds
+                </p>
+              </div>
+            \`;
+
+            // Scroll result section into view
+            setTimeout(() => {
+              resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
           });
         }
 
@@ -241,6 +269,13 @@ export function slashCommandConverterFormPartial(config: Config): string {
                 swap: 'innerHTML'
               });
             }, 2000);
+          }
+
+          // Smooth scroll to results after successful conversion
+          if (evt.detail.target.id === 'result-section' && evt.detail.xhr.status === 200) {
+            setTimeout(() => {
+              evt.detail.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 150);
           }
         });
 
