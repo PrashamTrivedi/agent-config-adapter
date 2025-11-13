@@ -196,7 +196,7 @@ describe('SlashCommandConverterService', () => {
       const userPrompt = callArgs[0][1].content as string;
 
       expect(userPrompt).toContain('authentication module');
-      expect(userPrompt).toContain('Replace $ARGUMENTS');
+      expect(userPrompt).toContain('<UserArguments>');
     });
 
     it('should stop after max iterations to prevent infinite loops', async () => {

@@ -1,4 +1,4 @@
-import type { AgentFormat, ConfigType } from './domain/types'
+import type {AgentFormat, ConfigType} from './domain/types'
 
 /**
  * Centralized AI Prompts
@@ -31,10 +31,12 @@ export function buildFormatConversionPrompt(params: {
   targetFormat: AgentFormat
   configType: ConfigType
 }): string {
-  const systemContext = `You are a configuration format converter for AI coding agents. Your task is to convert configuration files between different agent formats while preserving semantic meaning and functionality.
+  const systemContext = `You are a configuration format converter for AI coding agents. 
+  Your task is to convert configuration files between different agent formats while preserving tone, meaning and functionality.
 
 IMPORTANT RULES:
 1. Preserve the exact semantic meaning of the original configuration
+2. Preserve Formatting, Tone and functionality of prompt
 2. Maintain all functionality - do not add or remove features
 3. Follow the target format's syntax precisely
 4. Output ONLY the converted configuration - no explanations, no markdown code blocks, no preamble
@@ -78,22 +80,37 @@ allowed-tools: List of allowed tools
 The actual prompt content goes here.
 It can be multiple lines.
 
-Parameters can be referenced as $ARGUMENTS in the prompt.`
+Parameters can be referenced as $ARGUMENTS in the prompt.
+<ClaudeCodeMetaData>
+- Can run shell commands by directly using !\`Command\` way
+- Can run inject file contents by directly using  @\`FilePath\` way
+</ClaudeCodeMetaData>
+`
 
     case 'codex':
       return `${label} FORMAT: Codex
-Codex uses AGENTS.md style with markdown sections:
-# command-name
+Codex Slash Comands are Markdown with YAML Frontmatter:
+---
+description: Prep a branch, commit, and open a draft PR
+argument-hint: [FILES=<paths>] [PR_TITLE="<title>"]
+---
 
-Brief description of what the command does
+Create a branch named \`dev / <feature_name>\` for this work.
+If files are specified, stage them first: $FILES.
+Commit the staged changes with a clear message.
+Open a draft PR on the same branch. Use $PR_TITLE when supplied; otherwise write a concise summary yourself.
 
-## Prompt
+<CodexPromptMetadata>
+Codex reads prompt metadata and placeholders the next time the session starts.
 
-The actual prompt content goes here.
-It can be multiple lines.
+Description — Shown under the command name in the popup. Set it in YAML frontmatter as description:.
+Argument hint — Document expected parameters with argument-hint: KEY=<value>.
+Positional placeholders — $1-$9 expand from space-separated arguments you provide after the command. $ARGUMENTS includes them all.
+Named placeholders — Use uppercase names like $FILE or $TICKET_ID and supply values as KEY=value. Quote values with spaces (for example, FOCUS="loading state").
+Literal dollar signs — Write $$ to emit a single $ in the expanded prompt.
+</CodexPromptMetadata>
 
-Parameters are referenced as {{args}} in the prompt.`
-
+`
     case 'gemini':
       return `${label} FORMAT: Gemini
 Gemini uses TOML files (.toml) with this structure:
@@ -105,7 +122,12 @@ It can be multiple lines.
 """
 
 Note: Use triple-quoted strings for multi-line prompts.
-If there are no parameters, omit the args field entirely.`
+If there are no parameters, omit the args field entirely.
+<GeminiMetadata>
+- Can run shell commands using !{command} way
+- Can inject file content using @{filePath} way
+</GeminiMetadata>
+`
 
     default:
       return ''
@@ -134,27 +156,12 @@ export function buildSlashCommandSystemPrompt(params: {
   availableAgents: string[]
   availableSkills: string[]
 }): string {
-  return `<tool_usage_instructions>
-IMPORTANT: You have access to a read_configs function tool. When you need agent or skill content:
-1. Call the read_configs function with proper JSON parameters
-2. DO NOT generate code examples or Python syntax
-3. DO NOT use print() or any programming language syntax
-4. Use the standard function calling API to request the content
-
-Example of what the function expects:
-{
-  "references": [
-    {"name": "triage", "type": "agent"},
-    {"name": "conventional-commit", "type": "skill"}
-  ]
-}
-</tool_usage_instructions>
+  return `
 
 <core_task>
 Convert Claude Code slash commands to standalone prompts with SURGICAL changes only:
 1. Remove YAML frontmatter
-2. Replace $ARGUMENT in execution contexts (NOT in explanatory text)
-3. Extract critical dependencies to external XML sections (preserve references in main prompt)
+2. Extract critical dependencies to external XML sections (preserve references in main prompt)
 
 Output Format:
 - Main prompt (with references to skills/agents preserved)
@@ -163,56 +170,42 @@ Output Format:
 
 
 <sandbox_environment_context>
-(This section is context for YOU to understand - do NOT add this to the output)
-
 The converted output will run in sandboxed environments that:
 - Only have codebase files available
-- Are ALWAYS git repositories (checked out in clean state)
+- Is ALWAYS IN git repositories checked out in clean state
 - Have limited network access
 - Have NO GitHub access (use git commands only)
-- Cannot read from ~/.claude or similar external directories
-- AI agent can read/browse files, but USER cannot directly browse filesystem unless pushed in the specific branch
+- Can Only read the checked out codebase.
+- User can not read any generated files unless pushed to the repo.
 
-Use this context to decide:
-- Which references need extracting to XML sections
-- Which git/GitHub checks to REMOVE (repo existence is guaranteed)
-- What network-dependent features to avoid
-- When to suggest git commit/push workflows (always safe)
+Use this context and use these rules to generate outputs:
+- Remove any Github references.
+- Remove any checks/conditions/metions that says \`if (not) in git repository\`.
+- Remove any user prompts or user input requirement to confirm or checking out branches.
+- Remove any references from external websites.
+
+- Instead of asking the user to read file, push those file and ask user to refer that in the branch
+
+</sandbox_environment_context>
+<available_agents_skills>
 
 **Available References in Database:**
 
 To reduce false positives when detecting references:
 
 Agents: ${params.availableAgents.join(', ')}
-Skills: ${params.availableSkills.join(', ')}
-</sandbox_environment_context>
+Skills: ${params.availableSkills.join(', ')}.
 
+In prompts agents and skills are mentioned in specific markdown bold blocks (**agent-or-skill-name** or \`agebt-or-skill-name\`)
+</available_agents_skills>
 <frontmatter_removal>
 Strip everything between '-- -' markers at the start of the command.
 </frontmatter_removal>
 
 
 <argument_replacement>
-<when_to_replace>
-✅ REPLACE $ARGUMENT when it appears in EXECUTION instructions:
-- "Pass $ARGUMENT to the command"
-- "Fetch ticket $ARGUMENT from GitHub"
-- "Write output to taskNotes/$ARGUMENT/file.md"
-
-❌ DO NOT REPLACE in EXPLANATORY or META text:
-- "If $ARGUMENT is provided..." (explaining the argument)
-- "The $ARGUMENT can be..." (describing what it is)
-- "$ARGUMENT format: task | ticket-id" (documenting structure)
-
-Decision rule: Does inserting the actual value make grammatical sense?
-</when_to_replace>
-
-<multiple_occurrences>
-If $ARGUMENT appears multiple times:
-- First occurrence in execution: Replace with full value
-- Subsequent occurrences: Replace if it adds clarity, use shorthand if repetitive
-- Avoid making the prompt unreadable with excessive repetition
-</multiple_occurrences>
+- Replace $ARGUMENTS with user arguments smartly. 
+- While handling repeatation or simple declarative way, simply write user arguments instead of the argument text
 </argument_replacement>
 
 <agent_skill_extraction>
@@ -232,15 +225,6 @@ When you decide to extract agent/skill content:
 2. **Add XML section AFTER main prompt:**
    Format: \`<Skill-Conventional-Commit>content</Skill-Conventional-Commit>\`
 
-   Naming convention:
-   - Skills: \`<Skill-Name>\` (capitalize each word, use hyphens)
-   - Agents: \`<Agent-Name>\` (capitalize each word, use hyphens)
-
-   Examples:
-   - "conventional-commit" skill → \`<Skill-Conventional-Commit>\`
-   - "web-search-specialist" agent → \`<Agent-Web-Search-Specialist>\`
-   - "triage" agent → \`<Agent-Triage>\`
-   - "qa-validator" agent → \`<Agent-Qa-Validator>\`
 
 3. **Convert system prompt to user prompt in XML section:**
    ✅ STRIP from XML content:
@@ -262,116 +246,7 @@ When you decide to extract agent/skill content:
    - Example: Remove full code blocks, keep "Run \`npm test\`" or "Use \`git status\`"
 </xml_output_format>
 
-<complete_example>
-INPUT (slash command):
-\`\`\`
----
-description: Fix bugs in component
-argument-hint: component name
----
 
-Analyze the $ARGUMENT component.
-
-Use **triage** agent to identify issues.
-Use **conventional-commit** skill for commits.
-
-Test thoroughly before committing.
-\`\`\`
-
-TRIAGE AGENT CONTENT (system prompt):
-\`\`\`
----
-name: triage
-description: Issue analysis specialist
-tools: [Bash, Read, Grep]
----
-
-You are an Expert Technical Triage Specialist with deep expertise...
-
-## Triage Process
-1. Identify issue type from error/symptoms
-2. Reproduce with minimal steps
-3. Find root cause (check logs, inspect browser console)
-
-Example reproduction:
-\\\`\\\`\\\`typescript
-// Reproduce the bug
-const result = brokenFunction();
-console.log(result); // Expected: X, Actual: Y
-\\\`\\\`\\\`
-
-## Output Format
-**ISSUE**: [One line]
-**CAUSE**: [Root cause]
-**FIX**: [Solution]
-
-Be extremely concise.
-\`\`\`
-
-CONVENTIONAL-COMMIT SKILL CONTENT:
-\`\`\`
----
-name: conventional-commit
-description: Commit message formatter
----
-
-You are a commit message expert...
-
-## Commit Format
-type(scope): message
-
-Types: feat, fix, docs, refactor
-
-Example:
-\\\`\\\`\\\`bash
-git commit -m "feat(auth): add OAuth2 support"
-git commit -m "fix(ui): resolve button alignment"
-\\\`\\\`\\\`
-\`\`\`
-
-OUTPUT (with XML extraction):
-\`\`\`
-Analyze the authentication component.
-
-Use **triage** agent to identify issues.
-Use **conventional-commit** skill for commits.
-
-Test thoroughly before committing.
-
-<Agent-Triage>
-## Triage Process
-1. Identify issue type from error/symptoms
-2. Reproduce with minimal steps
-3. Find root cause (check logs, inspect browser console)
-
-## Output Format
-**ISSUE**: [One line]
-**CAUSE**: [Root cause]
-**FIX**: [Solution]
-
-Be extremely concise.
-</Agent-Triage>
-
-<Skill-Conventional-Commit>
-## Commit Format
-type(scope): message
-
-Types: feat, fix, docs, refactor
-
-Commands: \`git commit -m "type(scope): message"\`
-</Skill-Conventional-Commit>
-\`\`\`
-
-Notice what changed:
-- ✓ Frontmatter removed
-- ✓ $ARGUMENT → "authentication"
-- ✓ Main prompt keeps agent/skill references (NOT inlined)
-- ✓ XML sections added AFTER main prompt
-- ✓ XML naming: \`<Agent-Triage>\`, \`<Skill-Conventional-Commit>\`
-- ✓ System prompt identity removed from XML content
-- ✓ Procedural content preserved in XML
-- ✓ Code examples trimmed (kept command syntax only)
-</complete_example>
 </agent_skill_extraction>
 
 <preservation_rules>
@@ -400,31 +275,25 @@ CRITICAL: Keep original command as much as possible
 Quality check: < 5% of main prompt content should change (excluding frontmatter)
 </preservation_rules>
 
-<output_format>
-Return the converted output in this exact format:
+<tool_usage_instructions>
+CRITICAL: When you need to fetch agent or skill content, you MUST use the read_configs function tool.
 
-1. Main prompt (with frontmatter removed, $ARGUMENT replaced, references preserved)
-2. Blank line
-3. XML sections (one per extracted agent/skill)
+How to use the tool:
+- Provide an array of references to fetch
+- Each reference needs: name (string) and type ("agent" or "skill")
+- The tool will return the actual content from the database
+- DO NOT generate or guess the content - ALWAYS fetch it using the tool
 
-Structure:
-\`\`\`
-[Main prompt content]
+When to call the tool:
+- When you identify agent/skill references that need extraction
+- Before generating the final XML sections
+- To get the actual content for conversion
 
-<Agent-Name>
-[Agent content - system identity removed, procedural content preserved, code examples trimmed]
-</Agent-Name>
-
-<Skill-Name>
-[Skill content - system identity removed, procedural content preserved, code examples trimmed]
-</Skill-Name>
-\`\`\`
-
-- No explanations before or after
-- No code block wrappers around the entire output
-- No preamble or commentary
-- Just: main prompt + XML sections
-</output_format>`
+After receiving tool results:
+- Use the returned content to populate XML sections
+- Apply the conversion rules (strip identity, preserve procedures)
+- Output the final converted prompt with XML sections
+</tool_usage_instructions>`
 }
 
 /**
@@ -439,11 +308,13 @@ export function buildSlashCommandUserPrompt(params: {
   content: string
   userArguments?: string
 }): string {
-  let prompt = `Convert the following Claude Code slash command:\n\n${params.content}`
+  let prompt = `Convert the following Claude Code slash command
+  <ExistingSlashCommand>
+  ${params.content}
+  </ExistingSlashCommand>`
 
   if (params.userArguments) {
-    prompt += `\n\nUser Arguments: ${params.userArguments}`
-    prompt += `\n(Replace $ARGUMENTS or $ARGUMENT with this value)`
+    prompt += `<UserArguments> ${params.userArguments}</UserArguments>`
   }
 
   return prompt

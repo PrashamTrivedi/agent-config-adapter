@@ -1,4 +1,4 @@
-import { GoogleGenAI, FunctionCallingConfigMode } from '@google/genai'
+import {GoogleGenAI, FunctionCallingConfigMode} from '@google/genai'
 import type {
 	AIProvider,
 	AIConversionResult,
@@ -7,8 +7,8 @@ import type {
 	Tool,
 	ProviderMetrics,
 } from './types'
-import type { AgentFormat, ConfigType } from '../../domain/types'
-import { buildFormatConversionPrompt } from '../../prompts'
+import type {AgentFormat, ConfigType} from '../../domain/types'
+import {buildFormatConversionPrompt} from '../../prompts'
 
 export type GeminiThinkingBudget = number // 0 to 24576, or -1 for dynamic
 
@@ -85,11 +85,11 @@ export class GeminiProvider implements AIProvider {
 		if (config.directApiKey) {
 			// Local development: SDK includes actual API key in x-goog-api-key header
 			// AI Gateway forwards the key to Google
-			this.client = new GoogleGenAI({ apiKey: config.directApiKey })
+			this.client = new GoogleGenAI({apiKey: config.directApiKey})
 		} else {
 			// Production BYOK: SDK uses placeholder key
 			// AI Gateway replaces x-goog-api-key with stored key from Dashboard
-			this.client = new GoogleGenAI({ apiKey: 'placeholder-for-byok' })
+			this.client = new GoogleGenAI({apiKey: 'placeholder-for-byok'})
 		}
 	}
 
@@ -128,7 +128,7 @@ export class GeminiProvider implements AIProvider {
 			const durationMs = Date.now() - startTime
 
 			// Parse response to extract text and thinking parts
-			const { textContent, thinkingTokens } = this.parseResponse(response)
+			const {textContent, thinkingTokens} = this.parseResponse(response)
 
 			console.log('[Gemini] Conversion successful', {
 				model: 'gemini-2.5-flash',
@@ -157,7 +157,7 @@ export class GeminiProvider implements AIProvider {
 				},
 			}
 		} catch (error) {
-			console.error('[Gemini] Conversion failed', { error, durationMs: Date.now() - startTime })
+			console.error('[Gemini] Conversion failed', {error, durationMs: Date.now() - startTime})
 			throw error
 		}
 	}
@@ -166,6 +166,7 @@ export class GeminiProvider implements AIProvider {
 		const startTime = Date.now()
 
 		try {
+
 			// Extract system message for systemInstruction (Gemini doesn't support system role in contents)
 			const systemMessage = messages.find((m) => m.role === 'system')
 			const conversationMessages = messages.filter((m) => m.role !== 'system')
@@ -174,10 +175,20 @@ export class GeminiProvider implements AIProvider {
 			const geminiMessages = this.convertMessagesToGeminiFormat(conversationMessages)
 			const geminiTools = this.convertToolsToGeminiFormat(tools)
 
+			console.log('[Gemini] Chat request:', {
+				systemMessageLength: systemMessage?.content?.length || 0,
+				conversationMessagesCount: conversationMessages.length,
+				geminiMessagesCount: geminiMessages.length,
+				toolsCount: geminiTools.length,
+				toolNames: geminiTools.map(t => t.name),
+			})
+
 			const response = await this.client.models.generateContent({
 				model: 'gemini-2.5-flash',
 				contents: geminiMessages,
 				config: {
+					// NOTE: Disable thinking when using function calling to avoid conflicts
+					// thinkingConfig is incompatible with function calling in current SDK
 					httpOptions: {
 						baseUrl: this.baseUrl,
 						headers: {
@@ -186,17 +197,17 @@ export class GeminiProvider implements AIProvider {
 					},
 					systemInstruction: systemMessage?.content
 						? {
-								role: 'user',
-								parts: [{ text: systemMessage.content }],
-						  }
+							role: 'user',
+							parts: [{text: systemMessage.content}],
+						}
 						: undefined,
-					tools: geminiTools.length > 0 ? [{ functionDeclarations: geminiTools }] : undefined,
+					tools: geminiTools.length > 0 ? [{functionDeclarations: geminiTools}] : undefined,
 					toolConfig: geminiTools.length > 0
 						? {
-								functionCallingConfig: {
-									mode: FunctionCallingConfigMode.AUTO, // Enable automatic function calling
-								},
-						  }
+							functionCallingConfig: {
+								mode: FunctionCallingConfigMode.AUTO, // Enable automatic function calling
+							},
+						}
 						: undefined,
 				},
 			})
@@ -218,7 +229,7 @@ export class GeminiProvider implements AIProvider {
 			}
 
 			// Parse response to extract text and thinking parts
-			const { textContent, thinkingTokens } = this.parseResponse(response)
+			const {textContent, thinkingTokens} = this.parseResponse(response)
 
 			// Extract function calls from parts array
 			const functionCalls = this.extractFunctionCalls(response)
@@ -252,7 +263,7 @@ export class GeminiProvider implements AIProvider {
 				},
 			}
 		} catch (error) {
-			console.error('[Gemini] Chat with tools failed', { error, durationMs: Date.now() - startTime })
+			console.error('[Gemini] Chat with tools failed', {error, durationMs: Date.now() - startTime})
 			throw error
 		}
 	}
@@ -297,7 +308,7 @@ export class GeminiProvider implements AIProvider {
 	 * Parse Gemini response to extract text content and thinking tokens
 	 * Handles responses with thinking parts (thoughtSignature) properly
 	 */
-	private parseResponse(response: any): { textContent: string; thinkingTokens: number } {
+	private parseResponse(response: any): {textContent: string; thinkingTokens: number} {
 		// Check for thinking tokens in usage metadata
 		const thinkingTokens = response.usageMetadata?.thoughtsTokenCount || 0
 
@@ -316,7 +327,7 @@ export class GeminiProvider implements AIProvider {
 			textContent = response.text || ''
 		}
 
-		return { textContent, thinkingTokens }
+		return {textContent, thinkingTokens}
 	}
 
 	/**
@@ -361,7 +372,7 @@ export class GeminiProvider implements AIProvider {
 					responseContent = JSON.parse(m.content || '{}')
 				} catch {
 					// If not JSON, wrap in object
-					responseContent = { result: m.content }
+					responseContent = {result: m.content}
 				}
 
 				geminiMessages.push({
@@ -382,7 +393,7 @@ export class GeminiProvider implements AIProvider {
 			if (m.role === 'user') {
 				geminiMessages.push({
 					role: 'user',
-					parts: [{ text: m.content || '' }],
+					parts: [{text: m.content || ''}],
 				})
 				continue
 			}
@@ -393,7 +404,7 @@ export class GeminiProvider implements AIProvider {
 
 				// Add text content if present
 				if (m.content) {
-					parts.push({ text: m.content })
+					parts.push({text: m.content})
 				}
 
 				// Add function calls if present
@@ -458,7 +469,7 @@ export class GeminiProvider implements AIProvider {
 	private convertSchemaToGeminiFormat(schema: any): any {
 		if (!schema) return schema
 
-		const converted: any = { ...schema }
+		const converted: any = {...schema}
 
 		// Convert type to uppercase
 		if (converted.type) {
