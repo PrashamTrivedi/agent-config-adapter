@@ -1,5 +1,6 @@
 import { Config, SkillWithFiles, SkillFile } from '../domain/types';
 import { layout } from './layout';
+import { icons } from './icons';
 
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
@@ -20,7 +21,9 @@ export function skillsListView(skills: Config[]): string {
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div>
-          <h2 style="margin: 0;">🎯 Skills</h2>
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            ${icons.star('icon')} Skills
+          </h2>
           <p style="margin-top: 8px; color: var(--text-secondary);">
             Multi-file skills with companion resources
           </p>
@@ -37,7 +40,9 @@ export function skillsListView(skills: Config[]): string {
         skills.length === 0
           ? `
         <div class="no-results slide-up">
-          <div style="font-size: 3em; margin-bottom: 10px;">📦</div>
+          <div style="margin-bottom: 10px;">
+            ${icons.package('icon-lg')}
+          </div>
           <h3 style="margin: 10px 0; color: var(--text-primary);">No skills yet</h3>
           <p style="margin-bottom: 20px;">Create your first multi-file skill to get started!</p>
           <a href="/skills/new" class="btn">Create Skill</a>
@@ -50,8 +55,8 @@ export function skillsListView(skills: Config[]): string {
               (skill) => `
             <div class="card card-hover scale-in" style="position: relative;">
               <div style="margin-bottom: 12px;">
-                <a href="/skills/${skill.id}" style="color: var(--text-primary); text-decoration: none; font-size: 1.1em; font-weight: 600; display: block; margin-bottom: 8px;">
-                  📄 ${escapeHtml(skill.name)}
+                <a href="/skills/${skill.id}" style="color: var(--text-primary); text-decoration: none; font-size: 1.1em; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                  ${icons.file('icon')} ${escapeHtml(skill.name)}
                 </a>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                   <span class="badge">${skill.original_format}</span>
@@ -63,11 +68,11 @@ export function skillsListView(skills: Config[]): string {
               </div>
 
               <div style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 16px;">
-                <div style="margin-bottom: 4px;">
-                  📅 Created ${new Date(skill.created_at).toLocaleDateString()}
+                <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                  ${icons.calendar('icon')} Created ${new Date(skill.created_at).toLocaleDateString()}
                 </div>
-                <div>
-                  🕐 Updated ${new Date(skill.updated_at).toLocaleDateString()}
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  ${icons.clock('icon')} Updated ${new Date(skill.updated_at).toLocaleDateString()}
                 </div>
               </div>
 
@@ -78,8 +83,8 @@ export function skillsListView(skills: Config[]): string {
                 <a href="/skills/${skill.id}/edit" class="btn btn-secondary" style="flex: 1; text-align: center;">
                   Edit
                 </a>
-                <a href="/api/skills/${skill.id}/download" class="btn btn-secondary" style="flex: 1; text-align: center;" download>
-                  📥 ZIP
+                <a href="/api/skills/${skill.id}/download" class="btn btn-secondary" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;" download>
+                  ${icons.download('icon')} ZIP
                 </a>
               </div>
 
@@ -115,7 +120,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
         <div style="flex: 1;">
           <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
-            📄 ${escapeHtml(skill.name)}
+            ${icons.file('icon')} ${escapeHtml(skill.name)}
           </h2>
           <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
             <span class="badge">${skill.original_format}</span>
@@ -126,9 +131,11 @@ export function skillDetailView(skill: SkillWithFiles): string {
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="/skills/${skill.id}/edit" class="btn ripple">✏️ Edit</a>
-          <a href="/api/skills/${skill.id}/download" class="btn ripple" download="${skill.name}.zip">
-            📥 Download ZIP
+          <a href="/skills/${skill.id}/edit" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+            ${icons.edit('icon')} Edit
+          </a>
+          <a href="/api/skills/${skill.id}/download" class="btn ripple" download="${skill.name}.zip" style="display: flex; align-items: center; gap: 8px;">
+            ${icons.download('icon')} Download ZIP
           </a>
           <a href="/skills" class="btn btn-secondary">← Back</a>
         </div>
@@ -137,12 +144,14 @@ export function skillDetailView(skill: SkillWithFiles): string {
       <!-- Main Content Section -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="margin: 0;">📝 SKILL.md</h3>
+          <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+            ${icons.file('icon')} SKILL.md
+          </h3>
           <button
             class="btn btn-secondary"
-            style="padding: 6px 12px; font-size: 0.9em;"
+            style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
             onclick="copyToClipboard(\`${escapeHtml(skill.content).replace(/`/g, '\\`')}\`, this)">
-            📋 Copy Content
+            ${icons.clipboard('icon')} Copy Content
           </button>
         </div>
         <pre style="max-height: 500px; overflow: auto; margin: 0;">${escapeHtml(skill.content)}</pre>
@@ -153,34 +162,36 @@ export function skillDetailView(skill: SkillWithFiles): string {
           ? `
         <!-- Companion Files Section -->
         <div class="card slide-up" style="margin-bottom: 24px;">
-          <h3 style="margin: 0 0 16px 0;">📦 Companion Files</h3>
+          <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px;">
+            ${icons.package('icon')} Companion Files
+          </h3>
           <div style="display: grid; gap: 12px;">
             ${skill.files
               .map(
                 (file) => `
               <div class="card" style="background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; padding: 12px;">
                 <div style="flex: 1;">
-                  <div style="font-family: 'Courier New', monospace; color: var(--accent-primary); margin-bottom: 4px;">
-                    📄 ${escapeHtml(file.file_path)}
+                  <div style="font-family: 'Courier New', monospace; color: var(--accent-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                    ${icons.file('icon')} ${escapeHtml(file.file_path)}
                   </div>
                   <div style="font-size: 0.85em; color: var(--text-secondary); display: flex; gap: 16px;">
-                    <span>📊 ${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}</span>
-                    <span>🏷️ ${file.mime_type || 'Unknown'}</span>
+                    <span style="display: flex; align-items: center; gap: 6px;">${icons.barChart('icon')} ${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}</span>
+                    <span style="display: flex; align-items: center; gap: 6px;">${icons.tag('icon')} ${file.mime_type || 'Unknown'}</span>
                   </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                  <a href="/api/skills/${skill.id}/files/${file.id}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.9em;" target="_blank">
-                    👁️ View
+                  <a href="/api/skills/${skill.id}/files/${file.id}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;" target="_blank">
+                    ${icons.eye('icon')} View
                   </a>
                   <button
                     class="btn btn-danger"
-                    style="padding: 6px 12px; font-size: 0.9em;"
+                    style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
                     hx-delete="/api/skills/${skill.id}/files/${file.id}"
                     hx-confirm="Delete this file?"
                     hx-target="closest .card"
                     hx-swap="delete"
                     data-success-message="File deleted successfully">
-                    🗑️
+                    ${icons.trash('icon')}
                   </button>
                 </div>
               </div>
@@ -192,7 +203,9 @@ export function skillDetailView(skill: SkillWithFiles): string {
       `
           : `
         <div class="card slide-up" style="text-align: center; padding: 40px; margin-bottom: 24px;">
-          <div style="font-size: 3em; margin-bottom: 12px;">📦</div>
+          <div style="margin-bottom: 12px;">
+            ${icons.package('icon-lg')}
+          </div>
           <h3 style="color: var(--text-primary); margin-bottom: 8px;">No companion files</h3>
           <p style="color: var(--text-secondary); margin-bottom: 20px;">
             Add companion files to enhance this skill
@@ -204,18 +217,21 @@ export function skillDetailView(skill: SkillWithFiles): string {
 
       <!-- Danger Zone -->
       <div class="card" style="border-color: var(--danger); background: rgba(248, 81, 73, 0.05); margin-bottom: 24px;">
-        <h3 style="margin: 0 0 12px 0; color: var(--danger);">⚠️ Danger Zone</h3>
+        <h3 style="margin: 0 0 12px 0; color: var(--danger); display: flex; align-items: center; gap: 10px;">
+          ${icons.warning('icon')} Danger Zone
+        </h3>
         <p style="margin-bottom: 16px; color: var(--text-secondary);">
           Deleting this skill will remove all associated files. This action cannot be undone.
         </p>
         <button
           class="btn btn-danger ripple"
+          style="display: inline-flex; align-items: center; gap: 8px;"
           hx-delete="/api/skills/${skill.id}"
           hx-confirm="Are you sure you want to permanently delete this skill and all its files? This cannot be undone."
           hx-swap="outerHTML"
           hx-target="body"
           data-success-message="Skill deleted successfully">
-          🗑️ Delete Skill
+          ${icons.trash('icon')} Delete Skill
         </button>
       </div>
 
@@ -223,11 +239,15 @@ export function skillDetailView(skill: SkillWithFiles): string {
       <div style="padding: 20px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border-color);">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 0.9em;">
           <div>
-            <div style="color: var(--text-secondary); margin-bottom: 4px;">📅 Created</div>
+            <div style="color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              ${icons.calendar('icon')} Created
+            </div>
             <div style="color: var(--text-primary);">${new Date(skill.created_at).toLocaleString()}</div>
           </div>
           <div>
-            <div style="color: var(--text-secondary); margin-bottom: 4px;">🕐 Last Updated</div>
+            <div style="color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              ${icons.clock('icon')} Last Updated
+            </div>
             <div style="color: var(--text-primary);">${new Date(skill.updated_at).toLocaleString()}</div>
           </div>
           <div>
@@ -250,7 +270,9 @@ export function skillCreateView(): string {
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div>
-          <h2 style="margin: 0;">🎯 Create New Skill</h2>
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            ${icons.star('icon')} Create New Skill
+          </h2>
           <p style="margin-top: 8px; color: var(--text-secondary);">
             Choose how you want to create your skill
           </p>
@@ -260,11 +282,11 @@ export function skillCreateView(): string {
 
       <!-- Tab Navigation -->
       <div class="tabs slide-up">
-        <button class="tab-btn active" onclick="switchTab('form')">
-          ✏️ Manual Entry
+        <button class="tab-btn active" onclick="switchTab('form')" style="display: inline-flex; align-items: center; gap: 8px;">
+          ${icons.edit('icon')} Manual Entry
         </button>
-        <button class="tab-btn" onclick="switchTab('upload')">
-          📤 Upload ZIP
+        <button class="tab-btn" onclick="switchTab('upload')" style="display: inline-flex; align-items: center; gap: 8px;">
+          ${icons.upload('icon')} Upload ZIP
         </button>
       </div>
 
@@ -305,7 +327,7 @@ export function skillCreateView(): string {
 
           <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
             <button type="submit" class="btn ripple" data-success-message="Skill created successfully">
-              <span style="font-size: 1.1em;">✓</span> Create Skill
+              ${icons.check('icon')} Create Skill
             </button>
             <a href="/skills" class="btn btn-secondary">Cancel</a>
           </div>
@@ -315,7 +337,9 @@ export function skillCreateView(): string {
       <!-- ZIP Upload Tab -->
       <div id="tab-upload" class="tab-content card scale-in" style="display: none;">
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); padding: 16px; border-radius: 6px; margin-bottom: 20px;">
-          <h4 style="margin: 0 0 8px 0; color: var(--accent-primary);">📦 ZIP Upload Requirements</h4>
+          <h4 style="margin: 0 0 8px 0; color: var(--accent-primary); display: flex; align-items: center; gap: 10px;">
+            ${icons.package('icon')} ZIP Upload Requirements
+          </h4>
           <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary);">
             <li>ZIP must contain <code>SKILL.md</code> at the root level</li>
             <li>Companion files will be automatically detected and stored</li>
@@ -353,14 +377,14 @@ export function skillCreateView(): string {
                 <div class="progress-bar-fill"></div>
               </div>
             </div>
-            <span class="help-text">
-              📥 Select a ZIP file containing SKILL.md and optional companion files
+            <span class="help-text" style="display: flex; align-items: center; gap: 6px;">
+              ${icons.download('icon')} Select a ZIP file containing SKILL.md and optional companion files
             </span>
           </div>
 
           <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-            <button type="submit" class="btn ripple" data-success-message="Skill uploaded and created successfully">
-              <span style="font-size: 1.1em;">📤</span> Upload & Create
+            <button type="submit" class="btn ripple" data-success-message="Skill uploaded and created successfully" style="display: inline-flex; align-items: center; gap: 8px;">
+              ${icons.upload('icon')} Upload & Create
             </button>
             <a href="/skills" class="btn btn-secondary">Cancel</a>
           </div>
@@ -438,7 +462,9 @@ export function skillEditView(skill: SkillWithFiles): string {
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div>
-          <h2 style="margin: 0;">✏️ Edit Skill</h2>
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            ${icons.edit('icon')} Edit Skill
+          </h2>
           <p style="margin-top: 8px; color: var(--text-secondary);">
             ${escapeHtml(skill.name)}
           </p>
@@ -451,7 +477,9 @@ export function skillEditView(skill: SkillWithFiles): string {
 
       <!-- Main Metadata Form -->
       <div class="card slide-up" style="margin-bottom: 24px;">
-        <h3 style="margin: 0 0 20px 0;">📝 Skill Metadata</h3>
+        <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+          ${icons.file('icon')} Skill Metadata
+        </h3>
         <form id="edit-form" hx-put="/api/skills/${skill.id}" hx-encoding="multipart/form-data">
           <div class="form-group">
             <label for="name">Skill Name *</label>
@@ -488,7 +516,7 @@ export function skillEditView(skill: SkillWithFiles): string {
 
           <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
             <button type="submit" class="btn ripple" data-success-message="Skill updated successfully">
-              <span style="font-size: 1.1em;">✓</span> Save Changes
+              ${icons.check('icon')} Save Changes
             </button>
             <a href="/skills/${skill.id}" class="btn btn-secondary">Cancel</a>
           </div>
@@ -499,7 +527,9 @@ export function skillEditView(skill: SkillWithFiles): string {
       <div class="card slide-up" style="margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <div>
-            <h3 style="margin: 0;">📦 Companion Files</h3>
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+              ${icons.package('icon')} Companion Files
+            </h3>
             <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.9em;">
               Additional files that work alongside SKILL.md (e.g., FORMS.md, utils.js)
             </p>
@@ -519,22 +549,22 @@ export function skillEditView(skill: SkillWithFiles): string {
                 (file) => `
               <div class="card" style="background: var(--bg-primary); display: flex; justify-content: space-between; align-items: center; padding: 12px;">
                 <div style="flex: 1;">
-                  <div style="font-family: 'Courier New', monospace; color: var(--accent-primary); margin-bottom: 4px;">
-                    📄 ${escapeHtml(file.file_path)}
+                  <div style="font-family: 'Courier New', monospace; color: var(--accent-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                    ${icons.file('icon')} ${escapeHtml(file.file_path)}
                   </div>
-                  <div style="font-size: 0.85em; color: var(--text-secondary);">
-                    📊 ${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}
+                  <div style="font-size: 0.85em; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                    ${icons.barChart('icon')} ${file.file_size ? Math.round(file.file_size / 1024) + ' KB' : 'Unknown'}
                   </div>
                 </div>
                 <button
                   class="btn btn-danger"
-                  style="padding: 6px 12px; font-size: 0.9em;"
+                  style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
                   hx-delete="/api/skills/${skill.id}/files/${file.id}"
                   hx-confirm="Delete this file?"
                   hx-target="closest .card"
                   hx-swap="delete"
                   data-success-message="File deleted successfully">
-                  🗑️ Delete
+                  ${icons.trash('icon')} Delete
                 </button>
               </div>
             `
@@ -544,7 +574,7 @@ export function skillEditView(skill: SkillWithFiles): string {
         `
             : `
           <div id="files-list" style="text-align: center; padding: 30px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 24px;">
-            <div style="font-size: 2.5em; margin-bottom: 8px;">📁</div>
+            <div style="margin-bottom: 8px;">${icons.folder('icon-lg')}</div>
             <p style="color: var(--text-secondary); margin: 0;">No companion files yet</p>
           </div>
         `
@@ -552,7 +582,9 @@ export function skillEditView(skill: SkillWithFiles): string {
 
         <!-- Add File Form -->
         <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 6px; border: 2px dashed var(--border-color);">
-          <h4 style="margin: 0 0 16px 0; color: var(--text-primary);">➕ Add New File</h4>
+          <h4 style="margin: 0 0 16px 0; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+            ${icons.plus('icon')} Add New File
+          </h4>
           <form hx-post="/api/skills/${skill.id}/files" hx-encoding="multipart/form-data" hx-target="#files-list" hx-swap="beforeend">
             <div class="form-group">
               <label for="file_path">File Path *</label>
@@ -562,13 +594,17 @@ export function skillEditView(skill: SkillWithFiles): string {
                 name="file_path"
                 placeholder="e.g., FORMS.md or utils/helper.js"
                 required>
-              <span class="help-text">📂 Use forward slashes for subdirectories</span>
+              <span class="help-text" style="display: flex; align-items: center; gap: 6px;">
+                ${icons.folder('icon')} Use forward slashes for subdirectories
+              </span>
             </div>
 
             <div class="form-group">
               <label for="file_content">File Content *</label>
               <input type="file" id="file_content" name="file_content" required>
-              <span class="help-text">📎 Select the file to upload</span>
+              <span class="help-text" style="display: flex; align-items: center; gap: 6px;">
+                ${icons.paperclip('icon')} Select the file to upload
+              </span>
             </div>
 
             <button type="submit" class="btn ripple" data-success-message="File added successfully">

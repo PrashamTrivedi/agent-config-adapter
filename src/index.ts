@@ -7,6 +7,7 @@ import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { layout } from './views/layout';
+import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
 
 type Bindings = {
@@ -36,8 +37,8 @@ app.get('/', (c) => {
   const content = `
     <div class="fade-in">
       <div style="text-align: center; margin-bottom: 40px;">
-        <h2 style="font-size: 2.5em; margin: 0 0 16px 0; background: linear-gradient(135deg, var(--accent-primary), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-          🔄 Agent Config Adapter
+        <h2 style="font-size: 2.5em; margin: 0 0 16px 0; background: linear-gradient(135deg, var(--accent-primary), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: flex; align-items: center; justify-content: center; gap: 12px;">
+          ${icons.refresh('icon-lg')} Agent Config Adapter
         </h2>
         <p style="font-size: 1.15em; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6;">
           Universal adapter for AI coding agent configurations. Store once, deploy everywhere.
@@ -46,47 +47,47 @@ app.get('/', (c) => {
 
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
         <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
-          <span>✨</span>
+          ${icons.sparkles('icon')}
           <span>Features</span>
         </h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
           <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">📝</div>
+            <div style="margin-bottom: 8px; color: var(--accent-primary);">${icons.file('icon-lg')}</div>
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Config Management</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
               Store slash commands, agents, and MCP configs
             </p>
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">🔄</div>
+            <div style="margin-bottom: 8px; color: var(--accent-primary);">${icons.refresh('icon-lg')}</div>
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Format Conversion</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
               Convert between Claude Code, Codex, and Gemini
             </p>
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">🎯</div>
+            <div style="margin-bottom: 8px; color: var(--accent-primary);">${icons.target('icon-lg')}</div>
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Multi-file Skills</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
               Skills with ZIP upload/download support
             </p>
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">🏪</div>
+            <div style="margin-bottom: 8px; color: var(--accent-violet);">${icons.store('icon-lg')}</div>
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Marketplace</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
               Bundle and share extension collections
             </p>
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">⚡</div>
+            <div style="margin-bottom: 8px; color: var(--success);">${icons.refresh('icon-lg')}</div>
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Fast Caching</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
               Optimized retrieval with KV caching
             </p>
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="font-size: 2em; margin-bottom: 8px;">🔌</div>
+            <div style="margin-bottom: 8px; color: var(--accent-blue);">${icons.code('icon-lg')}</div>
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">MCP Server</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
               AI agent integration via MCP protocol
@@ -96,28 +97,30 @@ app.get('/', (c) => {
       </div>
 
       <div class="card slide-up">
-        <h3 style="margin: 0 0 20px 0;">🚀 Quick Actions</h3>
+        <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+          ${icons.target('icon')} Quick Actions
+        </h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-          <a href="/configs" class="btn ripple" style="text-align: center; padding: 16px;">
-            📝 View Configs
+          <a href="/configs" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.file('icon')} View Configs
           </a>
-          <a href="/configs/new" class="btn ripple" style="text-align: center; padding: 16px;">
-            ➕ New Config
+          <a href="/configs/new" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.plus('icon')} New Config
           </a>
-          <a href="/slash-commands/convert" class="btn ripple" style="text-align: center; padding: 16px;">
-            🔄 Converter
+          <a href="/slash-commands/convert" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.refresh('icon')} Converter
           </a>
-          <a href="/skills" class="btn ripple" style="text-align: center; padding: 16px;">
-            🎯 Skills
+          <a href="/skills" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.star('icon')} Skills
           </a>
-          <a href="/extensions" class="btn ripple" style="text-align: center; padding: 16px;">
-            📦 Extensions
+          <a href="/extensions" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.package('icon')} Extensions
           </a>
-          <a href="/marketplaces" class="btn ripple" style="text-align: center; padding: 16px;">
-            🏪 Marketplaces
+          <a href="/marketplaces" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.store('icon')} Marketplaces
           </a>
-          <a href="/mcp/info" class="btn ripple" style="text-align: center; padding: 16px; background: #6366f1;">
-            🔌 MCP Server
+          <a href="/mcp/info" class="btn ripple" style="text-align: center; padding: 16px; background: #6366f1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.code('icon')} MCP Server
           </a>
         </div>
       </div>
@@ -206,7 +209,7 @@ app.get('/mcp/info', (c) => {
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div>
           <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
-            🔌 MCP Server Information
+            ${icons.link('icon')} MCP Server Information
           </h2>
           <p style="margin-top: 8px; color: var(--text-secondary);">
             Model Context Protocol server for AI agent integration
@@ -219,7 +222,9 @@ app.get('/mcp/info', (c) => {
 
       <!-- Server Details -->
       <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white;">
-        <h3 style="margin: 0 0 16px 0; color: white;">📊 Server Details</h3>
+        <h3 style="margin: 0 0 16px 0; color: white; display: flex; align-items: center; gap: 8px;">
+          ${icons.barChart('icon')} Server Details
+        </h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
           <div>
             <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Name</div>
@@ -243,7 +248,7 @@ app.get('/mcp/info', (c) => {
       <!-- Tools -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <span>🛠️</span>
+          ${icons.wrench('icon')}
           <span>Tools (Write Operations)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
@@ -258,7 +263,7 @@ app.get('/mcp/info', (c) => {
       <!-- Resources -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <span>📚</span>
+          ${icons.book('icon')}
           <span>Resources (Pure Read Operations)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
@@ -273,7 +278,7 @@ app.get('/mcp/info', (c) => {
       <!-- Prompts -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-          <span>⚡</span>
+          ${icons.zap('icon')}
           <span>Prompts (Workflow Automation)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
@@ -287,7 +292,9 @@ app.get('/mcp/info', (c) => {
 
       <!-- Client Connection -->
       <div class="card slide-up" style="margin-bottom: 24px;">
-        <h3 style="margin: 0 0 16px 0;">🔗 Client Connection</h3>
+        <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          ${icons.link('icon')} Client Connection
+        </h3>
         <p style="margin-bottom: 12px; color: var(--text-secondary);">
           Add this to your MCP client configuration:
         </p>
@@ -301,7 +308,7 @@ app.get('/mcp/info', (c) => {
 }</code></pre>
         <button
           class="btn btn-secondary ripple copy-btn"
-          style="margin-top: 12px;"
+          style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px;"
           onclick="copyToClipboard(\`${`{
   "mcpServers": {
     "agent-config-adapter": {
@@ -310,16 +317,18 @@ app.get('/mcp/info', (c) => {
     }
   }
 }`}\`, this)">
-          📋 Copy Configuration
+          ${icons.clipboard('icon')} Copy Configuration
         </button>
       </div>
 
       <!-- Important Notes -->
       <div class="card slide-up" style="background: rgba(88, 166, 255, 0.05); border: 2px solid rgba(88, 166, 255, 0.2);">
-        <h3 style="margin: 0 0 16px 0; color: var(--accent-primary);">💡 Important Notes</h3>
+        <h3 style="margin: 0 0 16px 0; color: var(--accent-primary); display: flex; align-items: center; gap: 8px;">
+          ${icons.info('icon')} Important Notes
+        </h3>
         <div style="display: grid; gap: 12px;">
-          <div style="display: flex; gap: 12px;">
-            <div style="font-size: 1.5em;">📚</div>
+          <div style="display: flex; gap: 12px; align-items: start;">
+            <div style="margin-top: 2px; color: var(--accent-primary);">${icons.book('icon-lg')}</div>
             <div>
               <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Resources</div>
               <div style="font-size: 0.9em; color: var(--text-secondary);">
@@ -327,8 +336,8 @@ app.get('/mcp/info', (c) => {
               </div>
             </div>
           </div>
-          <div style="display: flex; gap: 12px;">
-            <div style="font-size: 1.5em;">🛠️</div>
+          <div style="display: flex; gap: 12px; align-items: start;">
+            <div style="margin-top: 2px; color: var(--accent-primary);">${icons.wrench('icon-lg')}</div>
             <div>
               <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Tools</div>
               <div style="font-size: 0.9em; color: var(--text-secondary);">
@@ -336,8 +345,8 @@ app.get('/mcp/info', (c) => {
               </div>
             </div>
           </div>
-          <div style="display: flex; gap: 12px;">
-            <div style="font-size: 1.5em;">⚡</div>
+          <div style="display: flex; gap: 12px; align-items: start;">
+            <div style="margin-top: 2px; color: var(--accent-primary);">${icons.zap('icon-lg')}</div>
             <div>
               <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Prompts</div>
               <div style="font-size: 0.9em; color: var(--text-secondary);">

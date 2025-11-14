@@ -1,17 +1,22 @@
 import { ExtensionWithConfigs, Config } from '../domain/types';
 import { layout } from './layout';
+import { icons } from './icons';
 
 export function extensionListView(extensions: ExtensionWithConfigs[]): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">📦 Extensions</h2>
+        <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+          ${icons.package('icon')} Extensions
+        </h2>
         <a href="/extensions/new" class="btn ripple">+ Create Extension</a>
       </div>
 
       ${extensions.length === 0 ? `
         <div class="card" style="text-align: center; padding: 40px;">
-          <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+          <div style="margin-bottom: 15px;">
+            ${icons.package('icon-lg')}
+          </div>
           <h3>No extensions yet</h3>
           <p style="color: var(--text-secondary); margin-bottom: 20px;">Extensions bundle multiple configs into distributable packages</p>
           <a href="/extensions/new" class="btn">Create your first extension</a>
@@ -24,8 +29,8 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
                 ${ext.icon_url ? `
                   <img src="${escapeHtml(ext.icon_url)}" alt="${escapeHtml(ext.name)}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
                 ` : `
-                  <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
-                    📦
+                  <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    ${icons.package('icon')}
                   </div>
                 `}
                 <div style="flex: 1; min-width: 0;">
@@ -49,8 +54,8 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
               ` : ''}
 
               ${ext.author ? `
-                <div style="font-size: 0.8em; color: var(--text-secondary); padding-top: 12px; border-top: 1px solid var(--border-color);">
-                  👤 ${escapeHtml(ext.author)}
+                <div style="font-size: 0.8em; color: var(--text-secondary); padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;">
+                  ${icons.user('icon')} ${escapeHtml(ext.author)}
                 </div>
               ` : ''}
             </div>
@@ -107,33 +112,33 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <div id="manifest-preview"></div>
 
-    <h3>📥 Download Plugin</h3>
+    <h3 style="display: flex; align-items: center; gap: 10px;">${icons.download('icon')} Download Plugin</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
       <!-- Claude Code Plugin -->
       <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">🔵 Claude Code Plugin</h4>
+        <h4 style="margin-top: 0; display: flex; align-items: center; gap: 8px;"><span style="color: var(--accent-primary);">●</span> Claude Code Plugin</h4>
         <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
           Full plugin with manifest, commands, agents, and MCP configs
         </p>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <a href="/plugins/${extension.id}/claude_code" class="btn" style="text-align: center;">
-            📁 Browse Files
+            ${icons.folder('icon')} Browse Files
           </a>
           <a href="/plugins/${extension.id}/claude_code/download" class="btn btn-primary" style="text-align: center;">
-            📥 Download ZIP
+            ${icons.download('icon')} Download ZIP
           </a>
         </div>
       </div>
 
       <!-- Gemini CLI Extension -->
       <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <h4 style="margin-top: 0;">🔶 Gemini CLI Extension</h4>
+        <h4 style="margin-top: 0; display: flex; align-items: center; gap: 8px;"><span style="color: #eab308;">●</span> Gemini CLI Extension</h4>
         <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0 0 15px 0;">
           JSON definition file - recommended for Gemini extensions
         </p>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary" style="text-align: center;">
-            📄 Download JSON Definition
+            ${icons.file('icon')} Download JSON Definition
           </a>
           <details style="margin-top: 10px;">
             <summary style="cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); user-select: none;">
@@ -141,10 +146,10 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
             </summary>
             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
               <a href="/plugins/${extension.id}/gemini" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
-                📁 Browse Files
+                ${icons.folder('icon')} Browse Files
               </a>
               <a href="/plugins/${extension.id}/gemini/download" class="btn btn-secondary" style="text-align: center; font-size: 0.875rem;">
-                📥 Download ZIP
+                ${icons.download('icon')} Download ZIP
               </a>
             </div>
           </details>
@@ -154,7 +159,7 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <h3>Installation Instructions</h3>
     <details open style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔵 Claude Code Installation</summary>
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;"><span style="color: var(--accent-primary);">●</span> Claude Code Installation</summary>
       <div style="padding-left: 20px;">
         <p><strong>Option 1: From Marketplace</strong></p>
         <p style="font-size: 0.875rem; color: var(--text-secondary);">
@@ -181,7 +186,7 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
     </details>
 
     <details style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;">🔶 Gemini CLI Installation</summary>
+      <summary style="cursor: pointer; font-weight: 600; margin-bottom: 10px;"><span style="color: #eab308;">●</span> Gemini CLI Installation</summary>
       <div style="padding-left: 20px;">
         <p><strong>Recommended: JSON Definition</strong></p>
         <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 10px;">
@@ -201,14 +206,14 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <h3>Actions</h3>
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <a href="/extensions/${extension.id}/edit" class="btn ripple">✏️ Edit</a>
+      <a href="/extensions/${extension.id}/edit" class="btn ripple">${icons.edit('icon')} Edit</a>
       <a href="/extensions" class="btn btn-secondary">← Back to List</a>
       <button
         class="btn btn-danger ripple"
         onclick="confirmAction('Are you sure you want to delete this extension? This will not delete the configs.', () => {
           htmx.ajax('DELETE', '/api/extensions/${extension.id}', {target:'body', swap:'outerHTML'});
         })">
-        🗑️ Delete
+        ${icons.trash('icon')} Delete
       </button>
     </div>
 
@@ -221,9 +226,9 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
           evt.detail.target.innerHTML = \`
             <div class="card fade-in">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="margin: 0;">📄 Manifest Content</h4>
+                <h4 style="margin: 0;">${icons.file('icon')} Manifest Content</h4>
                 <button class="btn btn-secondary copy-btn" onclick="copyManifest(\\\`\${jsonStr.replace(/\`/g, '\\\\\`')}\\\`)">
-                  📋 Copy
+                  ${icons.clipboard('icon')} Copy
                 </button>
               </div>
               <pre style="margin: 0; max-height: 400px; overflow-y: auto;">\${jsonStr}</pre>

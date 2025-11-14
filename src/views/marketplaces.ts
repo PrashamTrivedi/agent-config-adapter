@@ -1,19 +1,22 @@
 import { MarketplaceWithExtensions, ExtensionWithConfigs } from '../domain/types';
 import { layout } from './layout';
+import { icons } from './icons';
 
 export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div>
-          <h2 style="margin: 0;">🏪 Marketplaces</h2>
+          <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            ${icons.store('icon')} Marketplaces
+          </h2>
           <p style="margin-top: 8px; color: var(--text-secondary);">
             Curated collections of extensions for distribution
           </p>
         </div>
         <div style="display: flex; gap: 10px;">
           <a href="/marketplaces/new" class="btn ripple">
-            <span style="font-size: 1.1em;">+</span> Create Marketplace
+            ${icons.plus('icon')} Create Marketplace
           </a>
           <a href="/" class="btn btn-secondary">← Home</a>
         </div>
@@ -21,7 +24,9 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
 
       ${marketplaces.length === 0 ? `
         <div class="no-results slide-up">
-          <div style="font-size: 3em; margin-bottom: 10px;">🏪</div>
+          <div style="margin-bottom: 10px;">
+            ${icons.store('icon-lg')}
+          </div>
           <h3 style="margin: 10px 0; color: var(--text-primary);">No marketplaces yet</h3>
           <p style="margin-bottom: 20px;">Create your first marketplace to distribute extension collections!</p>
           <a href="/marketplaces/new" class="btn">Create Marketplace</a>
@@ -31,8 +36,8 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
           ${marketplaces.map(market => `
             <div class="card card-hover scale-in" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
               <div style="margin-bottom: 16px;">
-                <a href="/marketplaces/${market.id}" style="color: var(--text-primary); text-decoration: none; font-size: 1.2em; font-weight: 600; display: block; margin-bottom: 10px;">
-                  🏪 ${escapeHtml(market.name)}
+                <a href="/marketplaces/${market.id}" style="color: var(--text-primary); text-decoration: none; font-size: 1.2em; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                  ${icons.store('icon')} ${escapeHtml(market.name)}
                 </a>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
                   <span class="badge">v${escapeHtml(market.version)}</span>
@@ -50,7 +55,7 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
 
               <div style="padding-top: 12px; border-top: 1px solid var(--border-color);">
                 <div style="color: var(--text-secondary); font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
-                  <span>👤</span>
+                  ${icons.user('icon')}
                   <span>${escapeHtml(market.owner_name)}</span>
                 </div>
               </div>
@@ -72,7 +77,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
         <div style="flex: 1;">
           <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
-            🏪 ${escapeHtml(marketplace.name)}
+            ${icons.store('icon')} ${escapeHtml(marketplace.name)}
           </h2>
           <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
             <span class="badge">v${escapeHtml(marketplace.version)}</span>
@@ -87,14 +92,18 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="/marketplaces/${marketplace.id}/edit" class="btn ripple">✏️ Edit</a>
+          <a href="/marketplaces/${marketplace.id}/edit" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+            ${icons.edit('icon')} Edit
+          </a>
           <a href="/marketplaces" class="btn btn-secondary">← Back</a>
         </div>
       </div>
 
       ${marketplace.description ? `
         <div class="card slide-up" style="margin-bottom: 24px;">
-          <h3 style="margin: 0 0 12px 0;">📄 Description</h3>
+          <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+            ${icons.file('icon')} Description
+          </h3>
           <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(marketplace.description)}</p>
         </div>
       ` : ''}
@@ -103,7 +112,9 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
       <div class="card slide-up" style="margin-bottom: 24px;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
           <div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 0.9em;">👤 Owner</h4>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 0.9em; display: flex; align-items: center; gap: 6px;">
+              ${icons.user('icon')} Owner
+            </h4>
             <div style="color: var(--text-primary);">
               ${escapeHtml(marketplace.owner_name)}
               ${marketplace.owner_email ? `<br><span style="color: var(--text-secondary); font-size: 0.9em;">${escapeHtml(marketplace.owner_email)}</span>` : ''}
@@ -111,10 +122,12 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
           </div>
           ${marketplace.homepage || marketplace.repository ? `
             <div>
-              <h4 style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 0.9em;">🔗 Links</h4>
+              <h4 style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 0.9em; display: flex; align-items: center; gap: 6px;">
+                ${icons.info('icon')} Links
+              </h4>
               <div style="display: flex; flex-direction: column; gap: 6px;">
-                ${marketplace.homepage ? `<a href="${escapeHtml(marketplace.homepage)}" target="_blank" style="color: var(--accent-primary);">🏠 Homepage</a>` : ''}
-                ${marketplace.repository ? `<a href="${escapeHtml(marketplace.repository)}" target="_blank" style="color: var(--accent-primary);">📦 Repository</a>` : ''}
+                ${marketplace.homepage ? `<a href="${escapeHtml(marketplace.homepage)}" target="_blank" style="color: var(--accent-primary); display: flex; align-items: center; gap: 6px;">${icons.target('icon')} Homepage</a>` : ''}
+                ${marketplace.repository ? `<a href="${escapeHtml(marketplace.repository)}" target="_blank" style="color: var(--accent-primary); display: flex; align-items: center; gap: 6px;">${icons.package('icon')} Repository</a>` : ''}
               </div>
             </div>
           ` : ''}
@@ -123,10 +136,14 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
 
       <!-- Extensions Grid -->
       <div class="card slide-up" style="margin-bottom: 24px;">
-        <h3 style="margin: 0 0 16px 0;">📦 Extensions (${marketplace.extensions.length})</h3>
+        <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+          ${icons.package('icon')} Extensions (${marketplace.extensions.length})
+        </h3>
         ${marketplace.extensions.length === 0 ? `
           <div style="text-align: center; padding: 40px; background: var(--bg-tertiary); border-radius: 6px;">
-            <div style="font-size: 3em; margin-bottom: 12px;">📦</div>
+            <div style="margin-bottom: 12px;">
+              ${icons.package('icon-lg')}
+            </div>
             <p style="color: var(--text-secondary); margin: 0;">No extensions in this marketplace yet</p>
           </div>
         ` : `
@@ -134,8 +151,8 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
             ${marketplace.extensions.map(ext => `
               <div class="card" style="background: var(--bg-primary); display: flex; justify-content: space-between; align-items: flex-start; padding: 16px;">
                 <div style="flex: 1;">
-                  <a href="/extensions/${ext.id}" style="color: var(--accent-primary); font-weight: 600; font-size: 1.05em; text-decoration: none; display: block; margin-bottom: 8px;">
-                    📦 ${escapeHtml(ext.name)}
+                  <a href="/extensions/${ext.id}" style="color: var(--accent-primary); font-weight: 600; font-size: 1.05em; text-decoration: none; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    ${icons.package('icon')} ${escapeHtml(ext.name)}
                   </a>
                   <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
                     <span class="badge">v${escapeHtml(ext.version)}</span>
@@ -158,11 +175,11 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
 
       <!-- Download Options -->
       <div class="card slide-up" style="margin-bottom: 24px;">
-        <h3 style="margin: 0 0 20px 0;">📥 Download Marketplace</h3>
+        <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">${icons.download('icon')} Download Marketplace</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
           <!-- Claude Code -->
           <div class="card card-hover" style="background: rgba(37, 99, 235, 0.05); border: 2px solid rgba(37, 99, 235, 0.2);">
-            <h4 style="margin: 0 0 8px 0; color: var(--accent-primary);">🔵 Claude Code Marketplace</h4>
+            <h4 style="margin: 0 0 8px 0; color: var(--accent-primary); display: flex; align-items: center; gap: 8px;"><span>●</span> Claude Code Marketplace</h4>
             <p style="font-size: 0.875em; color: var(--text-secondary); margin: 0 0 16px 0;">
               marketplace.json with plugin references
             </p>
@@ -171,34 +188,34 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
                 onclick="copyMarketplaceUrl()"
                 class="btn ripple copy-btn"
                 style="width: 100%; text-align: center;">
-                📋 Copy Marketplace URL
+                ${icons.clipboard('icon')} Copy Marketplace URL
               </button>
               <a href="/api/marketplaces/${marketplace.id}/manifest?format=text" target="_blank" class="btn btn-secondary" style="width: 100%; text-align: center;">
-                📄 View JSON
+                ${icons.file('icon')} View JSON
               </a>
               <a href="/plugins/marketplaces/${marketplace.id}/download?format=claude_code" class="btn btn-secondary" style="width: 100%; text-align: center;">
-                📦 Download All Plugins (ZIP)
+                ${icons.package('icon')} Download All Plugins (ZIP)
               </a>
             </div>
           </div>
 
           <!-- Gemini -->
           <div class="card card-hover" style="background: rgba(234, 179, 8, 0.05); border: 2px solid rgba(234, 179, 8, 0.2);">
-            <h4 style="margin: 0 0 8px 0; color: #eab308;">🔶 Gemini Marketplace</h4>
+            <h4 style="margin: 0 0 8px 0; color: #eab308; display: flex; align-items: center; gap: 8px;"><span>●</span> Gemini Marketplace</h4>
             <p style="font-size: 0.875em; color: var(--text-secondary); margin: 0 0 16px 0;">
               Collection of JSON definitions for all extensions
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-              <a href="/plugins/marketplaces/${marketplace.id}/gemini/definition" class="btn ripple" style="width: 100%; text-align: center; background: #eab308;">
-                📄 Download JSON Collection
+              <a href="/plugins/marketplaces/${marketplace.id}/gemini/definition" class="btn ripple" style="width: 100%; text-align: center; background: #eab308; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                ${icons.file('icon')} Download JSON Collection
               </a>
               <details style="margin-top: 8px;">
                 <summary style="cursor: pointer; font-size: 0.875em; color: var(--text-secondary); user-select: none; padding: 8px; border-radius: 4px; background: var(--bg-tertiary);">
-                  ⚙️ Advanced: Full Plugin Files
+                  ${icons.settings('icon')} Advanced: Full Plugin Files
                 </summary>
                 <div style="padding-top: 10px;">
                   <a href="/plugins/marketplaces/${marketplace.id}/download?format=gemini" class="btn btn-secondary" style="width: 100%; text-align: center; font-size: 0.9em;">
-                    📦 Download All Plugins (ZIP)
+                    ${icons.package('icon')} Download All Plugins (ZIP)
                   </a>
                 </div>
               </details>
@@ -209,11 +226,11 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
 
       <!-- Installation Instructions -->
       <div class="card slide-up" style="margin-bottom: 24px;">
-        <h3 style="margin: 0 0 20px 0;">📖 Installation Instructions</h3>
+        <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">${icons.book('icon')} Installation Instructions</h3>
 
         <details open class="card" style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); margin-bottom: 16px; padding: 16px;">
           <summary style="cursor: pointer; font-weight: 600; color: var(--accent-primary); user-select: none; display: flex; align-items: center; gap: 8px;">
-            <span>🔵</span>
+            <span style="color: var(--accent-primary);">●</span>
             <span>Claude Code Setup</span>
           </summary>
           <div style="padding: 16px 0 0 0;">
@@ -224,8 +241,8 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
   ]
 }</code></pre>
             <div style="background: rgba(88, 166, 255, 0.1); padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid var(--accent-primary);">
-              <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-                ✨ Claude Code will automatically discover and load all ${marketplace.extensions.length} plugin(s)
+              <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                ${icons.sparkles('icon')} Claude Code will automatically discover and load all ${marketplace.extensions.length} plugin(s)
               </p>
             </div>
           </div>
@@ -233,7 +250,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
 
         <details class="card" style="background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.2); padding: 16px;">
           <summary style="cursor: pointer; font-weight: 600; color: #eab308; user-select: none; display: flex; align-items: center; gap: 8px;">
-            <span>🔶</span>
+            <span style="color: #eab308;">●</span>
             <span>Gemini CLI Setup</span>
           </summary>
           <div style="padding: 16px 0 0 0;">
@@ -245,7 +262,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
             </ol>
             <div style="background: rgba(234, 179, 8, 0.1); padding: 12px; border-radius: 6px; margin-top: 12px; border-left: 3px solid #eab308;">
               <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-                📊 This marketplace contains ${marketplace.extensions.length} extension(s) with ${totalConfigs} total config(s)
+                ${icons.barChart('icon')} This marketplace contains ${marketplace.extensions.length} extension(s) with ${totalConfigs} total config(s)
               </p>
             </div>
           </div>
@@ -254,7 +271,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
 
       <!-- Danger Zone -->
       <div class="card" style="border-color: var(--danger); background: rgba(248, 81, 73, 0.05); margin-bottom: 24px;">
-        <h3 style="margin: 0 0 12px 0; color: var(--danger);">⚠️ Danger Zone</h3>
+        <h3 style="margin: 0 0 12px 0; color: var(--danger); display: flex; align-items: center; gap: 10px;">${icons.warning('icon')} Danger Zone</h3>
         <p style="margin-bottom: 16px; color: var(--text-secondary);">
           Deleting this marketplace will only remove the marketplace record. Extensions will not be affected.
         </p>
@@ -265,7 +282,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
           hx-target="body"
           hx-swap="outerHTML"
           data-success-message="Marketplace deleted successfully">
-          🗑️ Delete Marketplace
+          ${icons.trash('icon')} Delete Marketplace
         </button>
       </div>
     </div>

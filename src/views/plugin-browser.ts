@@ -1,5 +1,6 @@
 import { ExtensionWithConfigs } from '../domain/types';
 import { layout } from './layout';
+import { icons } from './icons';
 
 interface FileInfo {
   path: string;
@@ -26,7 +27,9 @@ export function pluginBrowserView(
   const content = `
     <div class="container">
       <div class="header">
-        <h1>📦 ${escapeHtml(extension.name)}</h1>
+        <h1 style="display: flex; align-items: center; gap: 12px;">
+          ${icons.package('icon')} ${escapeHtml(extension.name)}
+        </h1>
         <p class="subtitle">${formatDisplay} Plugin Files</p>
       </div>
 
@@ -47,26 +50,26 @@ export function pluginBrowserView(
 
       <div class="actions-bar">
         ${format === 'claude_code' ? `
-          <a href="${pluginUrl}/download" class="btn btn-primary">
-            📥 Download Complete Plugin (ZIP)
+          <a href="${pluginUrl}/download" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+            ${icons.download('icon')} Download Complete Plugin (ZIP)
           </a>
-          <button onclick="copyToClipboard('${pluginUrl}')" class="btn">
-            📋 Copy Plugin URL
+          <button onclick="copyToClipboard('${pluginUrl}')" class="btn" style="display: flex; align-items: center; gap: 8px;">
+            ${icons.clipboard('icon')} Copy Plugin URL
           </button>
         ` : `
-          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary">
-            📄 Download JSON Definition (Recommended)
+          <a href="/plugins/${extension.id}/gemini/definition" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+            ${icons.file('icon')} Download JSON Definition (Recommended)
           </a>
           <details style="display: inline-block; position: relative;">
             <summary class="btn btn-secondary" style="list-style: none; cursor: pointer;">
               Advanced Options ▼
             </summary>
             <div style="position: absolute; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-top: 5px; z-index: 10; min-width: 200px;">
-              <a href="${pluginUrl}/download" class="btn btn-secondary" style="display: block; margin-bottom: 8px; text-align: center;">
-                📥 Download Full ZIP
+              <a href="${pluginUrl}/download" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; text-align: center;">
+                ${icons.download('icon')} Download Full ZIP
               </a>
-              <button onclick="copyToClipboard('${pluginUrl}')" class="btn btn-secondary" style="display: block; width: 100%;">
-                📋 Copy Plugin URL
+              <button onclick="copyToClipboard('${pluginUrl}')" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+                ${icons.clipboard('icon')} Copy Plugin URL
               </button>
             </div>
           </details>
@@ -77,14 +80,18 @@ export function pluginBrowserView(
       </div>
 
       <div class="file-browser">
-        <h2>📁 File Structure</h2>
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          ${icons.folder('icon')} File Structure
+        </h2>
         <div class="file-tree">
           ${renderFileTree(fileTree, pluginUrl)}
         </div>
       </div>
 
       <div class="installation-guide">
-        <h2>📖 Installation Instructions</h2>
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          ${icons.book('icon')} Installation Instructions
+        </h2>
         ${format === 'claude_code' ? renderClaudeCodeInstructions(pluginUrl, extension) : renderGeminiInstructions(extension)}
       </div>
     </div>
@@ -279,7 +286,7 @@ function renderFileTree(tree: FileTreeNode, baseUrl: string, depth: number = 0):
       html += `
         <li>
           <div class="directory-name">
-            <span>📁</span>
+            ${icons.folder('icon')}
             <span>${escapeHtml(name)}/</span>
           </div>
           ${renderFileTree(node as FileTreeNode, baseUrl, depth + 1)}
@@ -293,10 +300,8 @@ function renderFileTree(tree: FileTreeNode, baseUrl: string, depth: number = 0):
 }
 
 function getFileIcon(filename: string): string {
-  if (filename.endsWith('.json')) return '📄';
-  if (filename.endsWith('.md')) return '📝';
-  if (filename.endsWith('.toml')) return '⚙️';
-  return '📄';
+  if (filename.endsWith('.md')) return icons.file('icon');
+  return icons.file('icon');
 }
 
 function formatSize(bytes: number): string {
@@ -348,7 +353,9 @@ function renderClaudeCodeInstructions(pluginUrl: string, extension: ExtensionWit
 function renderGeminiInstructions(extension: ExtensionWithConfigs): string {
   return `
     <div class="installation-step">
-      <h4>📄 JSON Definition Installation (Recommended)</h4>
+      <h4 style="display: flex; align-items: center; gap: 8px;">
+        ${icons.file('icon')} JSON Definition Installation (Recommended)
+      </h4>
       <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px;">
         Gemini extensions work best with JSON manifest files
       </p>
@@ -360,7 +367,9 @@ function renderGeminiInstructions(extension: ExtensionWithConfigs): string {
     </div>
 
     <div class="installation-step">
-      <h4>📦 Full Plugin Installation (Advanced)</h4>
+      <h4 style="display: flex; align-items: center; gap: 10px;">
+        ${icons.package('icon')} Full Plugin Installation (Advanced)
+      </h4>
       <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 10px;">
         Only needed if you want to inspect or modify individual files
       </p>

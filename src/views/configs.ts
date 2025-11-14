@@ -1,5 +1,6 @@
 import { Config } from '../domain/types';
 import { layout } from './layout';
+import { icons } from './icons';
 
 // Helper function to render just the config list container (for HTMX partial updates)
 export function configListContainerPartial(
@@ -185,7 +186,9 @@ export function configDetailView(config: Config): string {
 
     ${isSlashCommand ? `
       <div class="card slide-up" style="margin-bottom: 20px; padding: 20px;">
-        <h3 style="margin-top: 0;">📋 Slash Command Analysis</h3>
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+          ${icons.clipboard('icon')} Slash Command Analysis
+        </h3>
         <ul style="margin-left: 20px; line-height: 1.8;">
           <li><strong>Requires arguments:</strong> ${config.has_arguments ? '<span class="status-indicator status-warning">Yes</span>' : '<span class="status-indicator status-success">No</span>'}</li>
           ${config.argument_hint ? `<li><strong>Argument hint:</strong> <code>${escapeHtml(config.argument_hint)}</code></li>` : ''}
@@ -206,8 +209,8 @@ export function configDetailView(config: Config): string {
           hx-swap="innerHTML"
           data-success-message="Analysis refreshed successfully"
           data-error-message="Failed to refresh analysis"
-          style="margin-top: 15px;">
-          🔄 Refresh Analysis
+          style="margin-top: 15px; display: inline-flex; align-items: center; gap: 8px;">
+          ${icons.refresh('icon')} Refresh Analysis
         </button>
         <span class="help-text" style="display: inline-block; margin-left: 10px;">
           Re-analyzes command for arguments and references
@@ -223,7 +226,9 @@ export function configDetailView(config: Config): string {
     <h3>Original Content</h3>
     <pre>${escapeHtml(config.content)}</pre>
 
-    <h3>🔄 Convert to Different Formats</h3>
+    <h3 style="display: flex; align-items: center; gap: 10px;">
+      ${icons.refresh('icon')} Convert to Different Formats
+    </h3>
     <div style="margin-bottom: 20px;">
       <button class="btn ripple" hx-get="/api/configs/${config.id}/format/claude_code" hx-target="#converted" hx-indicator="#convert-spinner">
         Claude Code
@@ -257,14 +262,17 @@ export function configDetailView(config: Config): string {
     <div id="cache-status"></div>
 
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <a href="/configs/${config.id}/edit" class="btn ripple">✏️ Edit</a>
+      <a href="/configs/${config.id}/edit" class="btn ripple" style="display: inline-flex; align-items: center; gap: 8px;">
+        ${icons.edit('icon')} Edit
+      </a>
       <a href="/configs" class="btn btn-secondary">← Back to List</a>
       <button
         class="btn btn-danger ripple"
         onclick="confirmAction('Are you sure you want to delete this config? This action cannot be undone.', () => {
           htmx.ajax('DELETE', '/api/configs/${config.id}', {target:'body', swap:'outerHTML'});
-        })">
-        🗑️ Delete
+        })"
+        style="display: inline-flex; align-items: center; gap: 8px;">
+        ${icons.trash('icon')} Delete
       </button>
     </div>
 
@@ -287,9 +295,9 @@ export function configDetailView(config: Config): string {
           evt.detail.target.innerHTML = \`
             <div class="card fade-in" style="margin-top: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0;">✅ Converted Content</h3>
-                <button class="btn btn-secondary copy-btn" onclick="copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this)">
-                  📋 Copy
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">${icons.checkCircle('icon')} Converted Content</h3>
+                <button class="btn btn-secondary copy-btn" onclick="copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this)" style="display: inline-flex; align-items: center; gap: 6px;">
+                  ${icons.clipboard('icon')} Copy
                 </button>
               </div>
               <pre style="margin: 0;">\${data.content}</pre>
@@ -331,7 +339,9 @@ export function configDetailView(config: Config): string {
 export function configCreateView(): string {
   const content = `
     <div class="fade-in">
-      <h2>✨ Add New Configuration</h2>
+      <h2 style="display: flex; align-items: center; gap: 12px;">
+        ${icons.sparkles('icon')} Add New Configuration
+      </h2>
       <div class="card" style="margin-top: 20px;">
         <form id="config-form" hx-post="/api/configs" hx-target="body" hx-swap="outerHTML">
           <div class="form-group">
@@ -423,7 +433,9 @@ export function configCreateView(): string {
 export function configEditView(config: Config): string {
   const content = `
     <div class="fade-in">
-      <h2>✏️ Edit Configuration</h2>
+      <h2 style="display: flex; align-items: center; gap: 12px;">
+        ${icons.edit('icon')} Edit Configuration
+      </h2>
       <div class="card" style="margin-top: 20px;">
         <form id="config-form" hx-put="/api/configs/${config.id}" hx-target="body" hx-swap="outerHTML">
           <div class="form-group">

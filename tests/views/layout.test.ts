@@ -38,17 +38,15 @@ describe('Layout View', () => {
 
       expect(html).toContain('<nav>');
       expect(html).toContain('href="/"');
-      expect(html).toContain('🏠');
       expect(html).toContain('Home');
       expect(html).toContain('href="/configs"');
-      expect(html).toContain('📝');
       expect(html).toContain('Configs');
       expect(html).toContain('href="/extensions"');
-      expect(html).toContain('📦');
       expect(html).toContain('Extensions');
       expect(html).toContain('href="/marketplaces"');
-      expect(html).toContain('🏪');
       expect(html).toContain('Marketplaces');
+      // Check for SVG icons instead of emojis
+      expect(html).toContain('<svg class="icon" viewBox="0 0 24 24">');
     });
 
     it('should include header with site title', () => {

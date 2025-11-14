@@ -1,5 +1,6 @@
 import { Config } from '../domain/types';
 import { layout } from './layout';
+import { icons } from './icons';
 
 // Helper to escape HTML
 function escapeHtml(text: string): string {
@@ -133,7 +134,7 @@ export function slashCommandConverterFormPartial(config: Config): string {
       <!-- Analysis info box (collapsible) -->
       <details class="card" style="margin-bottom: 20px; background: rgba(88, 166, 255, 0.05); border-left: 4px solid var(--accent-primary);" open>
         <summary style="cursor: pointer; padding: 15px; font-weight: 600; list-style: none; user-select: none;">
-          📋 Analysis Results
+          ${icons.clipboard('icon')} Analysis Results
           <span style="float: right; font-size: 0.875em; color: var(--text-secondary);">▼</span>
         </summary>
         <div style="padding: 0 15px 15px 15px;">
@@ -211,7 +212,7 @@ export function slashCommandConverterFormPartial(config: Config): string {
             class="btn ripple"
             hx-disabled-elt="this"
             data-loading-text="⏳ Converting...">
-            ✨ Convert Command
+            ${icons.sparkles('icon')} Convert Command
           </button>
           <div id="convert-progress" class="htmx-indicator" style="margin-left: 10px; display: inline-flex; align-items: center; gap: 8px;">
             <span class="spinner"></span>
@@ -310,7 +311,9 @@ export function slashCommandConversionResultPartial(
   return `
     <div class="card scale-in" style="border-left: 4px solid #3fb950;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0; color: #3fb950;">✅ Conversion Complete</h3>
+        <h3 style="margin: 0; color: #3fb950; display: flex; align-items: center; gap: 8px;">
+          ${icons.checkCircle('icon')} Conversion Complete
+        </h3>
         <span class="status-indicator status-success">
           <span class="status-dot"></span>
           Ready to use
@@ -319,7 +322,7 @@ export function slashCommandConversionResultPartial(
 
       <details class="card" style="margin-bottom: 20px; background: rgba(63, 185, 80, 0.05);">
         <summary style="cursor: pointer; padding: 15px; font-weight: 600; list-style: none; user-select: none;">
-          📊 Processing Summary
+          ${icons.barChart('icon')} Processing Summary
           <span style="float: right; font-size: 0.875em; color: var(--text-secondary);">▶</span>
         </summary>
         <div style="padding: 0 15px 15px 15px;">
@@ -347,7 +350,7 @@ export function slashCommandConversionResultPartial(
           class="btn btn-secondary copy-btn ripple"
           onclick="copyOutput()"
           style="margin-top: 15px;">
-          📋 Copy to Clipboard
+          ${icons.clipboard('icon')} Copy to Clipboard
         </button>
       </div>
     </div>
@@ -384,7 +387,7 @@ export function slashCommandNeedsInputPartial(
   return `
     <div class="card scale-in" style="border-left: 4px solid #d29922;">
       <div style="display: flex; align-items: flex-start; gap: 15px;">
-        <div style="font-size: 32px;">⚠️</div>
+        <div>${icons.warning('icon-lg')}</div>
         <div style="flex: 1;">
           <h3 style="margin: 0 0 10px 0; color: #d29922;">Arguments Required</h3>
           <p style="margin: 0 0 10px 0;">This command requires arguments. Please provide them in the form above and convert again.</p>
