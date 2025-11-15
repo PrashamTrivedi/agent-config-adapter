@@ -1,7 +1,6 @@
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { toReqRes, toFetchResponse } from 'fetch-to-node';
-import { createMCPServer } from './server';
-import { MCPContext } from './types';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /**
  * Handle MCP requests via Streamable HTTP transport
@@ -11,10 +10,13 @@ import { MCPContext } from './types';
  * and Node.js HTTP interfaces (required by MCP SDK)
  *
  * Stateless mode: No session management needed, each request is independent
+ *
+ * @param request - Incoming Web Request
+ * @param server - Pre-configured MCP server instance (with readonly or full access)
  */
 export async function handleMCPStreamable(
   request: Request,
-  env: MCPContext
+  server: McpServer
 ): Promise<Response> {
   try {
     // Convert Web Request to Node.js-compatible req/res objects
@@ -27,8 +29,7 @@ export async function handleMCPStreamable(
       enableJsonResponse: true
     });
 
-    // Create MCP server instance with environment bindings
-    const server = createMCPServer(env);
+    // Use the provided server instance (already configured with correct access mode)
 
     // Connect server to transport
     await server.connect(transport);
