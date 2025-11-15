@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { SubscriptionService } from '../services/subscription-service';
 import { EmailService } from '../services/email-service';
+import { subscriptionFormView } from '../views/subscriptions';
 
 type Bindings = {
   EMAIL_SUBSCRIPTIONS: KVNamespace;
@@ -17,6 +18,15 @@ function isValidEmail(email: string): boolean {
 }
 
 export const subscriptionsRouter = new Hono<{ Bindings: Bindings }>();
+
+/**
+ * GET /subscriptions/form
+ * Show subscription form (HTML view)
+ */
+subscriptionsRouter.get('/form', async (c) => {
+  const returnUrl = c.req.query('return');
+  return c.html(subscriptionFormView(returnUrl));
+});
 
 /**
  * POST /api/subscriptions/subscribe

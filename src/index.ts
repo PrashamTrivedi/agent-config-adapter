@@ -51,6 +51,34 @@ app.get('/', (c) => {
         </p>
       </div>
 
+      <!-- Public Access & Upload Notice -->
+      <div class="card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border: 2px solid var(--accent-primary); margin-bottom: 30px;">
+        <div style="text-align: center; padding: 20px;">
+          <h2 style="margin: 0 0 12px 0; color: var(--accent-primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
+            ${icons.star('icon')} Welcome to Agent Config Adapter
+          </h2>
+          <p style="font-size: 1.1em; color: var(--text-primary); margin: 0 0 16px 0; line-height: 1.6;">
+            Browse and explore <strong>configs</strong>, <strong>skills</strong>, and <strong>extensions</strong> for Claude Code, Gemini, and Codex agents.
+          </p>
+          <div style="display: inline-block; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 20px; margin-bottom: 16px;">
+            <p style="margin: 0; color: var(--text-primary);">
+              <strong>🚀 Coming Soon:</strong> User authentication & personal config management
+            </p>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+            <a href="/skills" class="btn ripple">
+              ${icons.star('icon')} Browse Skills
+            </a>
+            <a href="/configs" class="btn ripple">
+              ${icons.file('icon')} View Configs
+            </a>
+            <a href="/subscriptions/form" class="btn" style="background: var(--accent-primary); color: white;">
+              ${icons.mail('icon')} Get Upload Access
+            </a>
+          </div>
+        </div>
+      </div>
+
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
         <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
           ${icons.sparkles('icon')}

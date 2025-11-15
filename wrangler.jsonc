@@ -15,12 +15,22 @@
     {
       "binding": "CONFIG_CACHE",
       "id": "ede83b375aeb47e69d514c7ef0529da8"
+    },
+    {
+      "binding": "EMAIL_SUBSCRIPTIONS",
+      "id": "TBD" // Run: npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
     }
   ],
   "r2_buckets": [
     {
       "binding": "EXTENSION_FILES",
       "bucket_name": "agent-config-extension-files"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "destination_address": "admin-agent-config@prashamhtrivedi.app"
     }
   ],
   "vars": {
@@ -36,7 +46,10 @@
     "OPENAI_REASONING_MODE": "low",
 
     // Gemini Thinking Budget: "0" (disable) to "24576" (max), or "-1" (dynamic)
-    "GEMINI_THINKING_BUDGET": "0"
+    "GEMINI_THINKING_BUDGET": "0",
+
+    // Email Configuration
+    "ADMIN_EMAIL": "admin-agent-config@prashamhtrivedi.app"
   },
   "observability": {
     "logs": {
