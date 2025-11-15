@@ -184,11 +184,9 @@ export class GeminiProvider implements AIProvider {
 			})
 
 			const response = await this.client.models.generateContent({
-				model: 'gemini-2.5-flash',
+				model: 'gemini-2.5-pro',
 				contents: geminiMessages,
 				config: {
-					// NOTE: Disable thinking when using function calling to avoid conflicts
-					// thinkingConfig is incompatible with function calling in current SDK
 					httpOptions: {
 						baseUrl: this.baseUrl,
 						headers: {
@@ -196,7 +194,7 @@ export class GeminiProvider implements AIProvider {
 						},
 					},
 					thinkingConfig: {
-						thinkingBudget: THINKING_PRESETS.medium
+						thinkingBudget: THINKING_PRESETS.dynamic
 					},
 					systemInstruction: systemMessage?.content
 						? {

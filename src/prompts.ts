@@ -157,142 +157,63 @@ export function buildSlashCommandSystemPrompt(params: {
   availableSkills: string[]
 }): string {
   return `
+# Purpose
 
-<core_task>
-Convert Claude Code slash commands to standalone prompts with SURGICAL changes only:
-1. Remove YAML frontmatter
-2. Extract critical dependencies to external XML sections (preserve references in main prompt)
+Convert Claude Code slash commands to standalone prompts with SURGICAL changes only
 
-Output Format:
-- Main prompt (with references to skills/agents preserved)
-- Followed by XML sections for each extracted dependency
-</core_task>
+## Inputs
 
+You will be provided following inputs
 
-<sandbox_environment_context>
-The converted output will run in sandboxed environments that:
-- Only have codebase files available
-- Is ALWAYS IN git repositories checked out in clean state
-- Have limited network access
-- Have NO GitHub access (use git commands only)
-- Can Only read the checked out codebase.
-- User can not read any generated files unless pushed to the repo.
-
-Use this context and use these rules to generate outputs:
-- Remove any Github references.
-- Remove any content that deals with checking if the codebase is git repository and is clean. 
-    - Assume it will always be a clean git repository
-- Remove any content that asks user to checkout a branch, it will always be a new branch.
-- Remove any content that asks the user to read, review or doing anything where reading the generated file is requirement.
-    - Instead replace it with instructions to push the file and then asking user with mentioning the generated file is pushed for the user to review
-- Remove any references of accessing/reading external websites.
-</sandbox_environment_context>
-
-<available_agents_skills>
-
-**Available References in Database:**
-
-To reduce false positives when detecting references:
-
-Agents: ${params.availableAgents.join(', ')}
-Skills: ${params.availableSkills.join(', ')}.
-
-In prompts agents and skills are mentioned in specific markdown bold blocks (**agent-or-skill-name** or \`agebt-or-skill-name\`)
-</available_agents_skills>
-<frontmatter_removal>
-Strip everything between '-- -' markers at the start of the command.
-</frontmatter_removal>
+- The Claude Code Slash Command definition
+- Optional: User request 
 
 
-<argument_replacement>
-- Replace $ARGUMENTS with user arguments smartly. 
-- While handling repeatation or simple declarative way, simply write user arguments instead of the argument text
-</argument_replacement>
 
-<agent_skill_extraction>
-<decision_criteria>
-EXTRACT if: Command logic depends on it OR explicitly delegates to it
-OMIT if: Just a suggestion or optional reference
-</decision_criteria>
+### Tools
 
-<xml_output_format>
-When you decide to extract agent/skill content:
+You have access to \`read_configs\` tool which accepts a JSON in following shape
 
-1. **Keep reference in main prompt:**
-   - Original: "Use **conventional-commit** skill for commits"
-   - Main prompt: "Use **conventional-commit** skill for commits" (unchanged)
-   - Do NOT inline content into main prompt body
+[{name:configName, type: one of agent or skill}]
 
-2. **Add XML section AFTER main prompt:**
-   Format: \`<Skill-Conventional-Commit>content</Skill-Conventional-Commit>\`
+The tool will fetch the config of given type and return with exact content. If it doesn't it will return blank, indicating the absense of the config
 
+## Environment
 
-3. **Convert system prompt to user prompt in XML section:**
-   ✅ STRIP from XML content:
-   - YAML frontmatter (name, description, tools, color)
-   - "You are..." identity statements
-   - "You excel at..." capability declarations
-   - Any personality/expertise descriptions
+The converted prompt will run in a coding agent in a sandboxed environment. 
 
-   ✅ PRESERVE in XML content:
-   - ALL procedural content (## Process, steps, instructions)
-   - ALL markdown structure (headers, bold, lists)
-   - ALL output format specifications
-   - ALL behavioral guidance ("Be concise", "Focus on...")
-   - ALL examples and edge cases
+This is how sandbox works:
 
-   ✅ TRIM from XML content:
-   - Code examples (remove or simplify to 1-2 lines)
-   - Keep command references and command syntax
-   - Example: Remove full code blocks, keep "Run \`npm test\`" or "Use \`git status\`"
-</xml_output_format>
+## Environment
 
+The converted prompt will run in a coding agent in a sandboxed environment.
 
-</agent_skill_extraction>
+This is how sandbox works:
+- Sandbox is a linux virtual machine or container with many development tools installed.
+- The coding agent has all the permissions to run the tool it has access to.
+- Sandbox works in a Checked out git repository, with a non-main branch and is always clean state.
+- Sandbox always in the codebase directory.
+- It works with terminal agent in Command line, and there is a chat intface to interact with the agent.
+- It does not have Github access or wider internet access. **Therefore, any tool, agent, skill, or command that requires network access (e.g., \`gh\`, \`curl\`, web search) is invalid and must be completely removed from the workflow.** The logic must be adapted to work with only the information provided by the user and the local file system.
+-  **Crucially, when a file is created for user review, the workflow must be: 1. Write the file. 2. commit, and push the file. 3. Announce that the file is ready for review in the branch.The prompt must NOT instruct the agent to display the file's contents in the chat.**
 
-<preservation_rules>
-CRITICAL: Keep original command as much as possible
+## Workflow
 
-✅ Preserve exactly in MAIN PROMPT:
-- Formatting: Bold (**text**), italics, code blocks, XML tags
-- Structure: Step numbering, headers, bullet nesting
-- Tone: Formal/casual/funny - maintain voice
-- Emphasis: IMPORTANT, NEVER, ALWAYS - keep them
-- Personality: Jokes, quotes, cultural references
-- Details: Examples, edge cases, validation formats
-- Agent/skill references: Keep "use **agent-name** agent" as is
+    - Read given slash command content
+      - Check out $ARGUMENTS, replace smartly with user provided arguments
+        - Rewrite or remove any references which are invalid with the sandbox
+          - Call the tool and add the content of Agents or skill in their respective XML section after converted prompt. 
+    - Strip out frontmater from the agent and skill definition.
+    - For XML tags, follow this format < Agent / Skill - Kebab - Case - Name - Of - Agent >
+    - Strip out frontmatter from the prompt
 
-❌ Only modify in MAIN PROMPT:
-- Frontmatter (remove)
-- $ARGUMENT in execution contexts (replace smartly in context)
-- Nothing else in main prompt
+## Conversion rules
 
-✅ In XML SECTIONS (extracted agent/skill content):
-- Strip system prompt identity ("You are...")
-- Preserve all procedural content and structure
-- Trim code examples to command syntax only
-- Keep all behavioral guidance and output formats
-</preservation_rules>
+    - Preserve formatting, structure, tone, personality, emphasis and details from slash command.
+- Preserve workflows, structure, procedural content
+    - When injecting Agent or Skill content, you ** MUST ** remove persona - defining phrases like "You are...", "Your role is...", "Act as...".The content should state the purpose directly, not assign a persona.
 
-<tool_usage_instructions>
-CRITICAL: When you need to fetch agent or skill content, you MUST use the read_configs function tool.
-
-How to use the tool:
-- Provide an array of references to fetch
-- Each reference needs: name (string) and type ("agent" or "skill")
-- The tool will return the actual content from the database
-- DO NOT generate or guess the content - ALWAYS fetch it using the tool
-
-When to call the tool:
-- When you identify agent/skill references that need extraction
-- Before generating the final XML sections
-- To get the actual content for conversion
-
-After receiving tool results:
-- Use the returned content to populate XML sections
-- Apply the conversion rules (strip identity, preserve procedures)
-- Output the final converted prompt with XML sections
-</tool_usage_instructions>`
+`
 }
 
 /**
