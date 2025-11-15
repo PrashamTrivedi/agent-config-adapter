@@ -83,61 +83,16 @@ npx wrangler secret put AI_GATEWAY_TOKEN
 
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
-- `src/infrastructure/` - D1, KV, R2, AI services
-  - `src/infrastructure/ai/` - **Multi-Provider AI Infrastructure** (NEW)
-    - `types.ts` - AIProvider interface and shared types
-    - `openai-provider.ts` - OpenAI GPT-5-Mini with reasoning_effort parameter
-    - `gemini-provider.ts` - Google Gemini 2.5 Flash with thinking budgets
-    - `provider-factory.ts` - Multi-provider management with auto fallback
-- `src/services/` - Business logic layer
-  - ConfigService, ConversionService (for configs) - **Updated for multi-provider**
-  - SkillsService, SkillZipService (for multi-file skills)
-  - ExtensionService, MarketplaceService (for bundling)
-  - ManifestService (platform-specific manifests)
-  - FileGenerationService, ZipGenerationService (plugin files)
-  - Shared between REST API routes and MCP server tools
-  - Ensures consistent behavior across interfaces
+- `src/infrastructure/` - D1, KV, R2, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
+- `src/services/` - Business logic (shared between REST API and MCP server)
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers (configs, skills, extensions, marketplaces, plugins, files)
-- `src/mcp/` - MCP server implementation (server, transport, types)
-  - Exposes 6 tools, 1 resource, 3 prompts
-  - Uses Streamable HTTP transport for Cloudflare Workers
-- `src/views/` - HTMX server-rendered templates (configs, skills, extensions, marketplaces, plugin browser)
+- `src/routes/` - Hono REST HTTP handlers
+- `src/mcp/` - MCP server (6 tools, 3 resources, 3 prompts)
+- `src/views/` - HTMX server-rendered templates (Neural Lab design)
 
-**Conversion Flow**: AI-first with automatic fallback to rule-based conversion. Returns metadata tracking which method was used (provider, model, tokens, cost, duration).
+**Conversion Flow**: AI-first with automatic fallback to rule-based conversion.
 
-**Multi-Provider AI Architecture**:
-- **Supported Providers**: OpenAI (GPT-5-Mini), Google Gemini (2.5 Flash)
-- **Provider Selection**: `auto` (prefer Gemini 15x cheaper, fallback to OpenAI), `openai`, or `gemini`
-- **AI Gateway Integration**: ALL requests route through Cloudflare AI Gateway in both local dev and production
-  - Benefits: Logging, analytics, caching, rate limiting, cost tracking
-  - Works transparently with both authentication modes
-- **Authentication Modes**:
-  - **Local Development**: Direct API keys (OPENAI_API_KEY, GEMINI_API_KEY in .dev.vars)
-    - Keys passed through AI Gateway to providers
-    - You get full AI Gateway benefits even in local dev
-  - **Production BYOK**: Provider keys stored in Cloudflare Dashboard
-    1. Store provider API keys: Cloudflare Dashboard → AI Gateway → Provider Keys (ONE-TIME)
-    2. Worker authenticates to AI Gateway using `AI_GATEWAY_TOKEN` (cf-aig-authorization header)
-    3. AI Gateway retrieves provider keys from Cloudflare Secrets Store at runtime
-    4. AI Gateway forwards requests to OpenAI/Google with stored keys
-    5. Billing goes directly to YOUR provider accounts (OpenAI/Google)
-- **Advanced Features**:
-  - OpenAI: Reasoning modes (high/medium/low/minimal) - controlled via `reasoning_effort` API parameter on base model `gpt-5-mini`
-  - Gemini: Thinking budgets (0-24576 tokens or dynamic) - reserved for future SDK support
-  - Backend logging of AI responses with metadata (provider, model, tokens, cost, duration)
-- **Gemini Provider Implementation**:
-  - Proper system message handling using `systemInstruction` field (not in contents array)
-  - Tool/function response messages converted to Gemini's `functionResponse` format
-  - Schema conversion from OpenAI format (lowercase) to Gemini format (uppercase types)
-  - Empty message filtering to avoid malformed requests
-  - Function call support with multi-turn conversations
-  - `toolConfig` with `functionCallingConfig` mode set to `AUTO` for proper function calling
-  - MALFORMED_FUNCTION_CALL error detection and detailed logging
-  - Explicit tool usage instructions in system prompts to prevent code generation instead of function calls
-- **Security**: Provider keys NEVER in Worker code; local dev keys in .dev.vars (gitignored), production keys in AI Gateway only
-
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `AI_GATEWAY_TOKEN` (secret - production only), `ACCOUNT_ID` (var), `GATEWAY_ID` (var), `AI_PROVIDER` (var), `OPENAI_REASONING_MODE` (var), `GEMINI_THINKING_BUDGET` (var)
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`
 
 ## API Endpoints
 
@@ -161,17 +116,11 @@ GET    /api/slash-commands/:id             Get specific slash command with metad
 POST   /api/slash-commands/:id/convert     Convert slash command (body: { "userArguments": "optional" })
 ```
 
-**Slash Command Converter Notes:**
-- Uses proactive analysis with pre-computed metadata (computed on create/update)
-- Lazy analysis available for existing configs (analyzed on first access)
-- Returns `convertedContent`, `needsUserInput`, and full analysis metadata
-- Metadata includes: `has_arguments`, `argument_hint`, `agent_references`, `skill_references`, `analysis_version`
-- **Reference Inlining**: Fetches agent/skill references from D1 database during conversion
-  - Uses ConfigService.listConfigs() with smart matching (exact name preferred, falls back to partial match)
-  - Inlines actual content instead of placeholders
-  - AI determines which references to inline vs omit based on command logic
-  - Handles missing references gracefully with clear error messages
-- Frontend UI fully implemented with search and refresh capabilities
+**Slash Command Converter Features:**
+- Pre-computed metadata for fast lookups
+- Reference inlining (agents/skills)
+- Smart matching with fallback
+- Frontend UI with search and refresh
 
 ### REST API - Skills
 ```
@@ -232,13 +181,6 @@ GET    /plugins/marketplaces/:marketplaceId/download?format=   Download all mark
 
 Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
 
-**Skills Management Notes:**
-- Skills support multi-file structure: one required SKILL.md file plus optional companion files
-- Gist-like editing interface with tab-based file management
-- ZIP upload/download preserves directory structure and companion files
-- Config interface automatically redirects skill-type configs to skills interface
-- Companion files stored in R2 at `skills/{skill_id}/files/{file_path}`
-
 ### MCP Server
 ```
 POST   /mcp                            MCP JSON-RPC endpoint (Streamable HTTP transport)
@@ -247,7 +189,7 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 
 **MCP Capabilities**:
 - **6 Tools**: create_config, update_config, delete_config, get_config, convert_config, invalidate_cache
-- **1 Resource**: config://list (lists all configs)
+- **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
 - **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
 
 **MCP Client Config**:

@@ -1,19 +1,19 @@
-# Adapters
+# Format Adapters
 
-Format converters for transforming configurations between different agent formats.
+Format-specific parsing and conversion logic. NO business logic or infrastructure dependencies.
 
 ## Conversion Strategy
 
-- **AI-first with fallback**: `AIEnhancedAdapter` wraps base adapters, tries AI conversion first, falls back to rule-based
-- **MCP configs skip AI**: Rule-based only for accurate structured data transformation
-- All conversions must preserve semantic meaning
+- **AI-first with fallback**: Tries AI conversion first, falls back to rule-based
+- **MCP configs skip AI**: Rule-based only for accurate structured data
+- All conversions preserve semantic meaning
 - Return metadata: `{content, usedAI, fallbackUsed}`
 
 ## Implemented Adapters
 
-- **SlashCommandAdapter**: AI-enhanced conversion for slash commands
-- **MCPConfigAdapter**: Rule-based conversion for MCP configurations (no AI)
-- **PassthroughAdapter**: No conversion (agent definitions only)
+- **SlashCommandAdapter**: Slash commands (AI-enhanced)
+- **MCPConfigAdapter**: MCP configs (rule-based only)
+- **PassthroughAdapter**: Agent definitions and skills (MVP)
 
 ## Format Specifications
 
