@@ -183,16 +183,34 @@ Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces`
 
 ### MCP Server
 ```
-POST   /mcp                            MCP JSON-RPC endpoint (Streamable HTTP transport)
-GET    /mcp/info                       Server info and capabilities (HTML/JSON)
+POST   /mcp                            Public MCP endpoint (read-only, NO auth required)
+POST   /mcp/admin                      Admin MCP endpoint (full access, token-protected)
+GET    /mcp/info                       Server info page (ONLY shows public endpoint)
 ```
 
-**MCP Capabilities**:
-- **6 Tools**: create_config, update_config, delete_config, get_config, convert_config, invalidate_cache
-- **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
-- **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+**Access Control** (Temporary until full user auth):
+- **Public endpoint (`/mcp`)**: Read-only access, no authentication required
+  - **1 Tool**: get_config
+  - **Resources**: config://list (all resources available)
+  - **Prompts**: None (prompts describe write workflows)
+
+- **Admin endpoint (`/mcp/admin`)**: Full access, Bearer token authentication
+  - **6 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache
+  - **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
+  - **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+  - **Auth**: Requires `Authorization: Bearer <token>` header with valid admin token
+  - **Token validation**: SHA-256 hash comparison against `MCP_ADMIN_TOKEN_HASH` secret
+
+**⚠️ IMPORTANT - Security by Obscurity**:
+- Admin endpoint (`/mcp/admin`) is **UNDOCUMENTED in public UI**
+- NOT shown on `/mcp/info` page
+- NOT mentioned in README or public documentation
+- ONLY documented here in CLAUDE.md (internal project docs)
+- Only team members with token should know about admin endpoint
 
 **MCP Client Config**:
+
+Public (read-only):
 ```json
 {
   "mcpServers": {
@@ -202,6 +220,36 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
     }
   }
 }
+```
+
+Admin (full access):
+```json
+{
+  "mcpServers": {
+    "agent-config-adapter-admin": {
+      "type": "http",
+      "url": "http://localhost:8787/mcp/admin",
+      "headers": {
+        "Authorization": "Bearer YOUR_ADMIN_TOKEN"
+      }
+    }
+  }
+}
+```
+
+Token setup:
+```bash
+# Generate token hash for local dev
+tsx scripts/hash-token.ts "test-admin-token-123"
+
+# Add to .dev.vars
+MCP_ADMIN_TOKEN_HASH=bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721
+
+# For production - generate strong token
+tsx scripts/hash-token.ts "$(openssl rand -hex 32)"
+
+# Set as Worker secret
+npx wrangler secret put MCP_ADMIN_TOKEN_HASH
 ```
 
 ## Testing
@@ -215,9 +263,14 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 - All tests must pass before committing
 
 ### MCP Testing
-- Test MCP tools via `/mcp` endpoint
-- Use `GET /mcp/info` to verify server capabilities
-- Test workflows using prompts (migrate_config_format, batch_convert, sync_config_versions)
+- Test public MCP endpoint via `/mcp` (read-only, no auth)
+- Test admin MCP endpoint via `/mcp/admin` (requires Bearer token)
+- Use `GET /mcp/info` to verify public endpoint capabilities
+- Test read operations on public endpoint (should succeed)
+- Test write operations on public endpoint (should fail - tool not found)
+- Test write operations on admin endpoint with valid token (should succeed)
+- Test admin endpoint without token (should return 401)
+- Test workflows using prompts on admin endpoint (migrate_config_format, batch_convert, sync_config_versions)
 
 ### CI/CD Testing
 - GitHub Actions workflow (`.github/workflows/test-coverage.yml`) runs on all pushes and PRs
