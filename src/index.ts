@@ -9,6 +9,8 @@ import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
+import { createMCPServer } from './mcp/server';
+import { validateMCPAdminToken } from './mcp/auth';
 
 type Bindings = {
   DB: D1Database;
@@ -28,6 +30,10 @@ type Bindings = {
   // API Keys for Local Development (still routes through AI Gateway)
   OPENAI_API_KEY?: string; // For local dev
   GEMINI_API_KEY?: string; // For local dev
+
+  // MCP Admin Token (SHA-256 hash)
+  // Temporary security measure until full user auth is implemented
+  MCP_ADMIN_TOKEN_HASH?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -148,11 +154,44 @@ app.route('/slash-commands', slashCommandConverterRouter);
 app.route('/plugins', pluginsRouter);
 
 // MCP Server endpoints
+
+// Public MCP server (read-only access, NO authentication required)
 app.post('/mcp', async (c) => {
-  return handleMCPStreamable(c.req.raw, c.env);
+  const server = createMCPServer(c.env, 'readonly');
+  return handleMCPStreamable(c.req.raw, server);
+});
+
+// Admin MCP server (full access, token-protected)
+// NOTE: This endpoint is UNDOCUMENTED and SECRET (not shown in /mcp/info)
+// Only for internal team use until full user auth is implemented
+app.post('/mcp/admin', async (c) => {
+  // Validate admin token
+  const isValid = await validateMCPAdminToken(
+    c.req.raw,
+    c.env.MCP_ADMIN_TOKEN_HASH
+  );
+
+  if (!isValid) {
+    return c.json(
+      {
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32001,
+          message: 'Unauthorized: Valid admin token required'
+        }
+      },
+      401
+    );
+  }
+
+  const server = createMCPServer(c.env, 'full');
+  return handleMCPStreamable(c.req.raw, server);
 });
 
 // MCP Server info endpoint
+// NOTE: This endpoint ONLY documents the public read-only endpoint
+// Admin endpoint (/mcp/admin) is SECRET and undocumented
 app.get('/mcp/info', (c) => {
   const accept = c.req.header('Accept') || '';
 
@@ -162,27 +201,18 @@ app.get('/mcp/info', (c) => {
     description: 'Universal configuration adapter for AI coding agents',
     transport: 'streamable-http',
     endpoint: '/mcp',
+    access: 'Public read-only',
     capabilities: {
       tools: [
-        'create_config - Create a new agent configuration',
-        'update_config - Update an existing configuration',
-        'delete_config - Delete a configuration',
-        'invalidate_cache - Invalidate cached format conversions',
-        'convert_config - Convert config to different format (on-demand, with caching)'
+        'get_config - Get a single configuration by ID'
       ],
       resources: [
-        'config://list - List all configurations from database',
-        'config://{configId} - Get single configuration from database',
-        'config://{configId}/cached/{format} - Get cached conversion (null if not cached, pure read only)'
+        'config://list - List all configurations from database'
       ],
-      prompts: [
-        'migrate_config_format - Migrate configuration between agent formats',
-        'batch_convert - Bulk convert multiple configs to target format',
-        'sync_config_versions - Synchronize cached format conversions'
-      ]
+      prompts: []
     },
     usage: {
-      connection: 'POST requests to /mcp endpoint',
+      connection: 'POST requests to /mcp endpoint (no authentication required)',
       example_client_config: {
         mcpServers: {
           'agent-config-adapter': {
@@ -193,9 +223,9 @@ app.get('/mcp/info', (c) => {
       }
     },
     documentation: {
-      resources_behavior: 'Resources are pure reads (no conversion processing)',
-      tools_behavior: 'Tools perform operations with side effects (conversions, cache updates)',
-      prompts_workflow: 'Prompts provide guided workflows for complex operations'
+      access_level: 'Public read-only access (no write operations)',
+      resources_behavior: 'Resources provide context data for AI agents',
+      tools_behavior: 'Only read operations are available on public endpoint'
     }
   };
 
@@ -245,11 +275,22 @@ app.get('/mcp/info', (c) => {
         </div>
       </div>
 
+      <!-- Access Level Notice -->
+      <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+        <h3 style="margin: 0 0 12px 0; color: white; display: flex; align-items: center; gap: 8px;">
+          ${icons.shield('icon')} Access Level
+        </h3>
+        <p style="margin: 0; font-size: 0.95em; opacity: 0.95;">
+          This is the <strong>public read-only</strong> MCP endpoint. Only read operations are available.
+          Write operations require admin access (internal use only).
+        </p>
+      </div>
+
       <!-- Tools -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
           ${icons.wrench('icon')}
-          <span>Tools (Write Operations)</span>
+          <span>Tools (Read-Only Operations)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
           ${mcpInfo.capabilities.tools.map(tool => `
@@ -264,7 +305,7 @@ app.get('/mcp/info', (c) => {
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
           ${icons.book('icon')}
-          <span>Resources (Pure Read Operations)</span>
+          <span>Resources (Context Data)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
           ${mcpInfo.capabilities.resources.map(res => `
@@ -275,6 +316,7 @@ app.get('/mcp/info', (c) => {
         </div>
       </div>
 
+      ${mcpInfo.capabilities.prompts.length > 0 ? `
       <!-- Prompts -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
@@ -288,7 +330,7 @@ app.get('/mcp/info', (c) => {
             </div>
           `).join('')}
         </div>
-      </div>
+      </div>` : ''}
 
       <!-- Client Connection -->
       <div class="card slide-up" style="margin-bottom: 24px;">
