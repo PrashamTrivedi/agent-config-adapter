@@ -6,6 +6,7 @@ import { skillsRouter } from './routes/skills';
 import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
+import { subscriptionsRouter } from './routes/subscriptions';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
@@ -14,6 +15,7 @@ type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
   EXTENSION_FILES: R2Bucket;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
 
   // Cloudflare Configuration
   ACCOUNT_ID: string;
@@ -28,6 +30,10 @@ type Bindings = {
   // API Keys for Local Development (still routes through AI Gateway)
   OPENAI_API_KEY?: string; // For local dev
   GEMINI_API_KEY?: string; // For local dev
+
+  // Email Configuration
+  EMAIL: any; // Cloudflare send_email binding
+  ADMIN_EMAIL: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -136,6 +142,7 @@ app.route('/api/marketplaces', marketplacesRouter);
 app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 app.route('/api/slash-commands', slashCommandConverterRouter);
+app.route('/api/subscriptions', subscriptionsRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
@@ -143,6 +150,7 @@ app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
 app.route('/skills', skillsRouter);
 app.route('/slash-commands', slashCommandConverterRouter);
+app.route('/subscriptions', subscriptionsRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);

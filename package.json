@@ -9,6 +9,7 @@
     "fetch-to-node": "^2.1.0",
     "fflate": "^0.8.2",
     "hono": "^4.9.10",
+    "mimetext": "^3.0.27",
     "nanoid": "^3.3.11",
     "openai": "^6.3.0",
     "smol-toml": "^1.4.2",
