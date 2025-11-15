@@ -245,8 +245,8 @@ jobs:
 
           # Check if README has coverage badge
           if grep -q "!\[Coverage\]" README.md; then
-            # Replace existing badge line
-            sed -i "s|!\[Coverage\].*|${BADGE_MARKDOWN}|" README.md
+            # Replace existing badge line (match full markdown link pattern)
+            sed -i "s|\[!\[Coverage\].*\](.*)|${BADGE_MARKDOWN}|" README.md
           else
             # Insert badge after title (line 1) and empty line (line 2), so on line 3
             sed -i "3i ${BADGE_MARKDOWN}" README.md
