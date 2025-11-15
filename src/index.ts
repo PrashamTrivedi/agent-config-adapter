@@ -6,6 +6,7 @@ import { skillsRouter } from './routes/skills';
 import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
+import { subscriptionsRouter } from './routes/subscriptions';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
@@ -14,6 +15,7 @@ type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
   EXTENSION_FILES: R2Bucket;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
 
   // Cloudflare Configuration
   ACCOUNT_ID: string;
@@ -28,6 +30,10 @@ type Bindings = {
   // API Keys for Local Development (still routes through AI Gateway)
   OPENAI_API_KEY?: string; // For local dev
   GEMINI_API_KEY?: string; // For local dev
+
+  // Email Configuration
+  EMAIL: any; // Cloudflare send_email binding
+  ADMIN_EMAIL: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -43,6 +49,34 @@ app.get('/', (c) => {
         <p style="font-size: 1.15em; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6;">
           Universal adapter for AI coding agent configurations. Store once, deploy everywhere.
         </p>
+      </div>
+
+      <!-- Public Access & Upload Notice -->
+      <div class="card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border: 2px solid var(--accent-primary); margin-bottom: 30px;">
+        <div style="text-align: center; padding: 20px;">
+          <h2 style="margin: 0 0 12px 0; color: var(--accent-primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
+            ${icons.star('icon')} Welcome to Agent Config Adapter
+          </h2>
+          <p style="font-size: 1.1em; color: var(--text-primary); margin: 0 0 16px 0; line-height: 1.6;">
+            Browse and explore <strong>configs</strong>, <strong>skills</strong>, and <strong>extensions</strong> for Claude Code, Gemini, and Codex agents.
+          </p>
+          <div style="display: inline-block; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 20px; margin-bottom: 16px;">
+            <p style="margin: 0; color: var(--text-primary);">
+              <strong>🚀 Coming Soon:</strong> User authentication & personal config management
+            </p>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+            <a href="/skills" class="btn ripple">
+              ${icons.star('icon')} Browse Skills
+            </a>
+            <a href="/configs" class="btn ripple">
+              ${icons.file('icon')} View Configs
+            </a>
+            <a href="/subscriptions/form" class="btn" style="background: var(--accent-primary); color: white;">
+              ${icons.mail('icon')} Get Upload Access
+            </a>
+          </div>
+        </div>
       </div>
 
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
@@ -136,6 +170,7 @@ app.route('/api/marketplaces', marketplacesRouter);
 app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 app.route('/api/slash-commands', slashCommandConverterRouter);
+app.route('/api/subscriptions', subscriptionsRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
@@ -143,6 +178,7 @@ app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
 app.route('/skills', skillsRouter);
 app.route('/slash-commands', slashCommandConverterRouter);
+app.route('/subscriptions', subscriptionsRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);

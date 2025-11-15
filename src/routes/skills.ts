@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
+import { emailGateMiddleware } from '../middleware/email-gate';
 
 type Bindings = {
   DB: D1Database;
   EXTENSION_FILES: R2Bucket;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
 };
 
 export const skillsRouter = new Hono<{ Bindings: Bindings }>();
@@ -86,8 +88,8 @@ skillsRouter.post('/', async (c) => {
   }
 });
 
-// Upload skill from ZIP
-skillsRouter.post('/upload-zip', async (c) => {
+// Upload skill from ZIP (protected by email gate)
+skillsRouter.post('/upload-zip', emailGateMiddleware, async (c) => {
   const contentType = c.req.header('Content-Type') || '';
 
   if (!contentType.includes('multipart/form-data')) {
@@ -182,8 +184,8 @@ skillsRouter.get('/:id/files', async (c) => {
   }
 });
 
-// Upload companion file(s)
-skillsRouter.post('/:id/files', async (c) => {
+// Upload companion file(s) (protected by email gate)
+skillsRouter.post('/:id/files', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
   const contentType = c.req.header('Content-Type') || '';
 

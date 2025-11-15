@@ -303,3 +303,11 @@ export interface SlashCommandConversionResult {
   needsUserInput: boolean;  // True if arguments required but not provided
   analysis: SlashCommandAnalysis;  // Pre-computed analysis
 }
+
+// Email subscription types
+export interface SubscriptionRecord {
+  email: string;
+  projectName: 'agentConfig';
+  subscribedAt: string;  // ISO datetime
+  ipAddress?: string;
+}

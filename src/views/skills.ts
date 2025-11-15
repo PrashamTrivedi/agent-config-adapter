@@ -336,6 +336,18 @@ export function skillCreateView(): string {
 
       <!-- ZIP Upload Tab -->
       <div id="tab-upload" class="tab-content card scale-in" style="display: none;">
+        <!-- Email Subscription Notice -->
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 1.3em;">⚡</div>
+          <div style="flex: 1;">
+            <strong style="color: var(--text-primary);">Upload Access Required</strong>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9em;">
+              Enter your email below to unlock uploads. <strong>Full user authentication coming soon!</strong>
+              <a href="/subscriptions/form?return=/skills/new" style="color: var(--accent-primary); text-decoration: underline;">Subscribe here</a>
+            </p>
+          </div>
+        </div>
+
         <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); padding: 16px; border-radius: 6px; margin-bottom: 20px;">
           <h4 style="margin: 0 0 8px 0; color: var(--accent-primary); display: flex; align-items: center; gap: 10px;">
             ${icons.package('icon')} ZIP Upload Requirements
@@ -347,7 +359,24 @@ export function skillCreateView(): string {
           </ul>
         </div>
 
-        <form hx-post="/api/skills/upload-zip" hx-encoding="multipart/form-data">
+        <form
+          hx-post="/api/skills/upload-zip"
+          hx-encoding="multipart/form-data"
+          hx-on::before-request="this.setAttribute('hx-headers', JSON.stringify({'X-Subscriber-Email': document.getElementById('zip-subscriber-email').value}))">
+          <div class="form-group">
+            <label for="zip-subscriber-email">Your Email *</label>
+            <input
+              type="email"
+              id="zip-subscriber-email"
+              name="subscriber_email"
+              required
+              placeholder="you@example.com">
+            <span class="help-text">
+              Required for upload access.
+              <a href="/subscriptions/form?return=/skills/new" style="color: var(--accent-primary); text-decoration: underline;">Subscribe here</a> if you don't have access.
+            </span>
+          </div>
+
           <div class="form-group">
             <label for="zip-name">Skill Name *</label>
             <input
@@ -447,6 +476,17 @@ export function skillCreateView(): string {
           void targetTab.offsetWidth;
           targetTab.classList.add('scale-in');
         }
+
+        // Auto-populate email from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+          const storedEmail = localStorage.getItem('subscriberEmail')
+          if (storedEmail) {
+            const emailInput = document.getElementById('zip-subscriber-email')
+            if (emailInput) {
+              emailInput.value = storedEmail
+            }
+          }
+        })
       </script>
     </div>
   `;

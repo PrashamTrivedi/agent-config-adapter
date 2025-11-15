@@ -1,16 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Hono } from 'hono';
 import { skillsRouter } from '../../src/routes/skills';
-import { createMockD1Database, createMockR2Bucket } from '../test-utils';
+import { createMockD1Database, createMockR2Bucket, createMockKVNamespace } from '../test-utils';
 
 describe('Skills Routes', () => {
   let app: Hono;
   let mockDb: D1Database;
   let mockR2: R2Bucket;
+  let mockKV: KVNamespace;
+  const TEST_EMAIL = 'test@example.com';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockDb = createMockD1Database();
     mockR2 = createMockR2Bucket();
+    mockKV = createMockKVNamespace();
+
+    // Pre-populate KV with test subscription
+    await mockKV.put(TEST_EMAIL, JSON.stringify({
+      email: TEST_EMAIL,
+      projectName: 'agentConfig',
+      subscribedAt: new Date().toISOString(),
+    }));
 
     app = new Hono();
 
@@ -19,6 +29,7 @@ describe('Skills Routes', () => {
       c.env = {
         DB: mockDb,
         EXTENSION_FILES: mockR2,
+        EMAIL_SUBSCRIPTIONS: mockKV,
       } as any;
       await next();
     });
@@ -314,6 +325,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/upload-zip', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -324,7 +338,10 @@ describe('Skills Routes', () => {
     it('should return 400 if content type is not multipart/form-data', async () => {
       const req = new Request('http://localhost/upload-zip', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: JSON.stringify({}),
       });
 
@@ -338,6 +355,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/upload-zip', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -586,6 +606,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1/files', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -596,7 +619,10 @@ describe('Skills Routes', () => {
     it('should return 400 if content type is not multipart/form-data', async () => {
       const req = new Request('http://localhost/skill-1/files', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: JSON.stringify({}),
       });
 
@@ -609,6 +635,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1/files', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -630,6 +659,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/nonexistent/files', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -677,6 +709,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1/files', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
