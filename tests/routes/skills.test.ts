@@ -240,7 +240,10 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: JSON.stringify({
           name: 'Test Skill',
           type: 'skill',
@@ -270,6 +273,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/', {
         method: 'POST',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -280,7 +286,10 @@ describe('Skills Routes', () => {
     it('should return 400 for invalid skill data', async () => {
       const req = new Request('http://localhost/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: JSON.stringify({
           name: 'Test',
           type: 'slash_command', // Invalid type
@@ -395,7 +404,10 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: JSON.stringify({
           name: 'Updated Skill',
           content: '# Updated',
@@ -438,6 +450,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1', {
         method: 'PUT',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: formData,
       });
 
@@ -455,7 +470,10 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/nonexistent', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
         body: JSON.stringify({ name: 'Updated' }),
       });
 
@@ -483,6 +501,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1', {
         method: 'DELETE',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
       });
 
       const res = await app.request(req);
@@ -510,6 +531,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/nonexistent', {
         method: 'DELETE',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
       });
 
       const res = await app.request(req);
@@ -797,6 +821,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1/files/file-1', {
         method: 'DELETE',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
       });
 
       const res = await app.request(req);
@@ -815,6 +842,9 @@ describe('Skills Routes', () => {
 
       const req = new Request('http://localhost/skill-1/files/nonexistent', {
         method: 'DELETE',
+        headers: {
+          'X-Subscriber-Email': TEST_EMAIL,
+        },
       });
 
       const res = await app.request(req);
