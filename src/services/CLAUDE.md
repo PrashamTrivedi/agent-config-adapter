@@ -72,9 +72,30 @@ Business logic and service coordination. Shared by REST API and MCP server.
 - Plugin bundling
 - Extension/marketplace ZIPs
 
+### SubscriptionService
+- Email subscription management
+- KV-based storage (EMAIL_SUBSCRIPTIONS namespace)
+- Subscription verification for upload access
+- GDPR-compliant delete operations
+- Operations:
+  - `subscribe(email, ipAddress)`: Create new subscription
+  - `isSubscribed(email)`: Verify subscription status
+  - `getSubscription(email)`: Retrieve subscription record
+  - `listSubscriptions(cursor)`: Admin-only pagination
+  - `deleteSubscription(email)`: GDPR compliance
+
+### EmailService
+- Cloudflare Email Routing integration
+- Admin notifications via send_email binding
+- HTML email composition using mimetext
+- Email types:
+  - Subscription notifications (to admin)
+  - Welcome emails (to subscriber, optional)
+- Neural Lab design-themed email templates
+
 ## Service Patterns
 
 - **Shared logic**: Services used by both REST API routes and MCP tools
 - **Consistent behavior**: Same operations via REST or MCP
 - **Separation**: Business logic isolated from HTTP/protocol layers
-- **Coordination**: Services orchestrate infrastructure (DB, cache, AI, R2)
+- **Coordination**: Services orchestrate infrastructure (DB, cache, AI, R2, Email Routing)

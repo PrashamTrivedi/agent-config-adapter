@@ -21,6 +21,7 @@ npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_re
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0004_add_extensions_and_marketplaces.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0005_add_skill_config_type.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0006_add_skill_files.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0007_add_slash_command_metadata.sql
 
 # Load sample data
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
@@ -67,8 +68,11 @@ npm run deploy
 # First-time setup
 npx wrangler d1 create agent-config-adapter
 npx wrangler kv:namespace create CONFIG_CACHE
+npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
 npx wrangler r2 bucket create agent-config-extension-files
 # Update IDs in wrangler.jsonc
+# Configure Email Routing in Cloudflare Dashboard
+# Update send_email binding and ADMIN_EMAIL in wrangler.jsonc
 
 # PRODUCTION BYOK Setup:
 # 1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
@@ -83,16 +87,17 @@ npx wrangler secret put AI_GATEWAY_TOKEN
 
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
-- `src/infrastructure/` - D1, KV, R2, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
-- `src/services/` - Business logic (shared between REST API and MCP server)
+- `src/infrastructure/` - D1, KV, R2, Email Routing, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
+- `src/services/` - Business logic (shared between REST API and MCP server, includes SubscriptionService and EmailService)
+- `src/middleware/` - Request middleware (email gating for upload protection)
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers
+- `src/routes/` - Hono REST HTTP handlers (includes subscriptions routes)
 - `src/mcp/` - MCP server (6 tools, 3 resources, 3 prompts)
-- `src/views/` - HTMX server-rendered templates (Neural Lab design)
+- `src/views/` - HTMX server-rendered templates (Neural Lab design, includes subscription form)
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion.
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EMAIL_SUBSCRIPTIONS` (KV), `EXTENSION_FILES` (R2), `EMAIL` (send_email), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`, `ADMIN_EMAIL`
 
 ## API Endpoints
 
@@ -127,17 +132,19 @@ POST   /api/slash-commands/:id/convert     Convert slash command (body: { "userA
 GET    /api/skills                     List all skills
 GET    /api/skills/:id                 Get skill with companion files
 POST   /api/skills                     Create skill (JSON or form-data)
-POST   /api/skills/upload-zip          Create skill from ZIP upload
+POST   /api/skills/upload-zip          Create skill from ZIP upload (email gated)
 PUT    /api/skills/:id                 Update skill metadata/content
 DELETE /api/skills/:id                 Delete skill and all companion files
 
 GET    /api/skills/:id/files           List all companion files
-POST   /api/skills/:id/files           Upload companion file(s)
+POST   /api/skills/:id/files           Upload companion file(s) (email gated)
 GET    /api/skills/:id/files/:fileId   Download companion file
 DELETE /api/skills/:id/files/:fileId   Delete companion file
 
 GET    /api/skills/:id/download        Download skill as ZIP with all files
 ```
+
+**Email Gating**: Upload endpoints require `X-Subscriber-Email` header with subscribed email.
 
 ### REST API - Extensions
 ```
@@ -179,6 +186,20 @@ GET    /plugins/marketplaces/:marketplaceId/gemini/definition  Download marketpl
 GET    /plugins/marketplaces/:marketplaceId/download?format=   Download all marketplace plugins as ZIP
 ```
 
+### REST API - Subscriptions
+```
+GET    /subscriptions/form                 Show subscription form (HTML) with optional return URL
+POST   /api/subscriptions/subscribe        Subscribe email (stores in KV, sends admin notification)
+GET    /api/subscriptions/verify/:email    Check if email is subscribed
+GET    /api/subscriptions/verify?email=    Alternative verification endpoint
+```
+
+**Email Subscription Flow**:
+1. User submits email via `/subscriptions/form` or API
+2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
+3. Admin notification sent via Cloudflare Email Routing
+4. User can access upload endpoints with `X-Subscriber-Email` header
+
 Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
 
 ### MCP Server
@@ -209,8 +230,9 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 - Use Vitest for all tests
 - Test adapter conversion logic (critical)
 - Test D1 and KV operations
-- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService)
-- Test routes layer (configs, skills, extensions, marketplaces)
+- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService, SubscriptionService, EmailService)
+- Test routes layer (configs, skills, extensions, marketplaces, subscriptions)
+- Test middleware layer (email gating)
 - Test infrastructure layer (repositories, file storage)
 - All tests must pass before committing
 
@@ -227,8 +249,10 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 ## Configuration
 
 **wrangler.jsonc**: Uses JSONC format (comments allowed)
-- Update production database and KV IDs after creating resources
-- `nodejs_compat` flag required for nanoid, OpenAI SDK, Gemini SDK, and other Node.js modules
+- Update production database and KV IDs after creating resources (DB, CONFIG_CACHE, EMAIL_SUBSCRIPTIONS)
+- Configure `send_email` binding with admin email address
+- Set `ADMIN_EMAIL` in vars section
+- `nodejs_compat` flag required for nanoid, OpenAI SDK, Gemini SDK, mimetext, and other Node.js modules
 - Set `ACCOUNT_ID` and `GATEWAY_ID` in vars section
 - For production BYOK: Set `AI_GATEWAY_TOKEN` as a secret using wrangler CLI
 - For local dev: Set `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in .dev.vars (not as secrets)
@@ -258,12 +282,19 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
   - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
 - Plugin files are lazily generated and stored in R2
 - File generation is cached until invalidated
+- Email gating for upload protection:
+  - Upload endpoints require email subscription verification
+  - Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
+  - Admin notifications sent via Cloudflare Email Routing
+  - Prevents abuse while building user community
+  - Protected endpoints: `/api/skills/upload-zip`, `/api/skills/:id/files`
 
 ## MVP Limitations
 
 - Agent definitions use passthrough (no conversion yet)
 - Skills use passthrough (no conversion yet)
-- No authentication/authorization
+- Email gating for upload protection (simple subscription-based, no full authentication)
+- No user accounts or per-user config management
 - Extension and marketplace features not yet integrated with MCP tools
 - Skills features not yet integrated with MCP tools
 
