@@ -89,7 +89,7 @@ npx wrangler secret put AI_GATEWAY_TOKEN
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
 - `src/infrastructure/` - D1, KV, R2, Email Routing, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
 - `src/services/` - Business logic (shared between REST API and MCP server, includes SubscriptionService and EmailService)
-- `src/middleware/` - Request middleware (email gating for upload protection)
+- `src/middleware/` - Request middleware (email gating for all CUD operations)
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
 - `src/routes/` - Hono REST HTTP handlers (includes subscriptions routes)
 - `src/mcp/` - MCP server (6 tools, 3 resources, 3 prompts)
@@ -198,7 +198,7 @@ GET    /api/subscriptions/verify?email=    Alternative verification endpoint
 1. User submits email via `/subscriptions/form` or API
 2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
 3. Admin notification sent via Cloudflare Email Routing
-4. User can access upload endpoints with `X-Subscriber-Email` header
+4. User can access all CUD (Create, Update, Delete) endpoints with `X-Subscriber-Email` header
 
 Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
 
@@ -282,18 +282,23 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
   - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
 - Plugin files are lazily generated and stored in R2
 - File generation is cached until invalidated
-- Email gating for upload protection:
-  - Upload endpoints require email subscription verification
+- Email gating for all CUD operations:
+  - All Create, Update, Delete endpoints require email subscription verification
   - Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
   - Admin notifications sent via Cloudflare Email Routing
   - Prevents abuse while building user community
-  - Protected endpoints: `/api/skills/upload-zip`, `/api/skills/:id/files`
+  - Protected endpoints (26 total):
+    - Configs: POST /, PUT /:id, DELETE /:id, POST /:id/invalidate, POST /:id/refresh-analysis
+    - Skills: POST /, PUT /:id, DELETE /:id, POST /upload-zip, POST /:id/files, DELETE /:id/files/:fileId
+    - Extensions: POST /, PUT /:id, DELETE /:id, POST /:id/configs, POST /:id/configs/:configId, DELETE /:id/configs/:configId, POST /:id/invalidate
+    - Marketplaces: POST /, PUT /:id, DELETE /:id, POST /:id/extensions, POST /:id/extensions/:extensionId, DELETE /:id/extensions/:extensionId, POST /:id/invalidate
+    - Files/Plugins: POST /files/extensions/:extensionId, DELETE /files/:fileId, POST /plugins/:extensionId/:format/invalidate
 
 ## MVP Limitations
 
 - Agent definitions use passthrough (no conversion yet)
 - Skills use passthrough (no conversion yet)
-- Email gating for upload protection (simple subscription-based, no full authentication)
+- Email gating for all CUD operations (simple subscription-based, no full authentication)
 - No user accounts or per-user config management
 - Extension and marketplace features not yet integrated with MCP tools
 - Skills features not yet integrated with MCP tools

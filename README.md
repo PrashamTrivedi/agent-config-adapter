@@ -26,8 +26,9 @@ and MCP configs once, deploy across Codex, Gemini, and other agents.
   with format-specific downloads
 - 🔽 **Plugin Downloads**: Generate and serve plugins as ZIP files or JSON
   definitions for both Claude Code and Gemini
-- 📧 **Email Gating for Uploads**: Protect upload endpoints with email subscription
-  verification to prevent abuse and build user community
+- 📧 **Email Gating for CUD Operations**: Protect all Create, Update, Delete
+  endpoints (26 total) with email subscription verification to prevent abuse and
+  build user community
 - 🌐 **Claude Code Web Sync**: Automatically download and sync configurations
   from a ZIP file when running in Claude Code Web
 
