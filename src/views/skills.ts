@@ -655,7 +655,9 @@ export function skillEditView(skill: SkillWithFiles): string {
               </span>
             </div>
 
-            <button type="submit" class="btn ripple" data-success-message="File added successfully">
+            <button type="button" class="btn ripple"
+                    onclick="requireEmail(() => this.closest('form').requestSubmit())"
+                    data-success-message="File added successfully">
               <span style="font-size: 1.1em;">+</span> Add File
             </button>
           </form>
