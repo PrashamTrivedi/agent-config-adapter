@@ -1338,6 +1338,69 @@ export function layout(title: string, content: string): string {
       </head>
       <body>
         <div id="toast-container" class="toast-container"></div>
+
+        <!-- Email Gate Modal -->
+        <div id="email-gate-modal" class="modal-overlay" style="display: none;">
+          <div class="modal">
+            <div class="modal-header">
+              <h3 class="modal-title" style="display: flex; align-items: center; gap: 10px;">
+                ${icons.mail('icon')} Email Required
+              </h3>
+              <button class="btn btn-secondary" onclick="closeEmailGate()" style="padding: 4px 10px; margin: 0;">✕</button>
+            </div>
+            <div class="modal-body">
+              <div style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%); border-left: 4px solid var(--accent-primary); padding: 16px 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                  <div style="font-size: 1.5em;">🚀</div>
+                  <div>
+                    <h4 style="margin: 0 0 8px 0; color: var(--accent-primary); font-size: 1em;">
+                      User Login Coming Soon!
+                    </h4>
+                    <p style="margin: 0; color: var(--text-primary); line-height: 1.6; font-size: 0.9em;">
+                      We're building a full authentication system. When it's ready, you'll be able to securely create, update, and delete configurations.
+                    </p>
+                    <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.85em;">
+                      <strong>For now:</strong> Enter your email below to unlock access to create, edit, and delete operations.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <form id="email-gate-form" onsubmit="submitEmailGate(event)">
+                <div class="form-group">
+                  <label for="gate-email">Email Address *</label>
+                  <input
+                    type="email"
+                    id="gate-email"
+                    name="email"
+                    required
+                    placeholder="you@example.com"
+                    style="width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-primary); font-size: 1em;">
+                  <span class="help-text" style="display: block; margin-top: 6px; font-size: 0.85em; color: var(--text-secondary);">
+                    We'll verify this email address
+                  </span>
+                </div>
+
+                <div id="email-gate-result" style="margin-bottom: 16px;"></div>
+
+                <div style="display: flex; gap: 10px;">
+                  <button type="submit" class="btn ripple" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    ${icons.check('icon')} Continue
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="closeEmailGate()">Cancel</button>
+                </div>
+              </form>
+
+              <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-dim); text-align: center; font-size: 0.9em; color: var(--text-secondary);">
+                <p style="margin: 0;">
+                  Don't have access yet?
+                  <a href="/subscriptions/form" style="color: var(--accent-primary); text-decoration: underline;">Subscribe here</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <header>
           <div class="header-container">
             <a href="/" class="header-logo">
@@ -1640,6 +1703,176 @@ export function layout(title: string, content: string): string {
               }
             });
           };
+
+          // ===== EMAIL GATING SYSTEM =====
+          let pendingAction = null;
+
+          // Check if user has valid email subscription
+          window.hasValidEmail = function() {
+            const email = localStorage.getItem('subscriberEmail');
+            const subscribedAt = localStorage.getItem('subscribedAt');
+
+            if (!email || !subscribedAt) {
+              return false;
+            }
+
+            // Check if subscription is expired (30 days)
+            const expirationMs = 30 * 24 * 60 * 60 * 1000;
+            const isExpired = (new Date() - new Date(subscribedAt)) > expirationMs;
+
+            if (isExpired) {
+              localStorage.removeItem('subscriberEmail');
+              localStorage.removeItem('subscribedAt');
+              return false;
+            }
+
+            return true;
+          };
+
+          // Get stored email (returns null if not valid)
+          window.getStoredEmail = function() {
+            return window.hasValidEmail() ? localStorage.getItem('subscriberEmail') : null;
+          };
+
+          // Show email gate modal
+          window.showEmailGate = function(callback) {
+            pendingAction = callback;
+            const modal = document.getElementById('email-gate-modal');
+            const emailInput = document.getElementById('gate-email');
+
+            // Pre-fill email if exists (but expired)
+            const lastEmail = localStorage.getItem('subscriberEmail');
+            if (lastEmail) {
+              emailInput.value = lastEmail;
+            }
+
+            modal.style.display = 'flex';
+            emailInput.focus();
+          };
+
+          // Close email gate modal
+          window.closeEmailGate = function() {
+            const modal = document.getElementById('email-gate-modal');
+            modal.style.display = 'none';
+            document.getElementById('email-gate-result').innerHTML = '';
+            document.getElementById('gate-email').value = '';
+            pendingAction = null;
+          };
+
+          // Submit email gate form
+          window.submitEmailGate = async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('gate-email').value.trim();
+            const resultDiv = document.getElementById('email-gate-result');
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+
+            if (!email) {
+              resultDiv.innerHTML = \`
+                <div class="status-indicator status-error" style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                  <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: inline-block;"></span>
+                  <span style="color: var(--text-primary);">Please enter your email address</span>
+                </div>
+              \`;
+              return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.classList.add('btn-loading');
+            resultDiv.innerHTML = \`
+              <div class="status-indicator status-info" style="padding: 12px; background: rgba(96, 165, 250, 0.1); border-radius: 6px; border: 1px solid rgba(96, 165, 250, 0.3);">
+                <span class="spinner"></span>
+                <span style="color: var(--text-primary);">Verifying email...</span>
+              </div>
+            \`;
+
+            try {
+              // Verify email via API
+              const response = await fetch(\`/api/subscriptions/verify/\${encodeURIComponent(email)}\`);
+              const data = await response.json();
+
+              if (response.ok && data.subscribed) {
+                // Store email in localStorage
+                localStorage.setItem('subscriberEmail', email);
+                localStorage.setItem('subscribedAt', new Date().toISOString());
+
+                resultDiv.innerHTML = \`
+                  <div class="status-indicator status-success" style="padding: 12px; background: rgba(20, 184, 166, 0.1); border-radius: 6px; border: 1px solid rgba(20, 184, 166, 0.3);">
+                    <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block;"></span>
+                    <span style="color: var(--text-primary);">✓ Email verified! Proceeding...</span>
+                  </div>
+                \`;
+
+                window.showToast('Email verified successfully', 'success');
+
+                // Close modal and execute pending action
+                setTimeout(() => {
+                  window.closeEmailGate();
+                  if (pendingAction) {
+                    pendingAction();
+                    pendingAction = null;
+                  }
+                }, 1000);
+              } else {
+                // Email not subscribed
+                resultDiv.innerHTML = \`
+                  <div class="status-indicator status-error" style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: inline-block;"></span>
+                    <span style="color: var(--text-primary);">Email not subscribed. <a href="/subscriptions/form" style="color: var(--accent-primary); text-decoration: underline;">Subscribe here</a></span>
+                  </div>
+                \`;
+              }
+            } catch (error) {
+              resultDiv.innerHTML = \`
+                <div class="status-indicator status-error" style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                  <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: inline-block;"></span>
+                  <span style="color: var(--text-primary);">Verification failed. Please try again.</span>
+                </div>
+              \`;
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.classList.remove('btn-loading');
+            }
+          };
+
+          // Gate a CUD action with email check
+          window.requireEmail = function(callback) {
+            if (window.hasValidEmail()) {
+              callback();
+            } else {
+              window.showEmailGate(callback);
+            }
+          };
+
+          // Auto-add X-Subscriber-Email header to HTMX requests for CUD operations
+          document.body.addEventListener('htmx:configRequest', function(event) {
+            // Check if this is a CUD operation (POST, PUT, DELETE, PATCH)
+            const method = event.detail.verb.toUpperCase();
+            if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+              const email = window.getStoredEmail();
+              if (email) {
+                event.detail.headers['X-Subscriber-Email'] = email;
+              }
+            }
+          });
+
+          // Handle 401/403 responses from email-gated endpoints
+          document.addEventListener('htmx:responseError', function(event) {
+            if (event.detail.xhr.status === 401 || event.detail.xhr.status === 403) {
+              const response = event.detail.xhr.responseText;
+              try {
+                const data = JSON.parse(response);
+                if (data.error && (data.error.includes('Email') || data.error.includes('subscription'))) {
+                  window.showToast('Email subscription required', 'warning');
+                  // Clear invalid email from storage
+                  localStorage.removeItem('subscriberEmail');
+                  localStorage.removeItem('subscribedAt');
+                }
+              } catch (e) {
+                // Not JSON response
+              }
+            }
+          });
         </script>
       </body>
     </html>

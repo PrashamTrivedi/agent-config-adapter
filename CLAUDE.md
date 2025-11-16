@@ -196,9 +196,17 @@ GET    /api/subscriptions/verify?email=    Alternative verification endpoint
 
 **Email Subscription Flow**:
 1. User submits email via `/subscriptions/form` or API
-2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
+2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace (with 30-day expiration in localStorage)
 3. Admin notification sent via Cloudflare Email Routing
 4. User can access all CUD (Create, Update, Delete) endpoints with `X-Subscriber-Email` header
+
+**UI Email Gating**:
+- All CUD buttons/links in the UI are gated with `requireEmail()` JavaScript function
+- Email gate modal appears when user tries to perform CUD operation without subscription
+- Email stored in localStorage (`subscriberEmail` and `subscribedAt`) with 30-day expiration
+- HTMX automatically adds `X-Subscriber-Email` header to all POST/PUT/DELETE/PATCH requests
+- 401/403 responses automatically show email subscription prompt
+- 17 UI entry points protected: create/edit/delete buttons across configs, skills, extensions, marketplaces
 
 Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
 
@@ -298,7 +306,10 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 
 - Agent definitions use passthrough (no conversion yet)
 - Skills use passthrough (no conversion yet)
-- Email gating for all CUD operations (simple subscription-based, no full authentication)
+- Email gating for all CUD operations (subscription-based with UI modal, no full authentication)
+  - Backend: Middleware checks X-Subscriber-Email header (26 endpoints)
+  - Frontend: JavaScript modal gates all CUD buttons/links (17 entry points)
+  - localStorage-based email storage with 30-day expiration
 - No user accounts or per-user config management
 - Extension and marketplace features not yet integrated with MCP tools
 - Skills features not yet integrated with MCP tools
