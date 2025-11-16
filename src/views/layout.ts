@@ -1354,13 +1354,13 @@ export function layout(title: string, content: string): string {
                   <div style="font-size: 1.5em;">🚀</div>
                   <div>
                     <h4 style="margin: 0 0 8px 0; color: var(--accent-primary); font-size: 1em;">
-                      User Login Coming Soon!
+                      Create, Edit, and Delete Features Coming Soon!
                     </h4>
                     <p style="margin: 0; color: var(--text-primary); line-height: 1.6; font-size: 0.9em;">
-                      We're building a full authentication system. When it's ready, you'll be able to securely create, update, and delete configurations.
+                      We're building a full authentication system with user accounts. When it's ready, you'll be able to securely create, update, and delete configurations.
                     </p>
                     <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.85em;">
-                      <strong>For now:</strong> Enter your email below to unlock access to create, edit, and delete operations.
+                      <strong>Want early access?</strong> Sign up below to be notified when user accounts and editing features launch!
                     </p>
                   </div>
                 </div>
@@ -1377,7 +1377,7 @@ export function layout(title: string, content: string): string {
                     placeholder="you@example.com"
                     style="width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-primary); font-size: 1em;">
                   <span class="help-text" style="display: block; margin-top: 6px; font-size: 0.85em; color: var(--text-secondary);">
-                    We'll verify this email address
+                    We'll notify you when user accounts are available
                   </span>
                 </div>
 
@@ -1385,7 +1385,7 @@ export function layout(title: string, content: string): string {
 
                 <div style="display: flex; gap: 10px;">
                   <button type="submit" class="btn ripple" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    ${icons.check('icon')} Continue
+                    ${icons.check('icon')} Get Notified
                   </button>
                   <button type="button" class="btn btn-secondary" onclick="closeEmailGate()">Cancel</button>
                 </div>
@@ -1393,8 +1393,7 @@ export function layout(title: string, content: string): string {
 
               <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-dim); text-align: center; font-size: 0.9em; color: var(--text-secondary);">
                 <p style="margin: 0;">
-                  Don't have access yet?
-                  <a href="/subscriptions/form" style="color: var(--accent-primary); text-decoration: underline;">Subscribe here</a>
+                  Browse and explore all existing configs freely! Editing features coming soon.
                 </p>
               </div>
             </div>
@@ -1782,16 +1781,22 @@ export function layout(title: string, content: string): string {
             resultDiv.innerHTML = \`
               <div class="status-indicator status-info" style="padding: 12px; background: rgba(96, 165, 250, 0.1); border-radius: 6px; border: 1px solid rgba(96, 165, 250, 0.3);">
                 <span class="spinner"></span>
-                <span style="color: var(--text-primary);">Verifying email...</span>
+                <span style="color: var(--text-primary);">Subscribing...</span>
               </div>
             \`;
 
             try {
-              // Verify email via API
-              const response = await fetch(\`/api/subscriptions/verify/\${encodeURIComponent(email)}\`);
+              // Subscribe email via API
+              const response = await fetch('/api/subscriptions/subscribe', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+              });
               const data = await response.json();
 
-              if (response.ok && data.subscribed) {
+              if (response.ok && (data.subscription || data.subscribed)) {
                 // Store email in localStorage
                 localStorage.setItem('subscriberEmail', email);
                 localStorage.setItem('subscribedAt', new Date().toISOString());
@@ -1799,11 +1804,11 @@ export function layout(title: string, content: string): string {
                 resultDiv.innerHTML = \`
                   <div class="status-indicator status-success" style="padding: 12px; background: rgba(20, 184, 166, 0.1); border-radius: 6px; border: 1px solid rgba(20, 184, 166, 0.3);">
                     <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block;"></span>
-                    <span style="color: var(--text-primary);">✓ Email verified! Proceeding...</span>
+                    <span style="color: var(--text-primary);">✓ \${data.message || 'Subscribed successfully!'} Proceeding...</span>
                   </div>
                 \`;
 
-                window.showToast('Email verified successfully', 'success');
+                window.showToast(data.message || 'Subscribed successfully', 'success');
 
                 // Close modal and execute pending action
                 setTimeout(() => {
@@ -1814,11 +1819,12 @@ export function layout(title: string, content: string): string {
                   }
                 }, 1000);
               } else {
-                // Email not subscribed
+                // Subscription failed
+                const errorMsg = data.error || 'Subscription failed. Please try again.';
                 resultDiv.innerHTML = \`
                   <div class="status-indicator status-error" style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
                     <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: inline-block;"></span>
-                    <span style="color: var(--text-primary);">Email not subscribed. <a href="/subscriptions/form" style="color: var(--accent-primary); text-decoration: underline;">Subscribe here</a></span>
+                    <span style="color: var(--text-primary);">\${errorMsg}</span>
                   </div>
                 \`;
               }
@@ -1826,7 +1832,7 @@ export function layout(title: string, content: string): string {
               resultDiv.innerHTML = \`
                 <div class="status-indicator status-error" style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
                   <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: inline-block;"></span>
-                  <span style="color: var(--text-primary);">Verification failed. Please try again.</span>
+                  <span style="color: var(--text-primary);">Subscription failed. Please try again.</span>
                 </div>
               \`;
             } finally {

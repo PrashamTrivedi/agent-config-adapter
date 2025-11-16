@@ -34,9 +34,18 @@ subscriptionsRouter.get('/form', async (c) => {
  */
 subscriptionsRouter.post('/subscribe', async (c) => {
   try {
-    // Parse request body
-    const body = await c.req.json();
-    const { email } = body;
+    // Parse request body (handle both JSON and form data)
+    let email: string;
+    const contentType = c.req.header('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const body = await c.req.json();
+      email = body.email;
+    } else {
+      // Form data
+      const formData = await c.req.parseBody();
+      email = formData.email as string;
+    }
 
     // Validate email
     if (!email || typeof email !== 'string') {
