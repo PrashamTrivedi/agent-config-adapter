@@ -18,7 +18,7 @@
     },
     {
       "binding": "EMAIL_SUBSCRIPTIONS",
-      "id": "TBD" // Run: npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
+      "id": "1978914df8c641389e283b49eb023a77"
     }
   ],
   "r2_buckets": [
