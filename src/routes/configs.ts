@@ -6,10 +6,12 @@ import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provide
 import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
 import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
+import { emailGateMiddleware } from '../middleware/email-gate';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
   AI_GATEWAY_TOKEN?: string; // BYOK gateway token
@@ -140,7 +142,7 @@ configsRouter.get('/:id/format/:format', async (c) => {
 });
 
 // Create new config
-configsRouter.post('/', async (c) => {
+configsRouter.post('/', emailGateMiddleware, async (c) => {
   let body: CreateConfigInput;
 
   // Handle both JSON and form data
@@ -169,7 +171,7 @@ configsRouter.post('/', async (c) => {
 });
 
 // Update config
-configsRouter.put('/:id', async (c) => {
+configsRouter.put('/:id', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
   let body;
 
@@ -205,7 +207,7 @@ configsRouter.put('/:id', async (c) => {
 });
 
 // Manual cache invalidation
-configsRouter.post('/:id/invalidate', async (c) => {
+configsRouter.post('/:id/invalidate', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
   const service = new ConfigService(c.env);
   await service.invalidateCache(id);
@@ -220,7 +222,7 @@ configsRouter.post('/:id/invalidate', async (c) => {
 });
 
 // Refresh analysis for slash commands
-configsRouter.post('/:id/refresh-analysis', async (c) => {
+configsRouter.post('/:id/refresh-analysis', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
 
   // Initialize analyzer with ProviderFactory
@@ -298,7 +300,7 @@ configsRouter.post('/:id/refresh-analysis', async (c) => {
 });
 
 // Delete config
-configsRouter.delete('/:id', async (c) => {
+configsRouter.delete('/:id', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
 
   const service = new ConfigService(c.env);

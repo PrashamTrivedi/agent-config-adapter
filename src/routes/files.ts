@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
 import { FileStorageService } from '../services';
+import { emailGateMiddleware } from '../middleware/email-gate';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
   EXTENSION_FILES: R2Bucket;
 };
 
@@ -23,7 +25,7 @@ filesRouter.get('/extensions/:extensionId', async (c) => {
 });
 
 // Upload file to extension
-filesRouter.post('/extensions/:extensionId', async (c) => {
+filesRouter.post('/extensions/:extensionId', emailGateMiddleware, async (c) => {
   const extensionId = c.req.param('extensionId');
 
   // Parse multipart form data
@@ -105,7 +107,7 @@ filesRouter.get('/:fileId/download', async (c) => {
 });
 
 // Delete file
-filesRouter.delete('/:fileId', async (c) => {
+filesRouter.delete('/:fileId', emailGateMiddleware, async (c) => {
   const fileId = c.req.param('fileId');
   const service = new FileStorageService(c.env);
 

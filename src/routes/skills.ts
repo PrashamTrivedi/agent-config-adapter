@@ -62,7 +62,7 @@ skillsRouter.get('/:id', async (c) => {
 });
 
 // Create new skill (JSON or form)
-skillsRouter.post('/', async (c) => {
+skillsRouter.post('/', emailGateMiddleware, async (c) => {
   let body: CreateConfigInput;
 
   const contentType = c.req.header('Content-Type') || '';
@@ -125,7 +125,7 @@ skillsRouter.post('/upload-zip', emailGateMiddleware, async (c) => {
 });
 
 // Update skill
-skillsRouter.put('/:id', async (c) => {
+skillsRouter.put('/:id', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
   let body: UpdateConfigInput;
 
@@ -156,7 +156,7 @@ skillsRouter.put('/:id', async (c) => {
 });
 
 // Delete skill
-skillsRouter.delete('/:id', async (c) => {
+skillsRouter.delete('/:id', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
   const service = new SkillsService(c.env);
 
@@ -280,7 +280,7 @@ skillsRouter.get('/:id/files/:fileId', async (c) => {
 });
 
 // Delete companion file
-skillsRouter.delete('/:id/files/:fileId', async (c) => {
+skillsRouter.delete('/:id/files/:fileId', emailGateMiddleware, async (c) => {
   const id = c.req.param('id');
   const fileId = c.req.param('fileId');
   const service = new SkillsService(c.env);
