@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
-import { emailGateMiddleware } from '../middleware/email-gate';
+import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
@@ -62,7 +62,7 @@ skillsRouter.get('/:id', async (c) => {
 });
 
 // Create new skill (JSON or form)
-skillsRouter.post('/', emailGateMiddleware, async (c) => {
+skillsRouter.post('/', lockdownMiddleware, async (c) => {
   let body: CreateConfigInput;
 
   const contentType = c.req.header('Content-Type') || '';
@@ -88,8 +88,8 @@ skillsRouter.post('/', emailGateMiddleware, async (c) => {
   }
 });
 
-// Upload skill from ZIP (protected by email gate)
-skillsRouter.post('/upload-zip', emailGateMiddleware, async (c) => {
+// Upload skill from ZIP (coming soon)
+skillsRouter.post('/upload-zip', lockdownMiddleware, async (c) => {
   const contentType = c.req.header('Content-Type') || '';
 
   if (!contentType.includes('multipart/form-data')) {
@@ -125,7 +125,7 @@ skillsRouter.post('/upload-zip', emailGateMiddleware, async (c) => {
 });
 
 // Update skill
-skillsRouter.put('/:id', emailGateMiddleware, async (c) => {
+skillsRouter.put('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   let body: UpdateConfigInput;
 
@@ -156,7 +156,7 @@ skillsRouter.put('/:id', emailGateMiddleware, async (c) => {
 });
 
 // Delete skill
-skillsRouter.delete('/:id', emailGateMiddleware, async (c) => {
+skillsRouter.delete('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const service = new SkillsService(c.env);
 
@@ -184,8 +184,8 @@ skillsRouter.get('/:id/files', async (c) => {
   }
 });
 
-// Upload companion file(s) (protected by email gate)
-skillsRouter.post('/:id/files', emailGateMiddleware, async (c) => {
+// Upload companion file(s) (coming soon)
+skillsRouter.post('/:id/files', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const contentType = c.req.header('Content-Type') || '';
 
@@ -280,7 +280,7 @@ skillsRouter.get('/:id/files/:fileId', async (c) => {
 });
 
 // Delete companion file
-skillsRouter.delete('/:id/files/:fileId', emailGateMiddleware, async (c) => {
+skillsRouter.delete('/:id/files/:fileId', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const fileId = c.req.param('fileId');
   const service = new SkillsService(c.env);

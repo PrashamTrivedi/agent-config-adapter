@@ -34,20 +34,20 @@ export function subscriptionFormView(returnUrl?: string): string {
             <div style="font-size: 1.5em;">🚀</div>
             <div>
               <h3 style="margin: 0 0 8px 0; color: var(--accent-primary); font-size: 1.1em;">
-                User Login Coming Soon!
+                Create, Edit, and Delete Features Coming Soon!
               </h3>
               <p style="margin: 0; color: var(--text-primary); line-height: 1.6;">
-                We're building a full authentication system. When it's ready, you'll be able to securely upload and manage your agent configurations, skills, and extensions.
+                We're building a full authentication system with user accounts. When it's ready, you'll be able to securely create, update, delete, and manage your agent configurations, skills, and extensions.
               </p>
               <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.95em;">
-                <strong>For now:</strong> Enter your email below to get early access to upload features. We'll notify you when user accounts launch!
+                <strong>Want early access?</strong> Sign up below to be notified when user accounts and editing features launch!
               </p>
             </div>
           </div>
         </div>
 
         <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.95em;">
-          Browse and explore all configs, skills, and extensions freely. Email required only for uploads.
+          Browse and explore all configs, skills, and extensions freely. Sign up to be notified when editing features are available!
         </p>
 
         <form
@@ -85,16 +85,16 @@ export function subscriptionFormView(returnUrl?: string): string {
 
         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-dim); font-size: 0.9em; color: var(--text-secondary);">
           <p style="margin: 0 0 8px 0;">
-            <strong style="color: var(--text-primary);">What you get:</strong>
+            <strong style="color: var(--text-primary);">What you'll get:</strong>
           </p>
           <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-            <li>Upload skills (ZIP files with multi-file support)</li>
-            <li>Upload companion files for existing skills</li>
-            <li>Early access to new features</li>
-            <li>Notification when user accounts are available</li>
+            <li>Notification when user accounts launch</li>
+            <li>Early access to create, edit, and delete features</li>
+            <li>Ability to upload and manage your own configs</li>
+            <li>Updates about new features and improvements</li>
           </ul>
           <p style="margin: 16px 0 0 0; font-size: 0.85em; color: var(--text-secondary);">
-            By subscribing, you agree to receive notifications about platform updates and your uploads.
+            By subscribing, you agree to receive notifications about platform updates and feature launches.
           </p>
         </div>
       </div>

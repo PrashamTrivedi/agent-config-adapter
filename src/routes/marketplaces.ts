@@ -7,7 +7,7 @@ import {
   marketplaceCreateView,
   marketplaceEditView,
 } from '../views/marketplaces';
-import { emailGateMiddleware } from '../middleware/email-gate';
+import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
@@ -123,7 +123,7 @@ marketplacesRouter.get('/:id/manifest', async (c) => {
 });
 
 // Create new marketplace
-marketplacesRouter.post('/', emailGateMiddleware, async (c) => {
+marketplacesRouter.post('/', lockdownMiddleware, async (c) => {
   let body: CreateMarketplaceInput;
 
   // Handle both JSON and form data
@@ -166,7 +166,7 @@ marketplacesRouter.post('/', emailGateMiddleware, async (c) => {
 });
 
 // Update marketplace
-marketplacesRouter.put('/:id', emailGateMiddleware, async (c) => {
+marketplacesRouter.put('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   let body: UpdateMarketplaceInput;
 
@@ -199,7 +199,7 @@ marketplacesRouter.put('/:id', emailGateMiddleware, async (c) => {
 });
 
 // Delete marketplace
-marketplacesRouter.delete('/:id', emailGateMiddleware, async (c) => {
+marketplacesRouter.delete('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
 
   const service = new MarketplaceService(c.env);
@@ -221,7 +221,7 @@ marketplacesRouter.delete('/:id', emailGateMiddleware, async (c) => {
 });
 
 // Add single extension to marketplace
-marketplacesRouter.post('/:id/extensions/:extensionId', emailGateMiddleware, async (c) => {
+marketplacesRouter.post('/:id/extensions/:extensionId', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const extensionId = c.req.param('extensionId');
 
@@ -236,7 +236,7 @@ marketplacesRouter.post('/:id/extensions/:extensionId', emailGateMiddleware, asy
 });
 
 // Add multiple extensions to marketplace (batch operation)
-marketplacesRouter.post('/:id/extensions', emailGateMiddleware, async (c) => {
+marketplacesRouter.post('/:id/extensions', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json<{ extension_ids: string[] }>();
 
@@ -255,7 +255,7 @@ marketplacesRouter.post('/:id/extensions', emailGateMiddleware, async (c) => {
 });
 
 // Remove extension from marketplace
-marketplacesRouter.delete('/:id/extensions/:extensionId', emailGateMiddleware, async (c) => {
+marketplacesRouter.delete('/:id/extensions/:extensionId', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const extensionId = c.req.param('extensionId');
 
@@ -273,7 +273,7 @@ marketplacesRouter.delete('/:id/extensions/:extensionId', emailGateMiddleware, a
 });
 
 // Invalidate marketplace cache
-marketplacesRouter.post('/:id/invalidate', emailGateMiddleware, async (c) => {
+marketplacesRouter.post('/:id/invalidate', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const service = new MarketplaceService(c.env);
 

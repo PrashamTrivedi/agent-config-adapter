@@ -6,7 +6,7 @@ import {
   MarketplaceService,
 } from '../services';
 import { pluginBrowserView } from '../views/plugin-browser';
-import { emailGateMiddleware } from '../middleware/email-gate';
+import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
@@ -392,7 +392,7 @@ pluginsRouter.get('/:extensionId/:format/*', async (c) => {
 });
 
 // Invalidate/regenerate plugin files
-pluginsRouter.post('/:extensionId/:format/invalidate', emailGateMiddleware, async (c) => {
+pluginsRouter.post('/:extensionId/:format/invalidate', lockdownMiddleware, async (c) => {
   const extensionId = c.req.param('extensionId');
   const format = c.req.param('format') as 'claude_code' | 'gemini';
 
