@@ -156,6 +156,14 @@ export function buildSlashCommandSystemPrompt(params: {
   availableAgents: string[]
   availableSkills: string[]
 }): string {
+  const agentsList = params.availableAgents.length > 0
+    ? `Agents: ${params.availableAgents.join(', ')}`
+    : 'Agents: (none available)'
+
+  const skillsList = params.availableSkills.length > 0
+    ? `Skills: ${params.availableSkills.join(', ')}`
+    : 'Skills: (none available)'
+
   return `
 # Purpose
 
@@ -166,9 +174,14 @@ Convert Claude Code slash commands to standalone prompts with SURGICAL changes o
 You will be provided following inputs
 
 - The Claude Code Slash Command definition
-- Optional: User request 
+- Optional: User request
 
+## Available References
 
+${agentsList}
+${skillsList}
+
+Use these names to detect references accurately and avoid false positives.
 
 ### Tools
 
