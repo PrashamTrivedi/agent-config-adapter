@@ -1758,6 +1758,21 @@ export function layout(title: string, content: string): string {
             pendingAction = null;
           };
 
+          // Show coming soon modal (features locked until authentication)
+          window.showComingSoonModal = function() {
+            const modal = document.getElementById('email-gate-modal');
+            const emailInput = document.getElementById('gate-email');
+
+            // Pre-fill email if exists
+            const lastEmail = localStorage.getItem('subscriberEmail');
+            if (lastEmail) {
+              emailInput.value = lastEmail;
+            }
+
+            modal.style.display = 'flex';
+            emailInput.focus();
+          };
+
           // Submit email gate form
           window.submitEmailGate = async function(event) {
             event.preventDefault();
@@ -1810,14 +1825,12 @@ export function layout(title: string, content: string): string {
 
                 window.showToast(data.message || 'Subscribed successfully', 'success');
 
-                // Close modal and execute pending action
+                // Close modal after subscription (DO NOT execute callback - features are locked)
                 setTimeout(() => {
                   window.closeEmailGate();
-                  if (pendingAction) {
-                    pendingAction();
-                    pendingAction = null;
-                  }
-                }, 1000);
+                  // pendingAction is intentionally NOT executed
+                  // Email subscription is only for waitlist, not for unlocking features
+                }, 1500);
               } else {
                 // Subscription failed
                 const errorMsg = data.error || 'Subscription failed. Please try again.';
@@ -1841,13 +1854,11 @@ export function layout(title: string, content: string): string {
             }
           };
 
-          // Gate a CUD action with email check
+          // Gate a CUD action - ALWAYS show coming soon modal (uploads locked until auth)
           window.requireEmail = function(callback) {
-            if (window.hasValidEmail()) {
-              callback();
-            } else {
-              window.showEmailGate(callback);
-            }
+            // Features are locked until full authentication is implemented
+            // Email subscription is only for waitlist notifications
+            window.showComingSoonModal();
           };
 
           // Auto-add X-Subscriber-Email header to HTMX requests for CUD operations
