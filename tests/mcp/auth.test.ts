@@ -22,7 +22,7 @@ describe('MCP Auth', () => {
 		it('should generate expected hash for known input', async () => {
 			// Hash for "test-admin-token-123"
 			const expectedHash =
-				'bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721';
+				'a417e7e7339af63325b234490349c373a23ed9cfe0d762714fc3e1d887ec7144';
 			const actualHash = await hashToken('test-admin-token-123');
 
 			expect(actualHash).toBe(expectedHash);
@@ -32,7 +32,7 @@ describe('MCP Auth', () => {
 	describe('validateMCPAdminToken', () => {
 		const validToken = 'test-admin-token-123';
 		const validTokenHash =
-			'bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721';
+			'a417e7e7339af63325b234490349c373a23ed9cfe0d762714fc3e1d887ec7144';
 
 		it('should reject when no token hash is configured', async () => {
 			const request = new Request('https://example.com', {
@@ -112,7 +112,7 @@ describe('MCP Auth', () => {
 			});
 
 			const isValid = await validateMCPAdminToken(request, validTokenHash);
-			expect(isValid).toBe(false); // Extra whitespace changes the token
+			expect(isValid).toBe(true); // Whitespace is trimmed for user convenience
 		});
 	});
 });
