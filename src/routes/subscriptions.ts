@@ -5,7 +5,7 @@ import { subscriptionFormView } from '../views/subscriptions';
 
 type Bindings = {
   EMAIL_SUBSCRIPTIONS: KVNamespace;
-  EMAIL: any; // Cloudflare send_email binding
+  RESEND_API_KEY: string; // Resend API key
   ADMIN_EMAIL: string;
 };
 
@@ -73,18 +73,33 @@ subscriptionsRouter.post('/subscribe', async (c) => {
     const ipAddress = c.req.header('CF-Connecting-IP');
     const subscription = await subscriptionService.subscribe(email, ipAddress);
 
-    // Send admin notification
+    // Send emails (admin notification + welcome email to user)
     try {
       const emailService = new EmailService(
-        c.env.EMAIL,
+        c.env.RESEND_API_KEY,
         c.env.ADMIN_EMAIL
       );
+
+      console.log(`[Email] Sending admin notification to ${c.env.ADMIN_EMAIL}`);
+      // Send admin notification about new subscriber
       await emailService.sendSubscriptionNotification(
         email,
         subscription.subscribedAt
       );
+      console.log('[Email] Admin notification sent successfully');
+
+      console.log(`[Email] Sending welcome email to ${email}`);
+      // Send welcome email to the user
+      await emailService.sendWelcomeEmail(email);
+      console.log('[Email] Welcome email sent successfully');
     } catch (emailError) {
-      console.error('Failed to send admin notification:', emailError);
+      console.error('[Email] Failed to send emails:', emailError);
+      if (emailError instanceof Error) {
+        console.error('[Email] Error details:', {
+          message: emailError.message,
+          stack: emailError.stack,
+        });
+      }
       // Don't fail the subscription if email fails
     }
 

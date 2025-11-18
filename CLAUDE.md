@@ -32,12 +32,15 @@ cp .dev.vars.example .dev.vars
 # 1. Get API keys from OpenAI and/or Google
 # 2. Edit .dev.vars: Set OPENAI_API_KEY and/or GEMINI_API_KEY
 # 3. Keys route through AI Gateway for logging, analytics, caching
-# 4. Optional: Set AI_PROVIDER, OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
+# 4. Get Resend API key from https://resend.com/api-keys
+# 5. Edit .dev.vars: Set RESEND_API_KEY
+# 6. Optional: Set AI_PROVIDER, OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
 #
 # PRODUCTION BYOK (Bring Your Own Key):
 # 1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
 # 2. Create gateway token in Cloudflare Dashboard → AI Gateway → Settings
 # 3. Set AI_GATEWAY_TOKEN as Worker secret (see Deployment section below)
+# 4. Set RESEND_API_KEY as Worker secret: npx wrangler secret put RESEND_API_KEY
 # Provider keys NEVER stored in Worker code or .dev.vars!
 ```
 

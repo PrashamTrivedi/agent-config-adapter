@@ -1,15 +1,18 @@
-import { EmailMessage } from 'cloudflare:email';
-import { createMimeMessage } from 'mimetext';
+import { Resend } from 'resend';
 
 /**
- * Email service for sending notifications via Cloudflare Email Routing
+ * Email service for sending notifications via Resend
  */
 export class EmailService {
+  private resend: Resend;
+
   constructor(
-    private emailBinding: any, // send_email binding from env
+    private resendApiKey: string,
     private adminEmail: string,
-    private senderEmail: string = 'notifications@prashamhtrivedi.app'
-  ) {}
+    private senderEmail: string = 'notifications@agent-config.prashamhtrivedi.app'
+  ) {
+    this.resend = new Resend(resendApiKey);
+  }
 
   /**
    * Send admin notification about new subscriber
@@ -18,19 +21,11 @@ export class EmailService {
     subscriberEmail: string,
     subscribedAt: string
   ): Promise<void> {
-    const msg = createMimeMessage();
-
-    msg.setSender({
-      name: 'Agent Config Adapter',
-      addr: this.senderEmail,
-    });
-
-    msg.setRecipient(this.adminEmail);
-    msg.setSubject('New Subscription to Agent Config Adapter');
-
-    msg.addMessage({
-      contentType: 'text/html',
-      data: `
+    await this.resend.emails.send({
+      from: `Agent Config Adapter <${this.senderEmail}>`,
+      to: this.adminEmail,
+      subject: 'New Subscription to Agent Config Adapter',
+      html: `
         <html>
           <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0;">
@@ -61,35 +56,18 @@ export class EmailService {
         </html>
       `,
     });
-
-    const message = new EmailMessage(
-      this.senderEmail,
-      this.adminEmail,
-      msg.asRaw()
-    );
-
-    await this.emailBinding.send(message);
   }
 
   /**
    * Send welcome email to new subscriber
-   * NOTE: Requires subscriber email to be verified in Email Routing
    * Currently commented out in the subscription flow
    */
   async sendWelcomeEmail(subscriberEmail: string): Promise<void> {
-    const msg = createMimeMessage();
-
-    msg.setSender({
-      name: 'Agent Config Adapter',
-      addr: this.senderEmail,
-    });
-
-    msg.setRecipient(subscriberEmail);
-    msg.setSubject('Welcome to Agent Config Adapter!');
-
-    msg.addMessage({
-      contentType: 'text/html',
-      data: `
+    await this.resend.emails.send({
+      from: `Agent Config Adapter <${this.senderEmail}>`,
+      to: subscriberEmail,
+      subject: 'Welcome to Agent Config Adapter!',
+      html: `
         <html>
           <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0;">
@@ -121,13 +99,5 @@ export class EmailService {
         </html>
       `,
     });
-
-    const message = new EmailMessage(
-      this.senderEmail,
-      subscriberEmail,
-      msg.asRaw()
-    );
-
-    await this.emailBinding.send(message);
   }
 }

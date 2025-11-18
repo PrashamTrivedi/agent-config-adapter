@@ -71,12 +71,18 @@ OPENAI_API_KEY=
 GEMINI_API_KEY=
 
 # ============================================================================
-# Email Configuration (Optional for local development)
+# Email Configuration
 # ============================================================================
 # Admin email for subscription notifications
 # In production, this is set in wrangler.jsonc vars section
 # For local testing, you can set it here
 # ADMIN_EMAIL=your-admin-email@example.com
+
+# Resend API Key (for email notifications)
+# Required for both local development and production
+# Get your API key from: https://resend.com/api-keys
+# This is a Worker SECRET - set via: npx wrangler secret put RESEND_API_KEY
+RESEND_API_KEY=
 
 # ============================================================================
 # MCP Admin Access (Temporary Security Measure)

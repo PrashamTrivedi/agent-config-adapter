@@ -29,14 +29,6 @@
       "bucket_name": "agent-config-extension-files"
     }
   ],
-  "send_email": [
-    {
-      "name": "EMAIL",
-      "allowed_sender_addresses": [
-        "admin-agent-config@prashamhtrivedi.app"
-      ]
-    }
-  ],
   "vars": {
     // Cloudflare Configuration
     "ACCOUNT_ID": "b286748abb233ddf7bf942f876f11eac",

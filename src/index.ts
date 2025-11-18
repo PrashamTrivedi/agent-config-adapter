@@ -34,7 +34,7 @@ type Bindings = {
   GEMINI_API_KEY?: string; // For local dev
 
   // Email Configuration
-  EMAIL: any; // Cloudflare send_email binding
+  RESEND_API_KEY: string; // Resend API key for sending emails
   ADMIN_EMAIL: string;
 
   // MCP Admin Token (SHA-256 hash)
@@ -311,17 +311,6 @@ app.get('/mcp/info', (c) => {
         </div>
       </div>
 
-      <!-- Access Level Notice -->
-      <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
-        <h3 style="margin: 0 0 12px 0; color: white; display: flex; align-items: center; gap: 8px;">
-          ${icons.shield('icon')} Access Level
-        </h3>
-        <p style="margin: 0; font-size: 0.95em; opacity: 0.95;">
-          This is the <strong>public read-only</strong> MCP endpoint. Only read operations are available.
-          Write operations require admin access (internal use only).
-        </p>
-      </div>
-
       <!-- Tools -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
@@ -426,7 +415,10 @@ app.get('/mcp/info', (c) => {
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="margin-top: 2px; color: var(--accent-primary);">${icons.zap('icon-lg')}</div>
             <div>
-              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Prompts</div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                Prompts
+                <span style="display: inline-block; padding: 2px 8px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Coming Soon</span>
+              </div>
               <div style="font-size: 0.9em; color: var(--text-secondary);">
                 Guided workflows for complex multi-step operations
               </div>
