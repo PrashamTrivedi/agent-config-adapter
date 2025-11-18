@@ -144,7 +144,7 @@ app.get('/', (c) => {
           <a href="/configs" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
             ${icons.file('icon')} View Configs
           </a>
-          <a href="/configs/new" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <a href="#" onclick="event.preventDefault(); requireEmail(() => { window.location.href = '/configs/new'; });" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
             ${icons.plus('icon')} New Config
           </a>
           <a href="/slash-commands/convert" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
