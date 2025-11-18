@@ -7,10 +7,12 @@ import {
   extensionCreateView,
   extensionEditView,
 } from '../views/extensions';
+import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
   EXTENSION_FILES: R2Bucket;
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
@@ -156,7 +158,7 @@ extensionsRouter.get('/:id/manifest/:format', async (c) => {
 });
 
 // Create new extension
-extensionsRouter.post('/', async (c) => {
+extensionsRouter.post('/', lockdownMiddleware, async (c) => {
   let body: CreateExtensionInput;
 
   // Handle both JSON and form data
@@ -197,7 +199,7 @@ extensionsRouter.post('/', async (c) => {
 });
 
 // Update extension
-extensionsRouter.put('/:id', async (c) => {
+extensionsRouter.put('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   let body: UpdateExtensionInput;
 
@@ -228,7 +230,7 @@ extensionsRouter.put('/:id', async (c) => {
 });
 
 // Delete extension
-extensionsRouter.delete('/:id', async (c) => {
+extensionsRouter.delete('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
 
   const service = new ExtensionService(c.env);
@@ -263,7 +265,7 @@ extensionsRouter.get('/:id/configs', async (c) => {
 });
 
 // Add single config to extension
-extensionsRouter.post('/:id/configs/:configId', async (c) => {
+extensionsRouter.post('/:id/configs/:configId', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const configId = c.req.param('configId');
 
@@ -278,7 +280,7 @@ extensionsRouter.post('/:id/configs/:configId', async (c) => {
 });
 
 // Add multiple configs to extension (batch operation)
-extensionsRouter.post('/:id/configs', async (c) => {
+extensionsRouter.post('/:id/configs', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json<{ config_ids: string[] }>();
 
@@ -297,7 +299,7 @@ extensionsRouter.post('/:id/configs', async (c) => {
 });
 
 // Remove config from extension
-extensionsRouter.delete('/:id/configs/:configId', async (c) => {
+extensionsRouter.delete('/:id/configs/:configId', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const configId = c.req.param('configId');
 
@@ -315,7 +317,7 @@ extensionsRouter.delete('/:id/configs/:configId', async (c) => {
 });
 
 // Invalidate extension cache
-extensionsRouter.post('/:id/invalidate', async (c) => {
+extensionsRouter.post('/:id/invalidate', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const service = new ExtensionService(c.env);
 

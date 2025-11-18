@@ -26,6 +26,9 @@ and MCP configs once, deploy across Codex, Gemini, and other agents.
   with format-specific downloads
 - 🔽 **Plugin Downloads**: Generate and serve plugins as ZIP files or JSON
   definitions for both Claude Code and Gemini
+- 📧 **Email Gating for CUD Operations**: Protect all Create, Update, Delete
+  endpoints (26 total) with email subscription verification to prevent abuse and
+  build user community
 - 🌐 **Claude Code Web Sync**: Automatically download and sync configurations
   from a ZIP file when running in Claude Code Web
 
@@ -82,6 +85,7 @@ npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_re
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0004_add_extensions_and_marketplaces.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0005_add_skill_config_type.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0006_add_skill_files.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0007_add_slash_command_metadata.sql
 
 # Load sample data (optional)
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
@@ -137,10 +141,11 @@ console).
       gemini-provider.ts  # Google Gemini 2.5 Flash with thinking budgets
       provider-factory.ts # Multi-provider management with auto fallback
   /adapters        # Format converters (Claude ↔ Codex ↔ Gemini)
-  /services        # Business logic layer (config, conversion, skills, extension, marketplace, file generation services)
-  /routes          # Hono REST route handlers (configs, skills, extensions, marketplaces, plugins, files)
+  /services        # Business logic layer (config, conversion, skills, extension, marketplace, file generation, subscription, email services)
+  /middleware      # Request middleware (email gating)
+  /routes          # Hono REST route handlers (configs, skills, extensions, marketplaces, plugins, files, subscriptions)
   /mcp             # MCP server implementation (server, transport, types)
-  /views           # HTMX templates (configs, skills, extensions, marketplaces, plugin browser)
+  /views           # HTMX templates (configs, skills, extensions, marketplaces, plugin browser, subscription form)
   index.ts         # Entry point
 /migrations        # D1 migrations
 /seeds             # Seed data
@@ -166,14 +171,18 @@ console).
 - `GET /api/skills` - List all skills
 - `GET /api/skills/:id` - Get skill with all companion files
 - `POST /api/skills` - Create skill (JSON or form-data)
-- `POST /api/skills/upload-zip` - Create skill from ZIP upload
+- `POST /api/skills/upload-zip` - Create skill from ZIP upload (requires email subscription)
 - `PUT /api/skills/:id` - Update skill metadata/content
 - `DELETE /api/skills/:id` - Delete skill and all companion files
 - `GET /api/skills/:id/files` - List all companion files
-- `POST /api/skills/:id/files` - Upload companion file(s)
+- `POST /api/skills/:id/files` - Upload companion file(s) (requires email subscription)
 - `GET /api/skills/:id/files/:fileId` - Download companion file
 - `DELETE /api/skills/:id/files/:fileId` - Delete companion file
 - `GET /api/skills/:id/download` - Download skill as ZIP with all files
+
+**Upload Protection**: ZIP upload and file upload endpoints require email
+subscription. Include `X-Subscriber-Email` header with a subscribed email address
+to access these endpoints.
 
 ### Extensions
 
@@ -222,6 +231,19 @@ console).
 - `GET /plugins/marketplaces/:marketplaceId/download?format=` - Download all
   marketplace plugins as ZIP (format: claude_code or gemini)
 
+### Subscriptions
+
+- `GET /subscriptions/form` - Show subscription form (HTML view) with optional
+  return URL
+- `POST /api/subscriptions/subscribe` - Subscribe a new email address
+- `GET /api/subscriptions/verify/:email` - Check if email is subscribed
+- `GET /api/subscriptions/verify?email=xxx` - Alternative verification endpoint
+
+**Email Gating**: The subscription system protects upload endpoints from abuse
+while building a user community. Subscribed users receive admin notifications
+and can access upload features. To upload files, include the `X-Subscriber-Email`
+header with your subscribed email address in API requests.
+
 ### Example: Create a Config
 
 ```bash
@@ -247,6 +269,28 @@ curl http://localhost:8787/api/configs/{id}/format/codex
 ```bash
 # Force re-processing of conversions by invalidating cache
 curl -X POST http://localhost:8787/api/configs/{id}/invalidate
+```
+
+### Example: Subscribe for Upload Access
+
+```bash
+# Subscribe an email to gain upload access
+curl -X POST http://localhost:8787/api/subscriptions/subscribe \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com"}'
+
+# Verify subscription status
+curl http://localhost:8787/api/subscriptions/verify/user@example.com
+
+# Upload with subscription (ZIP upload example)
+curl -X POST http://localhost:8787/api/skills/upload-zip \
+  -H "X-Subscriber-Email: user@example.com" \
+  -F "file=@skill.zip"
+
+# Upload companion file with subscription
+curl -X POST http://localhost:8787/api/skills/{id}/files \
+  -H "X-Subscriber-Email: user@example.com" \
+  -F "file=@companion.txt"
 ```
 
 ## MCP Server
@@ -522,6 +566,8 @@ The web interface provides a user-friendly way to manage configurations:
   marketplaces
 - **Plugin Browser**: Browse and download plugin files with format-specific
   options
+- **Subscription Form** (`/subscriptions/form`): Email subscription for upload
+  access with marketing copy and return URL support
 
 All UI interactions use HTMX for seamless updates without full page reloads.
 
@@ -790,9 +836,10 @@ Before deploying (first time setup):
    npx wrangler d1 create agent-config-adapter
    ```
 
-2. Create KV namespace:
+2. Create KV namespaces:
    ```bash
    npx wrangler kv:namespace create CONFIG_CACHE
+   npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
    ```
 
 3. Create R2 bucket for plugin files:
@@ -800,17 +847,24 @@ Before deploying (first time setup):
    npx wrangler r2 bucket create extension-files
    ```
 
-4. Update [wrangler.jsonc](wrangler.jsonc) with production IDs
+4. Configure Email Routing:
+   - Enable Email Routing in Cloudflare Dashboard for your domain
+   - Set up a verified sender email address
+   - Update `send_email` binding in [wrangler.jsonc](wrangler.jsonc) with your
+     admin email address
+   - Set `ADMIN_EMAIL` in vars section
 
-5. For production BYOK: Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys, then set gateway token:
+5. Update [wrangler.jsonc](wrangler.jsonc) with production IDs (D1, KV, R2)
+
+6. For production BYOK: Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys, then set gateway token:
    ```bash
    npx wrangler secret put AI_GATEWAY_TOKEN
    ```
 
-6. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars
+7. Update `ACCOUNT_ID` and `GATEWAY_ID` in [wrangler.jsonc](wrangler.jsonc) vars
    section
 
-7. Apply migrations to production:
+8. Apply migrations to production:
    ```bash
    npx wrangler d1 migrations apply agent-config-adapter --remote
    ```
@@ -820,8 +874,9 @@ Before deploying (first time setup):
 - **Backend**: Hono (lightweight web framework)
 - **Platform**: Cloudflare Workers
 - **Database**: Cloudflare D1 (SQLite)
-- **Cache**: Cloudflare KV
+- **Cache**: Cloudflare KV (CONFIG_CACHE, EMAIL_SUBSCRIPTIONS)
 - **Storage**: Cloudflare R2 (for plugin files)
+- **Email**: Cloudflare Email Routing (send_email binding)
 - **AI Providers**: Multi-provider support via Cloudflare AI Gateway
   - OpenAI GPT-5-Mini (with reasoning_effort parameter)
   - Google Gemini 2.5 Flash (with thinking budgets)
@@ -832,6 +887,7 @@ Before deploying (first time setup):
 - **Language**: TypeScript
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
 - **ZIP Generation**: fflate (Cloudflare Workers compatible)
+- **Email Formatting**: mimetext (for HTML email composition)
 
 ## Architecture
 
@@ -840,7 +896,7 @@ shared business logic:
 
 - **Domain Layer**: Core business logic and types (no infrastructure
   dependencies)
-- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), and multi-provider AI services
+- **Infrastructure Layer**: Database (D1), cache (KV), storage (R2), email (Email Routing), and multi-provider AI services
   - AI infrastructure: Provider abstraction, OpenAI/Gemini implementations, factory with auto-fallback
 - **Services Layer**: Business logic orchestration
   - ConfigService: Configuration CRUD operations
@@ -852,16 +908,20 @@ shared business logic:
   - ManifestService: Generate platform-specific manifests (Claude Code, Gemini)
   - FileGenerationService: Generate plugin files and store in R2
   - ZipGenerationService: Create ZIP archives for plugin downloads
+  - SubscriptionService: Email subscription management in KV storage
+  - EmailService: Notification emails via Cloudflare Email Routing
   - Used by both REST API routes and MCP server tools
   - Provides consistent behavior across different interfaces
+- **Middleware Layer**: Request processing and protection
+  - emailGateMiddleware: Upload endpoint protection with email verification
 - **Adapter Layer**: Format conversion logic with AI enhancement (extensible for
   new formats)
 - **Routes Layer**: REST HTTP request handlers (Hono) for configs, skills,
-  extensions, marketplaces, and plugins
+  extensions, marketplaces, plugins, and subscriptions
 - **MCP Layer**: Model Context Protocol server with tools, resources, and
   prompts
 - **Views Layer**: HTML template generation (HTMX) for configs, skills,
-  extensions, marketplaces, and plugin browser
+  extensions, marketplaces, plugin browser, and subscription form
 
 ### AI-Powered Conversion
 
@@ -906,7 +966,8 @@ Adding a new agent format is straightforward:
 
 - Agent definitions use passthrough adapter (no format conversion yet)
 - Skills use passthrough adapter (no format conversion yet)
-- No authentication/authorization (both REST and MCP)
+- Email gating for upload protection (simple subscription-based, no full authentication)
+- No user accounts or per-user config management
 - No search or filter functionality in UI (basic filters available for configs)
 - Batch operations available via MCP prompts only (not in UI yet)
 - Extension and marketplace features do not yet have MCP tool integration

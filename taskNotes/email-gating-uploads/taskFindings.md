@@ -1,494 +1,146 @@
-# Email Gating for Upload Functionality
+# Email Gating Extension - All CUD Operations (v2)
 
 ## Purpose
 
-Implement email-based access control for upload functionality with automated admin notifications via Cloudflare email service.
+Extend email gating to protect ALL Create, Update, and Delete operations across the entire platform (configs, skills, extensions, marketplaces, files) - not just ZIP uploads.
 
 ## Original Ask
 
-We need to gate the upload functionality behind email. User must enter the email and it should record to a KV with email as primary key, projectName will be "agentConfig" and date time when the record is added. I must receive an email (using cloudflare's email sending capabilities-find online) when someone subscribes to email, using `admin-agent-config@prashamhtrivedi.app` (Domain already configured in cloudflare)
-
-**Additional Requirements:**
-- Email gating serves as a landing page before full user authentication
-- Marketing copy needed: "User Login is coming soon! When ready, you'll be able to upload your configs"
-- Public content access: All content (configs, skills, extensions, marketplaces) is publicly viewable
-- MCP content: Read-only access (being converted separately)
-- Upload functionality: Gated behind email subscription (temporary until auth is implemented)
+We need gating every CUD in this platform right now. Except MCP which is being worked in different ticket parallely.
 
 ## Complexity and the reason behind it
 
 **Complexity Score: 3/5**
 
 **Reasoning:**
-- Involves both backend (email validation, KV storage, email sending) and frontend (UI forms)
-- Integration with Cloudflare's native `send_email` binding (production-ready, part of Email Routing)
-- Requires middleware implementation for access control
-- Multiple touchpoints: 2 upload endpoints need gating
-- Security considerations (email validation, rate limiting)
-- However, the task is well-defined with clear requirements and uses established patterns
-- No complex state management or architectural changes required
-- Email solution is simpler than expected: native Cloudflare binding, no third-party service needed
+- **Large scope**: 26+ endpoints across 5 route files need protection
+- **Multiple touchpoints**: Configs, Skills, Extensions, Marketplaces, Files routes
+- **Frontend updates**: All creation/edit forms need email field
+- **Comprehensive testing**: Each CUD endpoint must be validated
+- **However**:
+  - Email gate middleware already built and tested (v1)
+  - Pattern is well-established and repetitive
+  - No new architectural components needed
+  - Changes are systematic and predictable
+  - Testing follows existing patterns from v1
 
 ## Architectural changes required
 
-### New Infrastructure Components
+### No new infrastructure needed
 
-1. **Email Subscription KV Namespace**
-   - New KV namespace: `EMAIL_SUBSCRIPTIONS`
-   - Schema: `{ email: string, projectName: string, subscribedAt: string, ipAddress?: string }`
-   - Primary key: email address (lowercase, trimmed)
+The existing email gating infrastructure from v1 is sufficient:
+- ✅ Email gate middleware (`src/middleware/email-gate.ts`)
+- ✅ Subscription service (`src/services/subscription-service.ts`)
+- ✅ Email service (`src/services/email-service.ts`)
+- ✅ EMAIL_SUBSCRIPTIONS KV namespace
+- ✅ Cloudflare Email Routing configured
 
-2. **Email Service Integration**
-   - **Cloudflare `send_email` Binding** (production-ready, native, FREE)
-   - Part of Email Routing (already available, no waitlist)
-   - No API keys needed - uses native Worker binding
-   - Perfect for admin notifications to verified addresses
+### Scope of changes
 
-3. **Middleware Layer**
-   - Email verification middleware for upload routes
-   - Session tracking (cookie or header-based)
-   - Rate limiting for email submissions
+**Apply existing `emailGateMiddleware` to 26 additional endpoints:**
 
-### Modified Routes
+#### Configs Routes (5 endpoints)
+- POST /api/configs - Create config
+- PUT /api/configs/:id - Update config
+- DELETE /api/configs/:id - Delete config
+- POST /api/configs/:id/invalidate - Invalidate cache
+- POST /api/configs/:id/refresh-analysis - Refresh slash command analysis
 
-**Gated Endpoints:**
-- `POST /api/skills/upload-zip` - ZIP upload (requires email)
-- `POST /api/skills/:id/files` - Companion file upload (requires email)
+#### Skills Routes (4 endpoints - 2 already gated)
+- POST /api/skills - Create skill ⚠️ **NOT YET GATED**
+- PUT /api/skills/:id - Update skill
+- DELETE /api/skills/:id - Delete skill
+- DELETE /api/skills/:id/files/:fileId - Delete companion file
+- ✅ POST /api/skills/upload-zip - **ALREADY GATED** (v1)
+- ✅ POST /api/skills/:id/files - **ALREADY GATED** (v1)
 
-**New Endpoints:**
-- `POST /api/subscriptions/subscribe` - Email subscription endpoint
-- `GET /api/subscriptions/verify/:email` - Check if email is subscribed
-- `GET /subscriptions/form` - UI for email subscription form (HTML)
+#### Extensions Routes (7 endpoints)
+- POST /api/extensions - Create extension
+- PUT /api/extensions/:id - Update extension
+- DELETE /api/extensions/:id - Delete extension
+- POST /api/extensions/:id/configs - Add configs to extension (batch)
+- POST /api/extensions/:id/configs/:configId - Add single config
+- DELETE /api/extensions/:id/configs/:configId - Remove config
+- POST /api/extensions/:id/invalidate - Invalidate extension cache
 
-### Configuration Changes
+#### Marketplaces Routes (7 endpoints)
+- POST /api/marketplaces - Create marketplace
+- PUT /api/marketplaces/:id - Update marketplace
+- DELETE /api/marketplaces/:id - Delete marketplace
+- POST /api/marketplaces/:id/extensions - Add extensions (batch)
+- POST /api/marketplaces/:id/extensions/:extensionId - Add single extension
+- DELETE /api/marketplaces/:id/extensions/:extensionId - Remove extension
+- POST /api/marketplaces/:id/invalidate - Invalidate marketplace cache
 
-**wrangler.jsonc additions:**
-```jsonc
-{
-  "kv_namespaces": [
-    // ... existing
-    {
-      "binding": "EMAIL_SUBSCRIPTIONS",
-      "id": "TBD" // Created during setup
-    }
-  ],
-  "send_email": [
-    {
-      "name": "EMAIL",
-      "destination_address": "admin-agent-config@prashamhtrivedi.app"
-    }
-  ],
-  "vars": {
-    // ... existing
-    "ADMIN_EMAIL": "admin-agent-config@prashamhtrivedi.app"
-  }
-}
-```
+#### Files/Plugins Routes (3 endpoints)
+- POST /api/files/extensions/:extensionId - Upload extension files
+- DELETE /api/files/:fileId - Delete file
+- POST /api/plugins/:extensionId/:format/invalidate - Invalidate plugin files
 
-**Environment Setup:**
-```bash
-# Production
-npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
-# Update wrangler.jsonc with the ID
-
-# No secrets needed - send_email binding uses native Email Routing
-```
+**Total: 26 endpoints to protect** (2 already protected from v1)
 
 ## Backend changes required
 
-### 1. Email Service Layer (`src/services/email-service.ts`)
+### 1. Update Route Files
 
-**Purpose:** Handle email sending via Cloudflare's native `send_email` binding
+Apply `emailGateMiddleware` to all CUD endpoints:
 
-**Dependencies:**
-```bash
-npm install mimetext
-```
-
-**Key Methods:**
+**Pattern:**
 ```typescript
-import { EmailMessage } from "cloudflare:email";
-import { createMimeMessage } from 'mimetext';
+import { emailGateMiddleware } from '../middleware/email-gate';
 
-class EmailService {
-  constructor(
-    private emailBinding: any, // send_email binding from env
-    private adminEmail: string,
-    private senderEmail: string = 'notifications@prashamhtrivedi.app'
-  )
+// Before:
+router.post('/', async (c) => { ... })
 
-  async sendSubscriptionNotification(subscriberEmail: string, subscribedAt: string): Promise<void>
-  // Sends admin notification about new subscriber using EmailMessage
-
-  async sendWelcomeEmail(subscriberEmail: string): Promise<void>
-  // Optional: Send welcome email (requires subscriberEmail to be verified in Email Routing)
-}
+// After:
+router.post('/', emailGateMiddleware, async (c) => { ... })
 ```
 
-**Implementation Example:**
+**Files to modify:**
+1. `src/routes/configs.ts` - Add middleware to 5 endpoints
+2. `src/routes/skills.ts` - Add middleware to 4 endpoints (2 already have it)
+3. `src/routes/extensions.ts` - Add middleware to 7 endpoints
+4. `src/routes/marketplaces.ts` - Add middleware to 7 endpoints
+5. `src/routes/files.ts` - Add middleware to 2 endpoints
+6. `src/routes/plugins.ts` - Add middleware to 1 endpoint
+
+### 2. Update Type Bindings
+
+Ensure all route files import the correct bindings for EMAIL_SUBSCRIPTIONS:
+
 ```typescript
-async sendSubscriptionNotification(subscriberEmail: string, subscribedAt: string): Promise<void> {
-  const msg = createMimeMessage();
-
-  msg.setSender({
-    name: 'Agent Config Adapter',
-    addr: this.senderEmail
-  });
-
-  msg.setRecipient(this.adminEmail);
-  msg.setSubject('New Subscription to Agent Config Adapter');
-
-  msg.addMessage({
-    contentType: 'text/html',
-    data: `
-      <h2>New Subscription</h2>
-      <p><strong>Email:</strong> ${subscriberEmail}</p>
-      <p><strong>Project:</strong> agentConfig</p>
-      <p><strong>Subscribed At:</strong> ${subscribedAt}</p>
-    `
-  });
-
-  const message = new EmailMessage(
-    this.senderEmail,
-    this.adminEmail,
-    msg.asRaw()
-  );
-
-  await this.emailBinding.send(message);
-}
+type Bindings = {
+  DB: D1Database;
+  CONFIG_CACHE: KVNamespace;
+  EMAIL_SUBSCRIPTIONS: KVNamespace; // Required for emailGateMiddleware
+  // ... other bindings
+};
 ```
 
-**Email Templates:**
-- Admin notification: "New subscriber: {email} subscribed to agentConfig at {datetime}"
-- Welcome email: (Optional - requires subscriber email to be verified in Email Routing)
+**Files to check/update:**
+- `src/routes/configs.ts` - Add EMAIL_SUBSCRIPTIONS to Bindings
+- `src/routes/extensions.ts` - Add EMAIL_SUBSCRIPTIONS to Bindings
+- `src/routes/marketplaces.ts` - Add EMAIL_SUBSCRIPTIONS to Bindings
+- `src/routes/files.ts` - Add EMAIL_SUBSCRIPTIONS to Bindings
+- `src/routes/plugins.ts` - Add EMAIL_SUBSCRIPTIONS to Bindings
+- ✅ `src/routes/skills.ts` - **ALREADY HAS IT** (v1)
 
-### 2. Subscription Service Layer (`src/services/subscription-service.ts`)
+### 3. No Service Layer Changes
 
-**Purpose:** Manage email subscriptions in KV
-
-**Key Methods:**
-```typescript
-class SubscriptionService {
-  constructor(kv: KVNamespace)
-
-  async subscribe(email: string, ipAddress?: string): Promise<SubscriptionRecord>
-  // Store subscription in KV, return subscription record
-
-  async isSubscribed(email: string): Promise<boolean>
-  // Check if email exists in KV
-
-  async getSubscription(email: string): Promise<SubscriptionRecord | null>
-  // Retrieve full subscription record
-
-  async listSubscriptions(cursor?: string): Promise<{ subscriptions: SubscriptionRecord[], cursor?: string }>
-  // Admin: list all subscriptions with pagination
-}
-
-interface SubscriptionRecord {
-  email: string
-  projectName: 'agentConfig'
-  subscribedAt: string // ISO datetime
-  ipAddress?: string
-}
-```
-
-**KV Storage Pattern:**
-```
-Key: email (lowercase, trimmed)
-Value: JSON.stringify(SubscriptionRecord)
-Metadata: { subscribedAt: timestamp }
-```
-
-### 3. Email Verification Middleware (`src/middleware/email-gate.ts`)
-
-**Purpose:** Protect upload endpoints
-
-**Implementation:**
-```typescript
-export const emailGateMiddleware = async (c: Context, next: Next) => {
-  // 1. Check for email in request
-  const email = c.req.header('X-Subscriber-Email') || c.req.query('email')
-
-  if (!email) {
-    return c.json({
-      error: 'Email required for uploads',
-      subscription_required: true,
-      subscription_url: '/subscriptions/form'
-    }, 401)
-  }
-
-  // 2. Validate email format
-  if (!isValidEmail(email)) {
-    return c.json({ error: 'Invalid email format' }, 400)
-  }
-
-  // 3. Check subscription status
-  const subscriptionService = new SubscriptionService(c.env.EMAIL_SUBSCRIPTIONS)
-  const isSubscribed = await subscriptionService.isSubscribed(email)
-
-  if (!isSubscribed) {
-    return c.json({
-      error: 'Email not subscribed',
-      subscription_required: true,
-      subscription_url: '/subscriptions/form'
-    }, 403)
-  }
-
-  // 4. Store email in context for logging
-  c.set('subscriberEmail', email)
-
-  await next()
-}
-```
-
-### 4. Updated Routes (`src/routes/subscriptions.ts`)
-
-**New subscription routes:**
-```typescript
-// POST /api/subscriptions/subscribe
-async (c) => {
-  const { email } = await c.req.json()
-
-  // Validate email
-  if (!isValidEmail(email)) {
-    return c.json({ error: 'Invalid email' }, 400)
-  }
-
-  // Check if already subscribed
-  const subscriptionService = new SubscriptionService(c.env.EMAIL_SUBSCRIPTIONS)
-  const existing = await subscriptionService.isSubscribed(email)
-
-  if (existing) {
-    return c.json({ message: 'Email already subscribed', subscribed: true })
-  }
-
-  // Subscribe
-  const ipAddress = c.req.header('CF-Connecting-IP')
-  const subscription = await subscriptionService.subscribe(email, ipAddress)
-
-  // Send notifications
-  const emailService = new EmailService(
-    c.env.EMAIL, // send_email binding
-    c.env.ADMIN_EMAIL
-  )
-  await emailService.sendSubscriptionNotification(email, subscription.subscribedAt)
-  // await emailService.sendWelcomeEmail(email) // Optional - requires email verification in Email Routing
-
-  return c.json({ message: 'Subscribed successfully', subscription }, 201)
-}
-
-// GET /api/subscriptions/verify/:email
-async (c) => {
-  const email = c.req.param('email')
-  const subscriptionService = new SubscriptionService(c.env.EMAIL_SUBSCRIPTIONS)
-  const isSubscribed = await subscriptionService.isSubscribed(email)
-
-  return c.json({ email, subscribed: isSubscribed })
-}
-```
-
-### 5. Modified Skills Routes
-
-**Apply middleware to upload endpoints:**
-```typescript
-import { emailGateMiddleware } from '../middleware/email-gate'
-
-// POST /api/skills/upload-zip
-skillsRouter.post('/upload-zip', emailGateMiddleware, async (c) => {
-  // Existing upload logic
-})
-
-// POST /api/skills/:id/files
-skillsRouter.post('/:id/files', emailGateMiddleware, async (c) => {
-  // Existing upload logic
-})
-```
-
-### 6. Domain Types Update (`src/domain/types.ts`)
-
-**Add subscription types:**
-```typescript
-export interface SubscriptionRecord {
-  email: string
-  projectName: 'agentConfig'
-  subscribedAt: string
-  ipAddress?: string
-}
-
-export interface Env {
-  // ... existing bindings
-  EMAIL_SUBSCRIPTIONS: KVNamespace
-  EMAIL: any // send_email binding
-  ADMIN_EMAIL: string
-}
-```
+All existing services remain unchanged. The middleware operates at the route level and doesn't require service modifications.
 
 ## Frontend changes required
 
-### 1. Email Subscription Form (`src/views/subscriptions.ts`)
+### 1. Add Email Fields to All Creation Forms
 
-**New view for subscription form with marketing copy:**
-```typescript
-export function subscriptionFormView(returnUrl?: string): string {
-  return layout('Subscribe for Upload Access', `
-    <div class="fade-in">
-      <div class="card" style="max-width: 700px; margin: 40px auto;">
-        <h2 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 12px;">
-          ${icons.mail('icon')} Get Early Access to Uploads
-        </h2>
+**Forms to update:**
 
-        <!-- Marketing Banner -->
-        <div style="background: linear-gradient(135deg, rgba(88, 166, 255, 0.15) 0%, rgba(88, 166, 255, 0.05) 100%); border-left: 4px solid var(--accent-primary); padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;">
-          <div style="display: flex; align-items: start; gap: 12px;">
-            <div style="font-size: 1.5em;">🚀</div>
-            <div>
-              <h3 style="margin: 0 0 8px 0; color: var(--accent-primary); font-size: 1.1em;">
-                User Login Coming Soon!
-              </h3>
-              <p style="margin: 0; color: var(--text-primary); line-height: 1.6;">
-                We're building a full authentication system. When it's ready, you'll be able to securely upload and manage your agent configurations, skills, and extensions.
-              </p>
-              <p style="margin: 8px 0 0 0; color: var(--text-secondary); font-size: 0.95em;">
-                <strong>For now:</strong> Enter your email below to get early access to upload features. We'll notify you when user accounts launch!
-              </p>
-            </div>
-          </div>
-        </div>
+#### Config Forms (`src/views/configs.ts`)
+- `configCreateView()` - Add email field
+- `configEditView()` - Add email field
 
-        <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.95em;">
-          Browse and explore all configs, skills, and extensions freely. Email required only for uploads.
-        </p>
-
-        <form
-          hx-post="/api/subscriptions/subscribe"
-          hx-target="#subscription-result"
-          hx-swap="innerHTML">
-
-          <div class="form-group">
-            <label for="email">Email Address *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              placeholder="you@example.com">
-            <span class="help-text">
-              We'll send a confirmation to this address
-            </span>
-          </div>
-
-          <div id="subscription-result" style="margin-bottom: 16px;"></div>
-
-          <button type="submit" class="btn ripple">
-            ${icons.check('icon')} Subscribe
-          </button>
-          ${returnUrl ? `
-            <input type="hidden" name="return_url" value="${escapeHtml(returnUrl)}">
-          ` : ''}
-        </form>
-
-        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color); font-size: 0.9em; color: var(--text-secondary);">
-          <p style="margin: 0 0 8px 0;">
-            <strong>What you get:</strong>
-          </p>
-          <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-            <li>Upload skills (ZIP files with multi-file support)</li>
-            <li>Upload companion files for existing skills</li>
-            <li>Early access to new features</li>
-            <li>Notification when user accounts are available</li>
-          </ul>
-          <p style="margin: 16px 0 0 0; font-size: 0.85em; color: var(--text-secondary);">
-            By subscribing, you agree to receive notifications about platform updates and your uploads.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.successful && evt.detail.target.id === 'subscription-result') {
-          const result = JSON.parse(evt.detail.xhr.responseText)
-          const container = document.getElementById('subscription-result')
-
-          if (result.subscription || result.subscribed) {
-            container.innerHTML = \`
-              <div class="status-indicator status-success" style="padding: 12px; background: rgba(76, 217, 100, 0.1); border-radius: 6px;">
-                <span class="status-dot"></span>
-                \${result.message}
-              </div>
-            \`
-
-            // Redirect after 2 seconds if return_url exists
-            const returnUrl = new FormData(evt.detail.target).get('return_url')
-            if (returnUrl) {
-              setTimeout(() => {
-                window.location.href = returnUrl
-              }, 2000)
-            }
-          }
-        }
-      })
-    </script>
-  `)
-}
-```
-
-### 2. Info Banner for Upload Pages (`src/views/skills.ts`)
-
-**Add banner at top of upload pages (create/edit forms):**
-```typescript
-// Banner component for upload pages
-function uploadAccessBanner(): string {
-  return `
-    <div style="background: rgba(255, 184, 0, 0.1); border: 1px solid rgba(255, 184, 0, 0.3); border-radius: 6px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-      <div style="font-size: 1.3em;">⚡</div>
-      <div style="flex: 1;">
-        <strong style="color: var(--text-primary);">Upload Access Required</strong>
-        <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9em;">
-          Enter your email below to unlock uploads. <strong>Full user authentication coming soon!</strong>
-        </p>
-      </div>
-    </div>
-  `;
-}
-```
-
-**Modify ZIP upload form to show banner and check subscription:**
-```typescript
-// In skillCreateView(), update ZIP upload tab
-<form
-  hx-post="/api/skills/upload-zip"
-  hx-encoding="multipart/form-data"
-  hx-headers='{"X-Subscriber-Email": localStorage.getItem("subscriberEmail") || ""}'
-  hx-on="htmx:responseError: handleUploadError">
-
-  <!-- Show subscription prompt if not subscribed -->
-  <div id="subscription-check"
-       hx-get="/api/subscriptions/verify?email="
-       hx-trigger="load"
-       hx-swap="innerHTML">
-    <div class="status-indicator status-info">
-      <span class="status-dot"></span>
-      Checking subscription status...
-    </div>
-  </div>
-
-  <!-- Rest of upload form -->
-</form>
-
-<script>
-function handleUploadError(evt) {
-  const response = JSON.parse(evt.detail.xhr.responseText)
-  if (response.subscription_required) {
-    window.location.href = response.subscription_url + '?return=' + window.location.pathname
-  }
-}
-</script>
-```
-
-**Add email input to upload forms:**
-```typescript
-// Before file upload section, add:
+**Pattern:**
+```html
 <div class="form-group">
   <label for="subscriber-email">Your Email *</label>
   <input
@@ -497,384 +149,418 @@ function handleUploadError(evt) {
     name="subscriber_email"
     required
     placeholder="you@example.com"
-    value=""
-    hx-post="/api/subscriptions/verify"
-    hx-trigger="change"
-    hx-target="#email-status"
-    hx-swap="innerHTML">
-  <div id="email-status"></div>
+    value="">
   <span class="help-text">
-    Required for upload access.
+    Required for content management.
     <a href="/subscriptions/form">Subscribe here</a> if you don't have access.
   </span>
 </div>
 ```
 
-### 3. Homepage Notice (`src/views/configs.ts` or main landing page)
+#### Extension Forms (`src/views/extensions.ts`)
+- `extensionCreateView()` - Add email field
+- `extensionEditView()` - Add email field
 
-**Add prominent notice on homepage:**
-```typescript
-// Add to top of configs list view or create a dedicated landing section
-function homepageNotice(): string {
-  return `
-    <div class="card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border: 2px solid var(--accent-primary); margin-bottom: 30px;">
-      <div style="text-align: center; padding: 20px;">
-        <h2 style="margin: 0 0 12px 0; color: var(--accent-primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
-          ${icons.star('icon')} Welcome to Agent Config Adapter
-        </h2>
-        <p style="font-size: 1.1em; color: var(--text-primary); margin: 0 0 16px 0; line-height: 1.6;">
-          Browse and explore <strong>configs</strong>, <strong>skills</strong>, and <strong>extensions</strong> for Claude Code, Gemini, and Codex agents.
-        </p>
-        <div style="display: inline-block; background: rgba(255, 184, 0, 0.1); border: 1px solid rgba(255, 184, 0, 0.3); border-radius: 8px; padding: 12px 20px; margin-bottom: 16px;">
-          <p style="margin: 0; color: var(--text-primary);">
-            <strong>🚀 Coming Soon:</strong> User authentication & personal config management
-          </p>
-        </div>
-        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
-          <a href="/skills" class="btn ripple">
-            ${icons.star('icon')} Browse Skills
-          </a>
-          <a href="/configs" class="btn ripple">
-            ${icons.file('icon')} View Configs
-          </a>
-          <a href="/subscriptions/form" class="btn" style="background: var(--accent-primary); color: white;">
-            ${icons.mail('icon')} Get Upload Access
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-}
-```
+#### Marketplace Forms (`src/views/marketplaces.ts`)
+- `marketplaceCreateView()` - Add email field
+- `marketplaceEditView()` - Add email field
 
-### 4. Navigation Update (`src/views/layout.ts`)
+#### Skills Forms (`src/views/skills.ts`)
+- `skillCreateView()` - **ALREADY HAS EMAIL FIELD** (verify and update if needed)
+- `skillEditView()` - **ALREADY HAS EMAIL FIELD** (verify and update if needed)
 
-**Update navigation to emphasize public access and upload CTA:**
+### 2. Update Form Submissions to Include Email Header
+
+All HTMX forms need to send email in headers:
+
 ```html
-<!-- Main navigation -->
-<nav>
-  <a href="/">${icons.home('icon')} Home</a>
-  <a href="/configs">${icons.file('icon')} Configs</a>
-  <a href="/skills">${icons.star('icon')} Skills</a>
-  <a href="/extensions">${icons.package('icon')} Extensions</a>
-  <a href="/marketplaces">${icons.grid('icon')} Marketplaces</a>
-
-  <!-- Upload Access CTA -->
-  <a href="/subscriptions/form" class="btn-primary" style="margin-left: auto; background: var(--accent-primary); color: white; padding: 8px 16px; border-radius: 6px;">
-    ${icons.upload('icon')} Upload Access
-  </a>
-</nav>
+<form
+  hx-post="/api/configs"
+  hx-headers='{"X-Subscriber-Email": localStorage.getItem("subscriberEmail") || document.getElementById("subscriber-email")?.value || ""}'
+  hx-target="#result">
+  <!-- form fields -->
+</form>
 ```
 
-### 5. Public Access Notice on List Views
+### 3. Add Email Verification UI Indicators
 
-**Add notice to configs/skills list views:**
-```typescript
-// Add to top of list views (before grid)
-function publicAccessNotice(): string {
-  return `
-    <div style="background: rgba(76, 217, 100, 0.1); border: 1px solid rgba(76, 217, 100, 0.3); border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-      <span style="font-size: 1.2em;">👁️</span>
-      <span style="color: var(--text-primary); font-size: 0.95em;">
-        <strong>Public Access:</strong> All content is freely browsable. <a href="/subscriptions/form" style="color: var(--accent-primary); text-decoration: underline;">Get upload access</a> to contribute your own configs.
-      </span>
-    </div>
-  `;
-}
+Add real-time email verification on blur:
+
+```html
+<input
+  type="email"
+  id="subscriber-email"
+  hx-post="/api/subscriptions/verify"
+  hx-trigger="blur"
+  hx-target="#email-status"
+  hx-include="[name='subscriber_email']">
+<div id="email-status"></div>
 ```
 
-### 6. Client-side Email Storage
+### 4. Update JavaScript for Email Persistence
 
-**Add to layout.ts for persistent email:**
+Enhance `src/views/layout.ts` with better email handling:
+
 ```javascript
-// Store subscriber email in localStorage after successful subscription
-document.body.addEventListener('subscription-success', function(evt) {
-  const email = evt.detail.email
-  localStorage.setItem('subscriberEmail', email)
-  localStorage.setItem('subscribedAt', new Date().toISOString())
-})
-
-// Auto-populate email fields from localStorage
+// Auto-populate email from localStorage
 document.addEventListener('DOMContentLoaded', function() {
-  const storedEmail = localStorage.getItem('subscriberEmail')
+  const storedEmail = localStorage.getItem('subscriberEmail');
   if (storedEmail) {
     document.querySelectorAll('input[name="subscriber_email"]').forEach(input => {
-      input.value = storedEmail
-    })
+      input.value = storedEmail;
+    });
   }
-})
+});
+
+// Save email after successful subscription
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+  if (evt.detail.successful && evt.detail.pathInfo.requestPath.includes('/subscribe')) {
+    const result = JSON.parse(evt.detail.xhr.responseText);
+    if (result.subscription || result.subscribed) {
+      const email = result.subscription?.email || evt.detail.requestConfig.parameters?.email;
+      if (email) {
+        localStorage.setItem('subscriberEmail', email);
+      }
+    }
+  }
+});
+```
+
+### 5. Update Marketing Messages
+
+Update all form pages to explain the email requirement:
+
+```html
+<div class="info-banner">
+  <strong>⚡ Email Required:</strong>
+  All content creation and modifications require email verification.
+  <strong>Full authentication coming soon!</strong>
+  <a href="/subscriptions/form">Subscribe for access</a>
+</div>
 ```
 
 ## Acceptance Criteria
 
-1. **Email Subscription Works**
-   - ✅ User can subscribe with valid email
-   - ✅ Duplicate subscriptions are handled gracefully
-   - ✅ Invalid emails are rejected with clear error messages
-   - ✅ Subscription record stored in KV with all required fields
+### 1. All CUD Endpoints Protected
+- ✅ All 26+ CUD endpoints reject requests without email (401)
+- ✅ All endpoints reject unsubscribed emails (403)
+- ✅ All endpoints accept subscribed emails (200/201)
 
-2. **Admin Notifications Sent**
-   - ✅ Admin receives email when new user subscribes
-   - ✅ Email contains subscriber email and timestamp
-   - ✅ Email is sent from `admin-agent-config@prashamhtrivedi.app`
+### 2. Email Validation
+- ✅ Invalid email formats rejected (400)
+- ✅ Case-insensitive email matching works
+- ✅ Email trimming and normalization works
 
-3. **Upload Gating Enforced**
-   - ✅ ZIP upload endpoint rejects requests without email
-   - ✅ Companion file upload endpoint rejects requests without email
-   - ✅ Unsubscribed emails are rejected with 403 status
-   - ✅ Subscribed emails can upload successfully
+### 3. Frontend UX
+- ✅ All creation/edit forms have email field
+- ✅ Email auto-populated from localStorage
+- ✅ Real-time email verification works
+- ✅ Clear error messages for email issues
+- ✅ Smooth redirect flow to subscription form
 
-4. **UI/UX Quality**
-   - ✅ Subscription form is accessible and user-friendly
-   - ✅ Clear error messages for validation failures
-   - ✅ Success confirmation after subscription
-   - ✅ Email persistence across sessions (localStorage)
-   - ✅ Smooth redirect flow from upload → subscribe → upload
+### 4. No Breaking Changes
+- ✅ Existing subscriptions continue to work
+- ✅ Previously gated endpoints (ZIP upload, companion files) still work
+- ✅ All existing tests still pass
+- ✅ MCP endpoints remain unaffected (read-only)
 
-5. **Security & Rate Limiting**
-   - ✅ Email validation prevents malformed inputs
-   - ✅ Lowercase/trim normalization prevents duplicates
-   - ✅ IP address captured for abuse monitoring
-   - ✅ (Optional) Rate limiting on subscription endpoint
-
-6. **Marketing & Messaging**
-   - ✅ Landing page clearly communicates "auth coming soon"
-   - ✅ Homepage prominently shows public access
-   - ✅ Upload pages explain temporary email requirement
-   - ✅ Subscription form highlights early access benefits
-   - ✅ Navigation emphasizes browse vs. upload distinction
+### 5. Error Handling
+- ✅ Consistent error messages across all endpoints
+- ✅ Proper HTTP status codes (401, 403, 400)
+- ✅ User-friendly error messages with subscription URL
 
 ## Validation
 
 ### Backend API Testing
 
-**1. Subscription Flow:**
+Test each CUD endpoint with 3 scenarios:
+1. **No email** → 401 Unauthorized
+2. **Unsubscribed email** → 403 Forbidden
+3. **Subscribed email** → Success (200/201)
+
+#### Configs Endpoints
 ```bash
-# Test new subscription
-curl -X POST http://localhost:8787/api/subscriptions/subscribe \
+# Subscribe test email first
+curl -X POST http://localhost:9090/api/subscriptions/subscribe \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com"}'
-# Expected: 201, subscription record returned, admin email sent
+  -d '{"email":"qa@test.com"}'
 
-# Test duplicate subscription
-curl -X POST http://localhost:8787/api/subscriptions/subscribe \
+# Test each config endpoint:
+
+# 1. Create config - No email
+curl -X POST http://localhost:9090/api/configs \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com"}'
-# Expected: 200, "already subscribed" message
+  -d '{"name":"Test","type":"slash_command","original_format":"claude_code","content":"test"}'
+# Expected: 401
 
-# Verify subscription status
-curl http://localhost:8787/api/subscriptions/verify/test@example.com
-# Expected: {"email": "test@example.com", "subscribed": true}
+# 2. Create config - Unsubscribed email
+curl -X POST http://localhost:9090/api/configs \
+  -H "X-Subscriber-Email: unsubscribed@test.com" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","type":"slash_command","original_format":"claude_code","content":"test"}'
+# Expected: 403
 
-# Check KV storage
-npx wrangler kv:key get --binding=EMAIL_SUBSCRIPTIONS "test@example.com" --local
-# Expected: {"email":"test@example.com","projectName":"agentConfig","subscribedAt":"..."}
+# 3. Create config - Subscribed email
+curl -X POST http://localhost:9090/api/configs \
+  -H "X-Subscriber-Email: qa@test.com" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","type":"slash_command","original_format":"claude_code","content":"test"}'
+# Expected: 201
+
+# Repeat for PUT, DELETE, and POST invalidate/refresh-analysis
 ```
 
-**2. Upload Gating:**
-```bash
-# Test ZIP upload without email
-curl -X POST http://localhost:8787/api/skills/upload-zip \
-  -F "skill_zip=@test-skill.zip" \
-  -F "name=Test Skill"
-# Expected: 401, "Email required for uploads"
+Repeat similar tests for:
+- **Skills**: POST /, PUT /:id, DELETE /:id, DELETE /:id/files/:fileId
+- **Extensions**: POST /, PUT /:id, DELETE /:id, POST/DELETE /:id/configs
+- **Marketplaces**: POST /, PUT /:id, DELETE /:id, POST/DELETE /:id/extensions
+- **Files/Plugins**: POST /extensions/:id, DELETE /:fileId, POST invalidate
 
-# Test ZIP upload with unsubscribed email
-curl -X POST http://localhost:8787/api/skills/upload-zip \
-  -H "X-Subscriber-Email: unsubscribed@example.com" \
-  -F "skill_zip=@test-skill.zip" \
-  -F "name=Test Skill"
-# Expected: 403, "Email not subscribed"
+#### Unit Tests Update
 
-# Test ZIP upload with subscribed email
-curl -X POST http://localhost:8787/api/skills/upload-zip \
-  -H "X-Subscriber-Email: test@example.com" \
-  -F "skill_zip=@test-skill.zip" \
-  -F "name=Test Skill"
-# Expected: 201, skill created successfully
+Update existing test suites:
 
-# Test companion file upload with subscribed email
-SKILL_ID="existing-skill-id"
-curl -X POST http://localhost:8787/api/skills/$SKILL_ID/files \
-  -H "X-Subscriber-Email: test@example.com" \
-  -F "file_path=FORMS.md" \
-  -F "file_content=@test-file.md"
-# Expected: 201, file uploaded successfully
+```typescript
+// src/routes/configs.test.ts
+describe('POST /api/configs', () => {
+  it('should reject requests without email', async () => {
+    const res = await app.request('/api/configs', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Test', type: 'slash_command', content: 'test' }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('should reject unsubscribed emails', async () => {
+    const res = await app.request('/api/configs', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Test', type: 'slash_command', content: 'test' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Subscriber-Email': 'unsubscribed@test.com'
+      }
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('should accept subscribed emails', async () => {
+    // Setup: Subscribe email first
+    await subscriptionService.subscribe('qa@test.com');
+
+    const res = await app.request('/api/configs', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Test', type: 'slash_command', content: 'test' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Subscriber-Email': 'qa@test.com'
+      }
+    });
+    expect(res.status).toBe(201);
+  });
+});
 ```
 
-**3. Email Validation:**
-```bash
-# Test invalid email formats
-curl -X POST http://localhost:8787/api/subscriptions/subscribe \
-  -H "Content-Type: application/json" \
-  -d '{"email": "invalid-email"}'
-# Expected: 400, "Invalid email format"
-
-curl -X POST http://localhost:8787/api/subscriptions/subscribe \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@"}'
-# Expected: 400, "Invalid email format"
-```
+Add similar tests for all route files.
 
 ### Frontend UI Testing
 
-**1. Subscription Form:**
-- Navigate to `/subscriptions/form`
-- Enter valid email → Submit → See success message
-- Check localStorage for stored email
-- Enter invalid email → Submit → See error message
-- Enter duplicate email → Submit → See "already subscribed" message
+**For each entity (Configs, Skills, Extensions, Marketplaces):**
 
-**2. Upload Flow:**
-- Navigate to `/skills/new`
-- Click "Upload ZIP" tab
-- Without email: See subscription prompt or error on submit
-- With subscribed email: Upload succeeds
-- Email auto-populated from localStorage
+1. **Navigate to creation form** (e.g., `/configs/new`)
+   - ✅ Email field is visible
+   - ✅ Email field is required
+   - ✅ Help text with subscription link present
 
-**3. Companion File Upload:**
-- Navigate to `/skills/:id/edit`
-- Try adding companion file without email → See error
-- Add email from subscription → Upload succeeds
+2. **Try to submit without email**
+   - ✅ Browser validation prevents submission OR
+   - ✅ API returns 401 with clear error message
 
-### Email Testing
+3. **Try to submit with unsubscribed email**
+   - ✅ API returns 403 with subscription URL
+   - ✅ User redirected to `/subscriptions/form`
 
-**Check admin email inbox:**
-- Subscribe with test email
-- Verify admin receives notification at `admin-agent-config@prashamhtrivedi.app`
-- Email contains:
-  - Subscriber email
-  - Project name: "agentConfig"
-  - Timestamp
-  - (Optional) IP address
+4. **Subscribe and retry**
+   - ✅ Subscription succeeds
+   - ✅ Email saved to localStorage
+   - ✅ Redirect back to form
+   - ✅ Email auto-populated
+   - ✅ Form submission succeeds
 
-**Resend Dashboard:**
-- Log into Resend dashboard
-- Check email logs for delivery status
-- Verify no bounce/spam issues
+5. **Verify edit forms**
+   - ✅ Edit forms also have email field
+   - ✅ Same gating behavior for PUT requests
+
+6. **Verify delete operations**
+   - ✅ Delete buttons/links send email header
+   - ✅ Same gating behavior for DELETE requests
+
+### Regression Testing
+
+1. **MCP endpoints remain read-only** (not gated)
+   ```bash
+   curl http://localhost:9090/mcp/info
+   # Should work without email
+   ```
+
+2. **GET endpoints remain public**
+   ```bash
+   curl http://localhost:9090/api/configs
+   curl http://localhost:9090/api/skills
+   # Should work without email
+   ```
+
+3. **Previously gated endpoints still work**
+   ```bash
+   # ZIP upload
+   curl -X POST http://localhost:9090/api/skills/upload-zip \
+     -H "X-Subscriber-Email: qa@test.com" \
+     -F "skill_zip=@test.zip" \
+     -F "name=Test"
+   # Should still work (201)
+   ```
+
+4. **All existing unit tests pass**
+   ```bash
+   npm test -- --run
+   # All 529+ tests should pass
+   ```
 
 ### Integration Testing
 
-**Full user journey:**
-1. User visits `/skills/new`
-2. Clicks "Upload ZIP"
-3. Sees "Email required for upload" message
-4. Clicks subscription link → Redirected to `/subscriptions/form`
-5. Enters email and subscribes
-6. Redirected back to `/skills/new`
-7. Email auto-populated in form
-8. Uploads ZIP successfully
-9. Admin receives notification email
+**End-to-End User Journey:**
 
-### Edge Cases
+1. User visits `/configs/new` (not subscribed yet)
+2. Fills out config form
+3. Submits without email → Browser validation error
+4. Adds fake email → Submit → 403 error
+5. Clicks subscription link → Redirected to `/subscriptions/form`
+6. Subscribes with real email → 201 success
+7. Redirected back to `/configs/new`
+8. Email auto-populated in form
+9. Submits config → 201 success
+10. Config created successfully
 
-**Test edge cases:**
-```bash
-# Case-insensitive email storage
-curl -X POST .../subscribe -d '{"email": "Test@Example.com"}'
-curl -X POST .../subscribe -d '{"email": "test@example.com"}'
-# Expected: Second request returns "already subscribed"
-
-# Whitespace handling
-curl -X POST .../subscribe -d '{"email": " test@example.com "}'
-# Expected: Trimmed and stored as "test@example.com"
-
-# Special characters in email
-curl -X POST .../subscribe -d '{"email": "test+tag@example.com"}'
-# Expected: Valid email, subscription succeeds
-
-# Very long email
-curl -X POST .../subscribe -d '{"email": "verylongemailaddress@very-long-domain-name.com"}'
-# Expected: Valid if under max length, subscription succeeds
-```
+Repeat for Skills, Extensions, Marketplaces.
 
 ### Performance Testing
 
-**KV lookup performance:**
-```bash
-# Measure subscription check latency
-time curl http://localhost:8787/api/subscriptions/verify/test@example.com
-# Expected: < 100ms for KV lookup
+**Verify middleware overhead is minimal:**
 
-# Concurrent uploads
-# Run 5 concurrent upload requests with valid emails
-# Expected: All succeed without conflicts
+```bash
+# Measure response time difference
+# Before gating (if we temporarily remove middleware)
+time curl -X POST http://localhost:9090/api/configs ...
+
+# After gating (with middleware)
+time curl -X POST http://localhost:9090/api/configs -H "X-Subscriber-Email: qa@test.com" ...
+
+# Difference should be < 5ms (KV lookup is fast)
 ```
 
-### Deployment Validation
+### Load Testing (Optional)
 
-**Production checklist:**
 ```bash
-# 1. Create KV namespace
-npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
-# Copy ID to wrangler.jsonc
+# Concurrent requests with subscribed email
+ab -n 100 -c 10 -H "X-Subscriber-Email: qa@test.com" \
+  -p config.json -T application/json \
+  http://localhost:9090/api/configs
 
-# 2. Set Resend API key
-npx wrangler secret put RESEND_API_KEY
-# Paste API key from Resend dashboard
+# All should succeed
+```
 
-# 3. Deploy
+## Deployment Checklist
+
+### Pre-Deployment
+
+1. ✅ All unit tests pass (`npm test`)
+2. ✅ Manual API testing complete (26+ endpoints)
+3. ✅ Frontend forms tested in browser
+4. ✅ Email gating works for all CUD operations
+5. ✅ MCP endpoints remain unaffected
+6. ✅ GET endpoints remain public
+7. ✅ Documentation updated (CLAUDE.md, README.md)
+
+### Deployment Steps
+
+No new infrastructure needed - v1 setup already complete:
+- ✅ EMAIL_SUBSCRIPTIONS KV namespace exists
+- ✅ Cloudflare Email Routing configured
+- ✅ ADMIN_EMAIL set in wrangler.jsonc
+
+**Deploy:**
+```bash
 npm run deploy
-
-# 4. Verify production endpoints
-curl https://agent-config-adapter.workers.dev/api/subscriptions/subscribe \
-  -X POST -H "Content-Type: application/json" \
-  -d '{"email": "production-test@example.com"}'
-
-# 5. Check admin email received
-# Verify email arrives at admin-agent-config@prashamhtrivedi.app
 ```
 
-## Setup Prerequisites
+### Post-Deployment Verification
 
-### Before Implementation
+```bash
+# 1. Verify subscription works
+curl -X POST https://agent-config-adapter.workers.dev/api/subscriptions/subscribe \
+  -H "Content-Type: application/json" \
+  -d '{"email":"production-qa@test.com"}'
 
-1. **Cloudflare Email Routing Setup**
-   - Enable Email Routing on `prashamhtrivedi.app` domain in Cloudflare Dashboard
-   - Go to: Dashboard → Domain → Email → Email Routing → Enable
-   - DNS records (SPF, DKIM, DMARC) are configured AUTOMATICALLY by Cloudflare
-   - Verify destination address: `admin-agent-config@prashamhtrivedi.app`
-   - Confirm verification via email link sent to admin address
+# 2. Verify gating works on production
+curl -X POST https://agent-config-adapter.workers.dev/api/configs \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","type":"slash_command","original_format":"claude_code","content":"test"}'
+# Expected: 401
 
-2. **Environment Preparation**
-   ```bash
-   # Production only - no local secrets needed for email
-   npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
-   # Update wrangler.jsonc with the returned ID
-   ```
+# 3. Verify subscribed email works
+curl -X POST https://agent-config-adapter.workers.dev/api/configs \
+  -H "X-Subscriber-Email: production-qa@test.com" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","type":"slash_command","original_format":"claude_code","content":"test"}'
+# Expected: 201
 
-3. **Dependencies**
-   ```bash
-   npm install mimetext
-   # Already using: nanoid (for potential token generation)
-   # Already using: hono (for routes)
-   ```
-
-4. **Verify Email Routing**
-   ```bash
-   # Test that notifications@prashamhtrivedi.app can send
-   # This email address will be the sender for admin notifications
-   # Domain must have Email Routing enabled
-   ```
+# 4. Verify admin email received
+# Check admin-agent-config@prashamhtrivedi.app inbox
+```
 
 ## Notes
 
 ### Technical
-- **Email Service**: Using Cloudflare's native `send_email` binding (production-ready, FREE, part of Email Routing)
-- **Why This Works**: Admin email is a verified destination address, so the "verified addresses only" limitation doesn't apply
-- **No API Keys**: Native binding means no secrets to manage, no third-party accounts
-- **Local Testing**: Wrangler simulates emails by writing .eml files to disk during `wrangler dev`
-- **Rate Limiting**: Consider adding Cloudflare's native rate limiting rules in dashboard for subscription endpoint
-- **GDPR Compliance**: Store minimal data (email, project, timestamp), allow deletion via support
-- **Future Enhancement**: Add email verification flow with confirmation tokens (requires verifying subscriber emails in Email Routing)
-- **Monitoring**: Track subscription count, failed email sends, and abuse attempts via Cloudflare analytics
-- **Sender Email**: Use `notifications@prashamhtrivedi.app` or any address from your domain with Email Routing enabled
+
+- **No breaking changes**: Existing v1 implementation (ZIP upload, companion files) continues to work
+- **MCP exemption**: MCP server endpoints (`/mcp/*`) deliberately NOT gated (handled in separate ticket)
+- **Middleware reuse**: No new middleware code needed - reuse existing `emailGateMiddleware`
+- **Systematic approach**: Apply same pattern to all 26+ endpoints
+- **Testing strategy**: Each CUD endpoint gets 3-scenario test (no email, unsubscribed, subscribed)
+- **Performance**: Email gate adds <5ms overhead (single KV lookup)
 
 ### Product & UX
-- **Temporary Landing Page**: Email subscription serves as MVP before full authentication
-- **Public First**: All content (configs, skills, extensions, marketplaces) is publicly browsable
-- **Upload Gating**: Only upload functionality requires email (temporary measure)
-- **Marketing Message**: "User Login Coming Soon" - sets expectations for future auth
-- **Migration Path**: When auth is ready, existing email subscriptions can become user accounts
-- **MCP Access**: Read-only (being converted separately, not affected by this feature)
-- **Content Strategy**: Encourage browsing and exploration, with upload as upgrade path
+
+- **Consistent gating**: All CUD operations now require email (not just uploads)
+- **Public browsing**: All GET endpoints remain public (view-only access)
+- **Clear messaging**: All forms explain email requirement with "auth coming soon" message
+- **Smooth flow**: Email persistence via localStorage reduces friction
+- **Migration path**: When full auth launches, existing email subscriptions become user accounts
+
+### Estimated Effort
+
+- **Backend**: ~2 hours (apply middleware to 26+ endpoints, update bindings)
+- **Frontend**: ~1.5 hours (add email fields to forms, update HTMX headers)
+- **Testing**: ~2 hours (comprehensive API + UI testing)
+- **Total**: ~5-6 hours of focused work
+
+### Migration from v1
+
+**What changes:**
+- v1: Only ZIP uploads and companion files gated
+- v2: ALL CUD operations gated
+
+**What stays the same:**
+- Email subscription flow
+- KV storage structure
+- Admin notifications
+- Middleware implementation
+- Subscription UI
+
+### Future Considerations
+
+When full authentication is implemented:
+1. Remove email gate middleware
+2. Replace with proper auth middleware
+3. Migrate EMAIL_SUBSCRIPTIONS to user accounts
+4. Keep subscription form as waitlist for new users

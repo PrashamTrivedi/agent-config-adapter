@@ -21,6 +21,7 @@ npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_re
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0004_add_extensions_and_marketplaces.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0005_add_skill_config_type.sql
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0006_add_skill_files.sql
+npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0007_add_slash_command_metadata.sql
 
 # Load sample data
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
@@ -31,12 +32,15 @@ cp .dev.vars.example .dev.vars
 # 1. Get API keys from OpenAI and/or Google
 # 2. Edit .dev.vars: Set OPENAI_API_KEY and/or GEMINI_API_KEY
 # 3. Keys route through AI Gateway for logging, analytics, caching
-# 4. Optional: Set AI_PROVIDER, OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
+# 4. Get Resend API key from https://resend.com/api-keys
+# 5. Edit .dev.vars: Set RESEND_API_KEY
+# 6. Optional: Set AI_PROVIDER, OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
 #
 # PRODUCTION BYOK (Bring Your Own Key):
 # 1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
 # 2. Create gateway token in Cloudflare Dashboard → AI Gateway → Settings
 # 3. Set AI_GATEWAY_TOKEN as Worker secret (see Deployment section below)
+# 4. Set RESEND_API_KEY as Worker secret: npx wrangler secret put RESEND_API_KEY
 # Provider keys NEVER stored in Worker code or .dev.vars!
 ```
 
@@ -67,8 +71,11 @@ npm run deploy
 # First-time setup
 npx wrangler d1 create agent-config-adapter
 npx wrangler kv:namespace create CONFIG_CACHE
+npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
 npx wrangler r2 bucket create agent-config-extension-files
 # Update IDs in wrangler.jsonc
+# Configure Email Routing in Cloudflare Dashboard
+# Update send_email binding and ADMIN_EMAIL in wrangler.jsonc
 
 # PRODUCTION BYOK Setup:
 # 1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
@@ -83,16 +90,17 @@ npx wrangler secret put AI_GATEWAY_TOKEN
 
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
-- `src/infrastructure/` - D1, KV, R2, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
-- `src/services/` - Business logic (shared between REST API and MCP server)
+- `src/infrastructure/` - D1, KV, R2, Email Routing, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
+- `src/services/` - Business logic (shared between REST API and MCP server, includes SubscriptionService and EmailService)
+- `src/middleware/` - Request middleware (email gating for all CUD operations)
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers
+- `src/routes/` - Hono REST HTTP handlers (includes subscriptions routes)
 - `src/mcp/` - MCP server (6 tools, 3 resources, 3 prompts)
-- `src/views/` - HTMX server-rendered templates (Neural Lab design)
+- `src/views/` - HTMX server-rendered templates (Neural Lab design, includes subscription form)
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion.
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EXTENSION_FILES` (R2), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EMAIL_SUBSCRIPTIONS` (KV), `EXTENSION_FILES` (R2), `EMAIL` (send_email), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`, `ADMIN_EMAIL`
 
 ## API Endpoints
 
@@ -127,17 +135,19 @@ POST   /api/slash-commands/:id/convert     Convert slash command (body: { "userA
 GET    /api/skills                     List all skills
 GET    /api/skills/:id                 Get skill with companion files
 POST   /api/skills                     Create skill (JSON or form-data)
-POST   /api/skills/upload-zip          Create skill from ZIP upload
+POST   /api/skills/upload-zip          Create skill from ZIP upload (email gated)
 PUT    /api/skills/:id                 Update skill metadata/content
 DELETE /api/skills/:id                 Delete skill and all companion files
 
 GET    /api/skills/:id/files           List all companion files
-POST   /api/skills/:id/files           Upload companion file(s)
+POST   /api/skills/:id/files           Upload companion file(s) (email gated)
 GET    /api/skills/:id/files/:fileId   Download companion file
 DELETE /api/skills/:id/files/:fileId   Delete companion file
 
 GET    /api/skills/:id/download        Download skill as ZIP with all files
 ```
+
+**Email Gating**: Upload endpoints require `X-Subscriber-Email` header with subscribed email.
 
 ### REST API - Extensions
 ```
@@ -179,20 +189,60 @@ GET    /plugins/marketplaces/:marketplaceId/gemini/definition  Download marketpl
 GET    /plugins/marketplaces/:marketplaceId/download?format=   Download all marketplace plugins as ZIP
 ```
 
+### REST API - Subscriptions
+```
+GET    /subscriptions/form                 Show subscription form (HTML) with optional return URL
+POST   /api/subscriptions/subscribe        Subscribe email (stores in KV, sends admin notification)
+GET    /api/subscriptions/verify/:email    Check if email is subscribed
+GET    /api/subscriptions/verify?email=    Alternative verification endpoint
+```
+
+**Email Subscription Flow**:
+1. User submits email via `/subscriptions/form` or API
+2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace (with 30-day expiration in localStorage)
+3. Admin notification sent via Cloudflare Email Routing
+4. User can access all CUD (Create, Update, Delete) endpoints with `X-Subscriber-Email` header
+
+**UI Email Gating**:
+- All CUD buttons/links in the UI are gated with `requireEmail()` JavaScript function
+- Email gate modal appears when user tries to perform CUD operation without subscription
+- Email stored in localStorage (`subscriberEmail` and `subscribedAt`) with 30-day expiration
+- HTMX automatically adds `X-Subscriber-Email` header to all POST/PUT/DELETE/PATCH requests
+- 401/403 responses automatically show email subscription prompt
+- 17 UI entry points protected: create/edit/delete buttons across configs, skills, extensions, marketplaces
+
 Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
 
 ### MCP Server
 ```
-POST   /mcp                            MCP JSON-RPC endpoint (Streamable HTTP transport)
-GET    /mcp/info                       Server info and capabilities (HTML/JSON)
+POST   /mcp                            Public MCP endpoint (read-only, NO auth required)
+POST   /mcp/admin                      Admin MCP endpoint (full access, token-protected)
+GET    /mcp/info                       Server info page (ONLY shows public endpoint)
 ```
 
-**MCP Capabilities**:
-- **6 Tools**: create_config, update_config, delete_config, get_config, convert_config, invalidate_cache
-- **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
-- **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+**Access Control** (Temporary until full user auth):
+- **Public endpoint (`/mcp`)**: Read-only access, no authentication required
+  - **1 Tool**: get_config
+  - **Resources**: config://list (all resources available)
+  - **Prompts**: None (prompts describe write workflows)
+
+- **Admin endpoint (`/mcp/admin`)**: Full access, Bearer token authentication
+  - **6 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache
+  - **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
+  - **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+  - **Auth**: Requires `Authorization: Bearer <token>` header with valid admin token
+  - **Token validation**: SHA-256 hash comparison against `MCP_ADMIN_TOKEN_HASH` secret
+
+**⚠️ IMPORTANT - Security by Obscurity**:
+- Admin endpoint (`/mcp/admin`) is **UNDOCUMENTED in public UI**
+- NOT shown on `/mcp/info` page
+- NOT mentioned in README or public documentation
+- ONLY documented here in CLAUDE.md (internal project docs)
+- Only team members with token should know about admin endpoint
 
 **MCP Client Config**:
+
+Public (read-only):
 ```json
 {
   "mcpServers": {
@@ -204,20 +254,56 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 }
 ```
 
+Admin (full access):
+```json
+{
+  "mcpServers": {
+    "agent-config-adapter-admin": {
+      "type": "http",
+      "url": "http://localhost:8787/mcp/admin",
+      "headers": {
+        "Authorization": "Bearer YOUR_ADMIN_TOKEN"
+      }
+    }
+  }
+}
+```
+
+Token setup:
+```bash
+# Generate token hash for local dev
+tsx scripts/hash-token.ts "test-admin-token-123"
+
+# Add to .dev.vars
+MCP_ADMIN_TOKEN_HASH=bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721
+
+# For production - generate strong token
+tsx scripts/hash-token.ts "$(openssl rand -hex 32)"
+
+# Set as Worker secret
+npx wrangler secret put MCP_ADMIN_TOKEN_HASH
+```
+
 ## Testing
 
 - Use Vitest for all tests
 - Test adapter conversion logic (critical)
 - Test D1 and KV operations
-- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService)
-- Test routes layer (configs, skills, extensions, marketplaces)
+- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService, SubscriptionService, EmailService)
+- Test routes layer (configs, skills, extensions, marketplaces, subscriptions)
+- Test middleware layer (email gating)
 - Test infrastructure layer (repositories, file storage)
 - All tests must pass before committing
 
 ### MCP Testing
-- Test MCP tools via `/mcp` endpoint
-- Use `GET /mcp/info` to verify server capabilities
-- Test workflows using prompts (migrate_config_format, batch_convert, sync_config_versions)
+- Test public MCP endpoint via `/mcp` (read-only, no auth)
+- Test admin MCP endpoint via `/mcp/admin` (requires Bearer token)
+- Use `GET /mcp/info` to verify public endpoint capabilities
+- Test read operations on public endpoint (should succeed)
+- Test write operations on public endpoint (should fail - tool not found)
+- Test write operations on admin endpoint with valid token (should succeed)
+- Test admin endpoint without token (should return 401)
+- Test workflows using prompts on admin endpoint (migrate_config_format, batch_convert, sync_config_versions)
 
 ### CI/CD Testing
 - GitHub Actions workflow (`.github/workflows/test-coverage.yml`) runs on all pushes and PRs
@@ -227,8 +313,10 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
 ## Configuration
 
 **wrangler.jsonc**: Uses JSONC format (comments allowed)
-- Update production database and KV IDs after creating resources
-- `nodejs_compat` flag required for nanoid, OpenAI SDK, Gemini SDK, and other Node.js modules
+- Update production database and KV IDs after creating resources (DB, CONFIG_CACHE, EMAIL_SUBSCRIPTIONS)
+- Configure `send_email` binding with admin email address
+- Set `ADMIN_EMAIL` in vars section
+- `nodejs_compat` flag required for nanoid, OpenAI SDK, Gemini SDK, mimetext, and other Node.js modules
 - Set `ACCOUNT_ID` and `GATEWAY_ID` in vars section
 - For production BYOK: Set `AI_GATEWAY_TOKEN` as a secret using wrangler CLI
 - For local dev: Set `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in .dev.vars (not as secrets)
@@ -258,12 +346,27 @@ GET    /mcp/info                       Server info and capabilities (HTML/JSON)
   - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
 - Plugin files are lazily generated and stored in R2
 - File generation is cached until invalidated
+- Email gating for all CUD operations:
+  - All Create, Update, Delete endpoints require email subscription verification
+  - Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
+  - Admin notifications sent via Cloudflare Email Routing
+  - Prevents abuse while building user community
+  - Protected endpoints (26 total):
+    - Configs: POST /, PUT /:id, DELETE /:id, POST /:id/invalidate, POST /:id/refresh-analysis
+    - Skills: POST /, PUT /:id, DELETE /:id, POST /upload-zip, POST /:id/files, DELETE /:id/files/:fileId
+    - Extensions: POST /, PUT /:id, DELETE /:id, POST /:id/configs, POST /:id/configs/:configId, DELETE /:id/configs/:configId, POST /:id/invalidate
+    - Marketplaces: POST /, PUT /:id, DELETE /:id, POST /:id/extensions, POST /:id/extensions/:extensionId, DELETE /:id/extensions/:extensionId, POST /:id/invalidate
+    - Files/Plugins: POST /files/extensions/:extensionId, DELETE /files/:fileId, POST /plugins/:extensionId/:format/invalidate
 
 ## MVP Limitations
 
 - Agent definitions use passthrough (no conversion yet)
 - Skills use passthrough (no conversion yet)
-- No authentication/authorization
+- Email gating for all CUD operations (subscription-based with UI modal, no full authentication)
+  - Backend: Middleware checks X-Subscriber-Email header (26 endpoints)
+  - Frontend: JavaScript modal gates all CUD buttons/links (17 entry points)
+  - localStorage-based email storage with 30-day expiration
+- No user accounts or per-user config management
 - Extension and marketplace features not yet integrated with MCP tools
 - Skills features not yet integrated with MCP tools
 

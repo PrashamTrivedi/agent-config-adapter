@@ -6,10 +6,12 @@ import {
   MarketplaceService,
 } from '../services';
 import { pluginBrowserView } from '../views/plugin-browser';
+import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
   EXTENSION_FILES: R2Bucket;
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
@@ -390,7 +392,7 @@ pluginsRouter.get('/:extensionId/:format/*', async (c) => {
 });
 
 // Invalidate/regenerate plugin files
-pluginsRouter.post('/:extensionId/:format/invalidate', async (c) => {
+pluginsRouter.post('/:extensionId/:format/invalidate', lockdownMiddleware, async (c) => {
   const extensionId = c.req.param('extensionId');
   const format = c.req.param('format') as 'claude_code' | 'gemini';
 

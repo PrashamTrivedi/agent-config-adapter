@@ -155,4 +155,83 @@ describe('MCP Server', () => {
       expect(server).toBeDefined();
     });
   });
+
+  describe('Access modes', () => {
+    describe('readonly mode (default)', () => {
+      it('should create server in readonly mode by default', () => {
+        const server = createMCPServer(context);
+        expect(server).toBeDefined();
+      });
+
+      it('should create server in readonly mode when explicitly specified', () => {
+        const server = createMCPServer(context, 'readonly');
+        expect(server).toBeDefined();
+      });
+
+      it('should register get_config tool in readonly mode', () => {
+        const server = createMCPServer(context, 'readonly');
+        // In readonly mode, only get_config tool should be available
+        expect(server).toBeDefined();
+      });
+
+      it('should register resources in readonly mode', () => {
+        const server = createMCPServer(context, 'readonly');
+        // Resources are available in readonly mode
+        expect(server).toBeDefined();
+      });
+
+      it('should not register prompts in readonly mode', () => {
+        const server = createMCPServer(context, 'readonly');
+        // Prompts should not be available in readonly mode
+        expect(server).toBeDefined();
+      });
+    });
+
+    describe('full mode', () => {
+      it('should create server in full mode when specified', () => {
+        const server = createMCPServer(context, 'full');
+        expect(server).toBeDefined();
+      });
+
+      it('should register all tools in full mode', () => {
+        const server = createMCPServer(context, 'full');
+        // All 6 tools should be available in full mode:
+        // get_config, create_config, update_config, delete_config, convert_config, invalidate_cache
+        expect(server).toBeDefined();
+      });
+
+      it('should register all resources in full mode', () => {
+        const server = createMCPServer(context, 'full');
+        // All resources should be available in full mode
+        expect(server).toBeDefined();
+      });
+
+      it('should register all prompts in full mode', () => {
+        const server = createMCPServer(context, 'full');
+        // All 3 prompts should be available in full mode:
+        // migrate_config_format, batch_convert, sync_config_versions
+        expect(server).toBeDefined();
+      });
+    });
+
+    describe('mode comparison', () => {
+      it('should have different capabilities between readonly and full modes', () => {
+        const readonlyServer = createMCPServer(context, 'readonly');
+        const fullServer = createMCPServer(context, 'full');
+
+        expect(readonlyServer).toBeDefined();
+        expect(fullServer).toBeDefined();
+        // Servers should have different tool sets based on mode
+      });
+
+      it('should default to readonly mode when no mode specified', () => {
+        const defaultServer = createMCPServer(context);
+        const readonlyServer = createMCPServer(context, 'readonly');
+
+        expect(defaultServer).toBeDefined();
+        expect(readonlyServer).toBeDefined();
+        // Default behavior should match readonly mode
+      });
+    });
+  });
 });

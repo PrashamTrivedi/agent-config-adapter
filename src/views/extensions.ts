@@ -9,7 +9,7 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
         <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
           ${icons.package('icon')} Extensions
         </h2>
-        <a href="/extensions/new" class="btn ripple">+ Create Extension</a>
+        <button onclick="requireEmail(() => window.location.href='/extensions/new')" class="btn ripple">+ Create Extension</button>
       </div>
 
       ${extensions.length === 0 ? `
@@ -19,7 +19,7 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
           </div>
           <h3>No extensions yet</h3>
           <p style="color: var(--text-secondary); margin-bottom: 20px;">Extensions bundle multiple configs into distributable packages</p>
-          <a href="/extensions/new" class="btn">Create your first extension</a>
+          <button onclick="requireEmail(() => window.location.href='/extensions/new')" class="btn">Create your first extension</button>
         </div>
       ` : `
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
@@ -206,13 +206,17 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <h3>Actions</h3>
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <a href="/extensions/${extension.id}/edit" class="btn ripple">${icons.edit('icon')} Edit</a>
+      <button onclick="requireEmail(() => window.location.href='/extensions/${extension.id}/edit')" class="btn ripple">${icons.edit('icon')} Edit</button>
       <a href="/extensions" class="btn btn-secondary">← Back to List</a>
       <button
         class="btn btn-danger ripple"
-        onclick="confirmAction('Are you sure you want to delete this extension? This will not delete the configs.', () => {
-          htmx.ajax('DELETE', '/api/extensions/${extension.id}', {target:'body', swap:'outerHTML'});
-        })">
+        onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+        hx-delete="/api/extensions/${extension.id}"
+        hx-trigger="click-confirmed"
+        hx-confirm="Are you sure you want to delete this extension? This will not delete the configs."
+        hx-target="body"
+        hx-swap="outerHTML"
+        data-success-message="Extension deleted successfully">
         ${icons.trash('icon')} Delete
       </button>
     </div>

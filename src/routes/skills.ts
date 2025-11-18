@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
+import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
   EXTENSION_FILES: R2Bucket;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
 };
 
 export const skillsRouter = new Hono<{ Bindings: Bindings }>();
@@ -60,7 +62,7 @@ skillsRouter.get('/:id', async (c) => {
 });
 
 // Create new skill (JSON or form)
-skillsRouter.post('/', async (c) => {
+skillsRouter.post('/', lockdownMiddleware, async (c) => {
   let body: CreateConfigInput;
 
   const contentType = c.req.header('Content-Type') || '';
@@ -86,8 +88,8 @@ skillsRouter.post('/', async (c) => {
   }
 });
 
-// Upload skill from ZIP
-skillsRouter.post('/upload-zip', async (c) => {
+// Upload skill from ZIP (coming soon)
+skillsRouter.post('/upload-zip', lockdownMiddleware, async (c) => {
   const contentType = c.req.header('Content-Type') || '';
 
   if (!contentType.includes('multipart/form-data')) {
@@ -123,7 +125,7 @@ skillsRouter.post('/upload-zip', async (c) => {
 });
 
 // Update skill
-skillsRouter.put('/:id', async (c) => {
+skillsRouter.put('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   let body: UpdateConfigInput;
 
@@ -154,7 +156,7 @@ skillsRouter.put('/:id', async (c) => {
 });
 
 // Delete skill
-skillsRouter.delete('/:id', async (c) => {
+skillsRouter.delete('/:id', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const service = new SkillsService(c.env);
 
@@ -182,8 +184,8 @@ skillsRouter.get('/:id/files', async (c) => {
   }
 });
 
-// Upload companion file(s)
-skillsRouter.post('/:id/files', async (c) => {
+// Upload companion file(s) (coming soon)
+skillsRouter.post('/:id/files', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const contentType = c.req.header('Content-Type') || '';
 
@@ -278,7 +280,7 @@ skillsRouter.get('/:id/files/:fileId', async (c) => {
 });
 
 // Delete companion file
-skillsRouter.delete('/:id/files/:fileId', async (c) => {
+skillsRouter.delete('/:id/files/:fileId', lockdownMiddleware, async (c) => {
   const id = c.req.param('id');
   const fileId = c.req.param('fileId');
   const service = new SkillsService(c.env);

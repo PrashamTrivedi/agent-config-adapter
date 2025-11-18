@@ -6,14 +6,18 @@ import { skillsRouter } from './routes/skills';
 import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
+import { subscriptionsRouter } from './routes/subscriptions';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
+import { createMCPServer } from './mcp/server';
+import { validateMCPAdminToken } from './mcp/auth';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
   EXTENSION_FILES: R2Bucket;
+  EMAIL_SUBSCRIPTIONS: KVNamespace;
 
   // Cloudflare Configuration
   ACCOUNT_ID: string;
@@ -28,6 +32,14 @@ type Bindings = {
   // API Keys for Local Development (still routes through AI Gateway)
   OPENAI_API_KEY?: string; // For local dev
   GEMINI_API_KEY?: string; // For local dev
+
+  // Email Configuration
+  RESEND_API_KEY: string; // Resend API key for sending emails
+  ADMIN_EMAIL: string;
+
+  // MCP Admin Token (SHA-256 hash)
+  // Temporary security measure until full user auth is implemented
+  MCP_ADMIN_TOKEN_HASH?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -43,6 +55,34 @@ app.get('/', (c) => {
         <p style="font-size: 1.15em; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6;">
           Universal adapter for AI coding agent configurations. Store once, deploy everywhere.
         </p>
+      </div>
+
+      <!-- Public Access & Upload Notice -->
+      <div class="card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border: 2px solid var(--accent-primary); margin-bottom: 30px;">
+        <div style="text-align: center; padding: 20px;">
+          <h2 style="margin: 0 0 12px 0; color: var(--accent-primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
+            ${icons.star('icon')} Welcome to Agent Config Adapter
+          </h2>
+          <p style="font-size: 1.1em; color: var(--text-primary); margin: 0 0 16px 0; line-height: 1.6;">
+            Browse and explore <strong>configs</strong>, <strong>skills</strong>, and <strong>extensions</strong> for Claude Code, Gemini, and Codex agents.
+          </p>
+          <div style="display: inline-block; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 20px; margin-bottom: 16px;">
+            <p style="margin: 0; color: var(--text-primary);">
+              <strong>🚀 Coming Soon:</strong> User authentication & personal config management
+            </p>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+            <a href="/skills" class="btn ripple">
+              ${icons.star('icon')} Browse Skills
+            </a>
+            <a href="/configs" class="btn ripple">
+              ${icons.file('icon')} View Configs
+            </a>
+            <a href="/subscriptions/form" class="btn" style="background: var(--accent-primary); color: white;">
+              ${icons.mail('icon')} Get Upload Access
+            </a>
+          </div>
+        </div>
       </div>
 
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
@@ -136,6 +176,7 @@ app.route('/api/marketplaces', marketplacesRouter);
 app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 app.route('/api/slash-commands', slashCommandConverterRouter);
+app.route('/api/subscriptions', subscriptionsRouter);
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
@@ -143,16 +184,50 @@ app.route('/extensions', extensionsRouter);
 app.route('/marketplaces', marketplacesRouter);
 app.route('/skills', skillsRouter);
 app.route('/slash-commands', slashCommandConverterRouter);
+app.route('/subscriptions', subscriptionsRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);
 
 // MCP Server endpoints
+
+// Public MCP server (read-only access, NO authentication required)
 app.post('/mcp', async (c) => {
-  return handleMCPStreamable(c.req.raw, c.env);
+  const server = createMCPServer(c.env, 'readonly');
+  return handleMCPStreamable(c.req.raw, server);
+});
+
+// Admin MCP server (full access, token-protected)
+// NOTE: This endpoint is UNDOCUMENTED and SECRET (not shown in /mcp/info)
+// Only for internal team use until full user auth is implemented
+app.post('/mcp/admin', async (c) => {
+  // Validate admin token
+  const isValid = await validateMCPAdminToken(
+    c.req.raw,
+    c.env.MCP_ADMIN_TOKEN_HASH
+  );
+
+  if (!isValid) {
+    return c.json(
+      {
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32001,
+          message: 'Unauthorized: Valid admin token required'
+        }
+      },
+      401
+    );
+  }
+
+  const server = createMCPServer(c.env, 'full');
+  return handleMCPStreamable(c.req.raw, server);
 });
 
 // MCP Server info endpoint
+// NOTE: This endpoint ONLY documents the public read-only endpoint
+// Admin endpoint (/mcp/admin) is SECRET and undocumented
 app.get('/mcp/info', (c) => {
   const accept = c.req.header('Accept') || '';
 
@@ -162,27 +237,18 @@ app.get('/mcp/info', (c) => {
     description: 'Universal configuration adapter for AI coding agents',
     transport: 'streamable-http',
     endpoint: '/mcp',
+    access: 'Public read-only',
     capabilities: {
       tools: [
-        'create_config - Create a new agent configuration',
-        'update_config - Update an existing configuration',
-        'delete_config - Delete a configuration',
-        'invalidate_cache - Invalidate cached format conversions',
-        'convert_config - Convert config to different format (on-demand, with caching)'
+        'get_config - Get a single configuration by ID'
       ],
       resources: [
-        'config://list - List all configurations from database',
-        'config://{configId} - Get single configuration from database',
-        'config://{configId}/cached/{format} - Get cached conversion (null if not cached, pure read only)'
+        'config://list - List all configurations from database'
       ],
-      prompts: [
-        'migrate_config_format - Migrate configuration between agent formats',
-        'batch_convert - Bulk convert multiple configs to target format',
-        'sync_config_versions - Synchronize cached format conversions'
-      ]
+      prompts: []
     },
     usage: {
-      connection: 'POST requests to /mcp endpoint',
+      connection: 'POST requests to /mcp endpoint (no authentication required)',
       example_client_config: {
         mcpServers: {
           'agent-config-adapter': {
@@ -193,9 +259,9 @@ app.get('/mcp/info', (c) => {
       }
     },
     documentation: {
-      resources_behavior: 'Resources are pure reads (no conversion processing)',
-      tools_behavior: 'Tools perform operations with side effects (conversions, cache updates)',
-      prompts_workflow: 'Prompts provide guided workflows for complex operations'
+      access_level: 'Public read-only access (no write operations)',
+      resources_behavior: 'Resources provide context data for AI agents',
+      tools_behavior: 'Only read operations are available on public endpoint'
     }
   };
 
@@ -249,7 +315,7 @@ app.get('/mcp/info', (c) => {
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
           ${icons.wrench('icon')}
-          <span>Tools (Write Operations)</span>
+          <span>Tools (Read-Only Operations)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
           ${mcpInfo.capabilities.tools.map(tool => `
@@ -264,7 +330,7 @@ app.get('/mcp/info', (c) => {
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
           ${icons.book('icon')}
-          <span>Resources (Pure Read Operations)</span>
+          <span>Resources (Context Data)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
           ${mcpInfo.capabilities.resources.map(res => `
@@ -275,6 +341,7 @@ app.get('/mcp/info', (c) => {
         </div>
       </div>
 
+      ${mcpInfo.capabilities.prompts.length > 0 ? `
       <!-- Prompts -->
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
@@ -288,7 +355,7 @@ app.get('/mcp/info', (c) => {
             </div>
           `).join('')}
         </div>
-      </div>
+      </div>` : ''}
 
       <!-- Client Connection -->
       <div class="card slide-up" style="margin-bottom: 24px;">
@@ -348,7 +415,10 @@ app.get('/mcp/info', (c) => {
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="margin-top: 2px; color: var(--accent-primary);">${icons.zap('icon-lg')}</div>
             <div>
-              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Prompts</div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                Prompts
+                <span style="display: inline-block; padding: 2px 8px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Coming Soon</span>
+              </div>
               <div style="font-size: 0.9em; color: var(--text-secondary);">
                 Guided workflows for complex multi-step operations
               </div>

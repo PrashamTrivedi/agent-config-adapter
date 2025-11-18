@@ -20,6 +20,7 @@ HTMX-powered HTML templates with Neural Lab design system.
 - **marketplaces.ts**: Marketplace management
 - **slash-command-converter.ts**: Converter frontend UI
 - **plugin-browser.ts**: File tree navigation
+- **subscriptions.ts**: Email subscription form with marketing copy
 
 ## Template Patterns
 
@@ -47,3 +48,17 @@ Skills use tab-based editing:
 - Companion file tabs
 - Add/remove file buttons
 - ZIP upload/download
+
+## Subscription Form
+
+Email subscription interface for upload access:
+- **Marketing Copy**: Explains benefits of subscription
+- **Form Fields**: Email input with validation
+- **Return URL Support**: Optional `?return=/path` parameter
+- **Success Handling**: Redirects to return URL or shows confirmation
+- **Neural Lab Theme**: Consistent with design system
+- **Features Listed**:
+  - Upload skills as ZIP files
+  - Upload companion files
+  - Early access to new features
+  - Notification when user accounts are available

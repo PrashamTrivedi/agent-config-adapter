@@ -69,3 +69,33 @@ OPENAI_API_KEY=
 
 # Google Gemini API Key (for local development)
 GEMINI_API_KEY=
+
+# ============================================================================
+# Email Configuration
+# ============================================================================
+# Admin email for subscription notifications
+# In production, this is set in wrangler.jsonc vars section
+# For local testing, you can set it here
+# ADMIN_EMAIL=your-admin-email@example.com
+
+# Resend API Key (for email notifications)
+# Required for both local development and production
+# Get your API key from: https://resend.com/api-keys
+# This is a Worker SECRET - set via: npx wrangler secret put RESEND_API_KEY
+RESEND_API_KEY=
+
+# ============================================================================
+# MCP Admin Access (Temporary Security Measure)
+# ============================================================================
+# SHA-256 hash of admin token for /mcp/admin endpoint
+# This is a temporary security measure until full user auth is implemented
+#
+# Generate token hash:
+#   tsx scripts/hash-token.ts "your-secret-token-here"
+#
+# For local development, use test token:
+#   tsx scripts/hash-token.ts "test-admin-token-123"
+#   Result: bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721
+#
+# Production: Generate a strong random token (32+ characters)
+MCP_ADMIN_TOKEN_HASH=bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721

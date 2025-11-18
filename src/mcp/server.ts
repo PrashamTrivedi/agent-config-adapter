@@ -8,8 +8,20 @@ import { AgentFormat, ConfigType } from '../domain/types';
  * Create and configure MCP server instance
  * This server exposes configs, conversion tools, and workflow prompts
  * via the Model Context Protocol
+ *
+ * @param env - MCP context with database and service dependencies
+ * @param mode - Access mode: 'readonly' (public) or 'full' (admin with token)
+ *
+ * Access modes:
+ * - readonly: Only get_config tool + all resources (no prompts)
+ * - full: All 6 tools + all resources + all 3 prompts
+ *
+ * Note: This is a temporary security measure until full user auth is implemented
  */
-export function createMCPServer(env: MCPContext): McpServer {
+export function createMCPServer(
+	env: MCPContext,
+	mode: 'readonly' | 'full' = 'readonly'
+): McpServer {
   const server = new McpServer(
     {
       name: 'agent-config-adapter',
@@ -27,10 +39,60 @@ export function createMCPServer(env: MCPContext): McpServer {
   const configService = new ConfigService(env);
   const conversionService = new ConversionService(env);
 
-  // ===== TOOLS (Write Operations) =====
+  // ===== TOOLS =====
 
-  // Tool: create_config
+  // Tool: get_config (Read-only - available in both modes)
   server.tool(
+    'get_config',
+    'Get a single configuration by ID',
+    {
+      configId: z.string().describe('Config ID to retrieve')
+    },
+    async ({ configId }) => {
+      try {
+        const config = await configService.getConfig(configId);
+
+        if (!config) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                error: `Config not found: ${configId}`
+              }, null, 2)
+            }],
+            isError: true
+          };
+        }
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              config
+            }, null, 2)
+          }]
+        };
+      } catch (error: any) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              success: false,
+              error: error.message
+            }, null, 2)
+          }],
+          isError: true
+        };
+      }
+    }
+  );
+
+  // Write tools - only available in 'full' mode
+  if (mode === 'full') {
+    // Tool: create_config
+    server.tool(
     'create_config',
     'Create a new agent configuration (slash command, MCP config, or agent definition)',
     {
@@ -70,11 +132,11 @@ export function createMCPServer(env: MCPContext): McpServer {
           isError: true
         };
       }
-    }
-  );
+      }
+    );
 
-  // Tool: update_config
-  server.tool(
+    // Tool: update_config
+    server.tool(
     'update_config',
     'Update an existing configuration',
     {
@@ -128,11 +190,11 @@ export function createMCPServer(env: MCPContext): McpServer {
           isError: true
         };
       }
-    }
-  );
+      }
+    );
 
-  // Tool: delete_config
-  server.tool(
+    // Tool: delete_config
+    server.tool(
     'delete_config',
     'Delete a configuration',
     {
@@ -176,11 +238,11 @@ export function createMCPServer(env: MCPContext): McpServer {
           isError: true
         };
       }
-    }
-  );
+      }
+    );
 
-  // Tool: invalidate_cache
-  server.tool(
+    // Tool: invalidate_cache
+    server.tool(
     'invalidate_cache',
     'Invalidate all cached format conversions for a config',
     {
@@ -211,59 +273,11 @@ export function createMCPServer(env: MCPContext): McpServer {
           isError: true
         };
       }
-    }
-  );
-
-  // Tool: get_config (added since we simplified resources)
-  server.tool(
-    'get_config',
-    'Get a single configuration by ID',
-    {
-      configId: z.string().describe('Config ID to retrieve')
-    },
-    async ({ configId }) => {
-      try {
-        const config = await configService.getConfig(configId);
-
-        if (!config) {
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify({
-                success: false,
-                error: `Config not found: ${configId}`
-              }, null, 2)
-            }],
-            isError: true
-          };
-        }
-
-        return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              success: true,
-              config
-            }, null, 2)
-          }]
-        };
-      } catch (error: any) {
-        return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              success: false,
-              error: error.message
-            }, null, 2)
-          }],
-          isError: true
-        };
       }
-    }
-  );
+    );
 
-  // Tool: convert_config
-  server.tool(
+    // Tool: convert_config
+    server.tool(
     'convert_config',
     'Convert a config to a different agent format (on-demand, with caching). This is the OPERATION that triggers conversion, unlike the resource which only reads cache.',
     {
@@ -306,8 +320,9 @@ export function createMCPServer(env: MCPContext): McpServer {
           isError: true
         };
       }
-    }
-  );
+      }
+    );
+  }
 
   // ===== RESOURCES (Read Operations) =====
   // Note: MCP resources are for providing context to AI, not for operations
@@ -331,9 +346,11 @@ export function createMCPServer(env: MCPContext): McpServer {
   );
 
   // ===== PROMPTS (Workflow Automation) =====
+  // Prompts only available in 'full' mode (they describe write workflows)
 
-  // Prompt: migrate_config_format
-  server.prompt(
+  if (mode === 'full') {
+    // Prompt: migrate_config_format
+    server.prompt(
     'migrate_config_format',
     'Migrate a configuration from one agent format to another',
     {
@@ -499,8 +516,9 @@ Please execute this sync workflow and provide a detailed summary.`
           }
         }]
       };
-    }
-  );
+      }
+    );
+  }
 
   return server;
 }

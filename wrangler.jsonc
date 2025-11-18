@@ -2,8 +2,10 @@
   // Production configuration for agent-config-adapter
   "name": "agent-config-adapter",
   "main": "src/index.ts",
-  "compatibility_date": "2024-09-23",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2025-11-17",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -15,6 +17,10 @@
     {
       "binding": "CONFIG_CACHE",
       "id": "ede83b375aeb47e69d514c7ef0529da8"
+    },
+    {
+      "binding": "EMAIL_SUBSCRIPTIONS",
+      "id": "1978914df8c641389e283b49eb023a77"
     }
   ],
   "r2_buckets": [
@@ -27,20 +33,46 @@
     // Cloudflare Configuration
     "ACCOUNT_ID": "b286748abb233ddf7bf942f876f11eac",
     "GATEWAY_ID": "ai-agent-adapter",
-
     // Multi-Provider Configuration
     // Provider Selection: 'openai' | 'gemini' | 'auto' (auto = prefer Gemini, fallback to OpenAI)
     "AI_PROVIDER": "auto",
-
     // OpenAI Reasoning Mode: 'high' | 'medium' | 'low' | 'minimal'
     "OPENAI_REASONING_MODE": "low",
-
     // Gemini Thinking Budget: "0" (disable) to "24576" (max), or "-1" (dynamic)
-    "GEMINI_THINKING_BUDGET": "0"
+    "GEMINI_THINKING_BUDGET": "0",
+    // Email Configuration
+    "ADMIN_EMAIL": "admin-agent-config@prashamhtrivedi.app"
+
+    // MCP Admin Token Hash (INTERNAL DOCS ONLY - NOT PUBLIC)
+    // SHA-256 hash of admin token for /mcp/admin endpoint
+    // This is a WORKER SECRET - NOT a var! Set using wrangler CLI:
+    //
+    // Production setup:
+    //   1. Generate strong token: tsx scripts/hash-token.ts "$(openssl rand -hex 32)"
+    //   2. Save token securely (password manager)
+    //   3. Copy hash and run: npx wrangler secret put MCP_ADMIN_TOKEN_HASH
+    //   4. Paste hash when prompted
+    //
+    // Local development:
+    //   - Set MCP_ADMIN_TOKEN_HASH in .dev.vars file
+    //   - See .dev.vars.example for test token hash
+    //
+    // IMPORTANT: This is a temporary security measure until full user auth is implemented
+    // Secret name: MCP_ADMIN_TOKEN_HASH (set via wrangler CLI, not in this file)
   },
   "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
     "logs": {
-      "enabled": true
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "persist": true,
+      "head_sampling_rate": 1
     }
   }
 }

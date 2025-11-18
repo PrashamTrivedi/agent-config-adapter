@@ -29,9 +29,9 @@ export function skillsListView(skills: Config[]): string {
           </p>
         </div>
         <div>
-          <a href="/skills/new" class="btn ripple">
+          <button onclick="requireEmail(() => window.location.href='/skills/new')" class="btn ripple">
             <span style="font-size: 1.1em;">+</span> Create New Skill
-          </a>
+          </button>
           <a href="/" class="btn btn-secondary">← Home</a>
         </div>
       </div>
@@ -45,7 +45,7 @@ export function skillsListView(skills: Config[]): string {
           </div>
           <h3 style="margin: 10px 0; color: var(--text-primary);">No skills yet</h3>
           <p style="margin-bottom: 20px;">Create your first multi-file skill to get started!</p>
-          <a href="/skills/new" class="btn">Create Skill</a>
+          <button onclick="requireEmail(() => window.location.href='/skills/new')" class="btn">Create Skill</button>
         </div>
       `
           : `
@@ -80,9 +80,9 @@ export function skillsListView(skills: Config[]): string {
                 <a href="/skills/${skill.id}" class="btn btn-secondary" style="flex: 1; text-align: center;">
                   View
                 </a>
-                <a href="/skills/${skill.id}/edit" class="btn btn-secondary" style="flex: 1; text-align: center;">
+                <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn btn-secondary" style="flex: 1; text-align: center;">
                   Edit
-                </a>
+                </button>
                 <a href="/api/skills/${skill.id}/download" class="btn btn-secondary" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;" download>
                   ${icons.download('icon')} ZIP
                 </a>
@@ -91,7 +91,9 @@ export function skillsListView(skills: Config[]): string {
               <button
                 class="btn btn-danger"
                 style="position: absolute; top: 12px; right: 12px; padding: 4px 10px; font-size: 0.85em; margin: 0;"
+                onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
                 hx-delete="/api/skills/${skill.id}"
+                hx-trigger="click-confirmed"
                 hx-confirm="Are you sure you want to delete this skill and all its files?"
                 hx-target="closest .card"
                 hx-swap="delete"
@@ -131,9 +133,9 @@ export function skillDetailView(skill: SkillWithFiles): string {
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <a href="/skills/${skill.id}/edit" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.edit('icon')} Edit
-          </a>
+          </button>
           <a href="/api/skills/${skill.id}/download" class="btn ripple" download="${skill.name}.zip" style="display: flex; align-items: center; gap: 8px;">
             ${icons.download('icon')} Download ZIP
           </a>
@@ -186,7 +188,9 @@ export function skillDetailView(skill: SkillWithFiles): string {
                   <button
                     class="btn btn-danger"
                     style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
+                    onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
                     hx-delete="/api/skills/${skill.id}/files/${file.id}"
+                    hx-trigger="click-confirmed"
                     hx-confirm="Delete this file?"
                     hx-target="closest .card"
                     hx-swap="delete"
@@ -210,7 +214,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
           <p style="color: var(--text-secondary); margin-bottom: 20px;">
             Add companion files to enhance this skill
           </p>
-          <a href="/skills/${skill.id}/edit" class="btn">Add Files</a>
+          <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn">Add Files</button>
         </div>
       `
       }
@@ -226,7 +230,9 @@ export function skillDetailView(skill: SkillWithFiles): string {
         <button
           class="btn btn-danger ripple"
           style="display: inline-flex; align-items: center; gap: 8px;"
+          onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
           hx-delete="/api/skills/${skill.id}"
+          hx-trigger="click-confirmed"
           hx-confirm="Are you sure you want to permanently delete this skill and all its files? This cannot be undone."
           hx-swap="outerHTML"
           hx-target="body"
@@ -280,14 +286,12 @@ export function skillCreateView(): string {
         <a href="/skills" class="btn btn-secondary">← Back to Skills</a>
       </div>
 
-      <!-- Tab Navigation -->
+      <!-- Tab Navigation (Upload locked until authentication) -->
       <div class="tabs slide-up">
         <button class="tab-btn active" onclick="switchTab('form')" style="display: inline-flex; align-items: center; gap: 8px;">
           ${icons.edit('icon')} Manual Entry
         </button>
-        <button class="tab-btn" onclick="switchTab('upload')" style="display: inline-flex; align-items: center; gap: 8px;">
-          ${icons.upload('icon')} Upload ZIP
-        </button>
+        <!-- Upload ZIP tab hidden until full authentication is implemented -->
       </div>
 
       <!-- Manual Entry Tab -->
@@ -334,62 +338,8 @@ export function skillCreateView(): string {
         </form>
       </div>
 
-      <!-- ZIP Upload Tab -->
-      <div id="tab-upload" class="tab-content card scale-in" style="display: none;">
-        <div style="background: rgba(88, 166, 255, 0.1); border: 1px solid rgba(88, 166, 255, 0.3); padding: 16px; border-radius: 6px; margin-bottom: 20px;">
-          <h4 style="margin: 0 0 8px 0; color: var(--accent-primary); display: flex; align-items: center; gap: 10px;">
-            ${icons.package('icon')} ZIP Upload Requirements
-          </h4>
-          <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary);">
-            <li>ZIP must contain <code>SKILL.md</code> at the root level</li>
-            <li>Companion files will be automatically detected and stored</li>
-            <li>Directory structure will be preserved</li>
-          </ul>
-        </div>
-
-        <form hx-post="/api/skills/upload-zip" hx-encoding="multipart/form-data">
-          <div class="form-group">
-            <label for="zip-name">Skill Name *</label>
-            <input
-              type="text"
-              id="zip-name"
-              name="name"
-              required
-              placeholder="My Awesome Skill">
-            <span class="help-text">This will be the display name for your skill</span>
-          </div>
-
-          <div class="form-group">
-            <label for="zip-format">Format *</label>
-            <select id="zip-format" name="original_format" required>
-              <option value="claude_code">Claude Code</option>
-              <option value="gemini">Gemini</option>
-              <option value="codex">Codex</option>
-            </select>
-            <span class="help-text">Choose the target agent format</span>
-          </div>
-
-          <div class="form-group">
-            <label for="skill_zip">Upload ZIP File *</label>
-            <div style="position: relative;">
-              <input type="file" id="skill_zip" name="skill_zip" accept=".zip" required>
-              <div class="progress-bar indeterminate htmx-indicator" style="margin-top: 10px;">
-                <div class="progress-bar-fill"></div>
-              </div>
-            </div>
-            <span class="help-text" style="display: flex; align-items: center; gap: 6px;">
-              ${icons.download('icon')} Select a ZIP file containing SKILL.md and optional companion files
-            </span>
-          </div>
-
-          <div style="display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-            <button type="submit" class="btn ripple" data-success-message="Skill uploaded and created successfully" style="display: inline-flex; align-items: center; gap: 8px;">
-              ${icons.upload('icon')} Upload & Create
-            </button>
-            <a href="/skills" class="btn btn-secondary">Cancel</a>
-          </div>
-        </form>
-      </div>
+      <!-- ZIP Upload Tab - HIDDEN UNTIL AUTHENTICATION IMPLEMENTED -->
+      <!-- Upload functionality is locked until full user authentication is built -->
 
       <style>
         .tabs {
@@ -427,27 +377,7 @@ export function skillCreateView(): string {
         }
       </style>
 
-      <script>
-        function switchTab(tab) {
-          // Update tab buttons
-          document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-          });
-          event.target.classList.add('active');
-
-          // Update tab content
-          document.querySelectorAll('.tab-content').forEach(content => {
-            content.style.display = 'none';
-            content.classList.remove('scale-in');
-          });
-
-          const targetTab = document.getElementById('tab-' + tab);
-          targetTab.style.display = 'block';
-          // Trigger reflow to restart animation
-          void targetTab.offsetWidth;
-          targetTab.classList.add('scale-in');
-        }
-      </script>
+      <!-- No switchTab function needed - upload tab removed until authentication -->
     </div>
   `;
 
@@ -559,7 +489,9 @@ export function skillEditView(skill: SkillWithFiles): string {
                 <button
                   class="btn btn-danger"
                   style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
+                  onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
                   hx-delete="/api/skills/${skill.id}/files/${file.id}"
+                  hx-trigger="click-confirmed"
                   hx-confirm="Delete this file?"
                   hx-target="closest .card"
                   hx-swap="delete"
@@ -580,37 +512,16 @@ export function skillEditView(skill: SkillWithFiles): string {
         `
         }
 
-        <!-- Add File Form -->
-        <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 6px; border: 2px dashed var(--border-color);">
-          <h4 style="margin: 0 0 16px 0; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-            ${icons.plus('icon')} Add New File
-          </h4>
-          <form hx-post="/api/skills/${skill.id}/files" hx-encoding="multipart/form-data" hx-target="#files-list" hx-swap="beforeend">
-            <div class="form-group">
-              <label for="file_path">File Path *</label>
-              <input
-                type="text"
-                id="file_path"
-                name="file_path"
-                placeholder="e.g., FORMS.md or utils/helper.js"
-                required>
-              <span class="help-text" style="display: flex; align-items: center; gap: 6px;">
-                ${icons.folder('icon')} Use forward slashes for subdirectories
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="file_content">File Content *</label>
-              <input type="file" id="file_content" name="file_content" required>
-              <span class="help-text" style="display: flex; align-items: center; gap: 6px;">
-                ${icons.paperclip('icon')} Select the file to upload
-              </span>
-            </div>
-
-            <button type="submit" class="btn ripple" data-success-message="File added successfully">
-              <span style="font-size: 1.1em;">+</span> Add File
-            </button>
-          </form>
+        <!-- Add File Form - LOCKED UNTIL AUTHENTICATION -->
+        <div style="background: rgba(245, 158, 11, 0.1); border: 2px dashed rgba(245, 158, 11, 0.3); padding: 24px; border-radius: 6px; text-align: center;">
+          <div style="margin-bottom: 12px; font-size: 2em;">🔒</div>
+          <h4 style="margin: 0 0 12px 0; color: var(--text-primary);">File Uploads Locked</h4>
+          <p style="margin: 0 0 16px 0; color: var(--text-secondary); font-size: 0.95em;">
+            File upload functionality will be available when user accounts and authentication launch.
+          </p>
+          <a href="/subscriptions/form?return=/skills/${skill.id}/edit" class="btn" style="display: inline-flex; align-items: center; gap: 8px;">
+            ${icons.mail('icon')} Get Notified When Ready
+          </a>
         </div>
       </div>
     </div>

@@ -29,7 +29,7 @@ export function configListContainerPartial(
             <div style="font-size: 0.875em; margin-top: 8px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
               <span>Created: ${new Date(c.created_at).toLocaleDateString()}</span>
               <div class="quick-actions" style="opacity: 0; transition: opacity 0.2s;">
-                <a href="/configs/${c.id}/edit" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.875em; margin-right: 5px;">Edit</a>
+                <button onclick="event.stopPropagation(); requireEmail(() => window.location.href='/configs/${c.id}/edit')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.875em; margin-right: 5px;">Edit</button>
                 <a href="/configs/${c.id}" class="btn" style="padding: 4px 10px; font-size: 0.875em;">View →</a>
               </div>
             </div>
@@ -55,7 +55,7 @@ export function configListView(
   const content = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 style="margin: 0;">All Configurations</h2>
-      <a href="/configs/new" class="btn ripple">+ Add New Config</a>
+      <button onclick="requireEmail(() => window.location.href='/configs/new')" class="btn ripple">+ Add New Config</button>
     </div>
 
     <!-- Filter Controls -->
@@ -262,15 +262,15 @@ export function configDetailView(config: Config): string {
     <div id="cache-status"></div>
 
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <a href="/configs/${config.id}/edit" class="btn ripple" style="display: inline-flex; align-items: center; gap: 8px;">
+      <button onclick="requireEmail(() => window.location.href='/configs/${config.id}/edit')" class="btn ripple" style="display: inline-flex; align-items: center; gap: 8px;">
         ${icons.edit('icon')} Edit
-      </a>
+      </button>
       <a href="/configs" class="btn btn-secondary">← Back to List</a>
       <button
         class="btn btn-danger ripple"
-        onclick="confirmAction('Are you sure you want to delete this config? This action cannot be undone.', () => {
+        onclick="requireEmail(() => confirmAction('Are you sure you want to delete this config? This action cannot be undone.', () => {
           htmx.ajax('DELETE', '/api/configs/${config.id}', {target:'body', swap:'outerHTML'});
-        })"
+        }))"
         style="display: inline-flex; align-items: center; gap: 8px;">
         ${icons.trash('icon')} Delete
       </button>
