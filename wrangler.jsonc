@@ -50,6 +50,23 @@
     "GEMINI_THINKING_BUDGET": "0",
     // Email Configuration
     "ADMIN_EMAIL": "admin-agent-config@prashamhtrivedi.app"
+
+    // MCP Admin Token Hash (INTERNAL DOCS ONLY - NOT PUBLIC)
+    // SHA-256 hash of admin token for /mcp/admin endpoint
+    // This is a WORKER SECRET - NOT a var! Set using wrangler CLI:
+    //
+    // Production setup:
+    //   1. Generate strong token: tsx scripts/hash-token.ts "$(openssl rand -hex 32)"
+    //   2. Save token securely (password manager)
+    //   3. Copy hash and run: npx wrangler secret put MCP_ADMIN_TOKEN_HASH
+    //   4. Paste hash when prompted
+    //
+    // Local development:
+    //   - Set MCP_ADMIN_TOKEN_HASH in .dev.vars file
+    //   - See .dev.vars.example for test token hash
+    //
+    // IMPORTANT: This is a temporary security measure until full user auth is implemented
+    // Secret name: MCP_ADMIN_TOKEN_HASH (set via wrangler CLI, not in this file)
   },
   "observability": {
     "enabled": false,

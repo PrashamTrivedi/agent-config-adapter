@@ -13,6 +13,9 @@ export interface MCPContext {
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
   AI_GATEWAY_TOKEN?: string;
+  // SHA-256 hash of admin token for /mcp/admin endpoint
+  // Temporary security measure until full user auth is implemented
+  MCP_ADMIN_TOKEN_HASH?: string;
 }
 
 /**
