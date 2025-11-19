@@ -8,6 +8,8 @@ import {
   marketplaceEditView,
 } from '../views/marketplaces';
 import { lockdownMiddleware } from '../middleware/lockdown';
+import { AnalyticsService } from '../services/analytics-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   DB: D1Database;
@@ -17,6 +19,7 @@ type Bindings = {
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
+  ANALYTICS?: AnalyticsEngineDataset;
 };
 
 export const marketplacesRouter = new Hono<{ Bindings: Bindings }>();
@@ -48,6 +51,10 @@ marketplacesRouter.get('/:id/edit', async (c) => {
 // List all marketplaces
 marketplacesRouter.get('/', async (c) => {
   const service = new MarketplaceService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track marketplace browse event
+  await analytics.trackPageView(c.req.raw);
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -65,11 +72,15 @@ marketplacesRouter.get('/', async (c) => {
 marketplacesRouter.get('/:id', async (c) => {
   const id = c.req.param('id');
   const service = new MarketplaceService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
   const marketplace = await service.getMarketplaceWithExtensions(id);
 
   if (!marketplace) {
     return c.json({ error: 'Marketplace not found' }, 404);
   }
+
+  // Track marketplace view event
+  await analytics.trackEvent(c.req.raw, 'marketplace_browse');
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {

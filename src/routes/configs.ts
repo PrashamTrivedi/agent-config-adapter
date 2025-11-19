@@ -7,6 +7,8 @@ import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
 import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
 import { lockdownMiddleware } from '../middleware/lockdown';
+import { AnalyticsService } from '../services/analytics-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   DB: D1Database;
@@ -20,6 +22,7 @@ type Bindings = {
   GEMINI_THINKING_BUDGET?: string; // String because env vars are strings
   OPENAI_API_KEY?: string; // For local dev
   GEMINI_API_KEY?: string; // For local dev
+  ANALYTICS?: AnalyticsEngineDataset;
 };
 
 export const configsRouter = new Hono<{ Bindings: Bindings }>();
@@ -27,6 +30,12 @@ export const configsRouter = new Hono<{ Bindings: Bindings }>();
 // List all configs with optional filters
 configsRouter.get('/', async (c) => {
   const service = new ConfigService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track configs browse event
+  await analytics.trackEvent(c.req.raw, 'configs_browse', {
+    onboardingICP: c.req.query('icp') as any,
+  });
 
   // Extract filter query parameters
   const type = c.req.query('type');
@@ -91,6 +100,7 @@ configsRouter.get('/:id/edit', async (c) => {
 configsRouter.get('/:id', async (c) => {
   const id = c.req.param('id');
   const service = new ConfigService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
   const config = await service.getConfig(id);
 
   if (!config) {
@@ -101,6 +111,13 @@ configsRouter.get('/:id', async (c) => {
   if (config.type === 'skill') {
     return c.redirect(`/skills/${id}`);
   }
+
+  // Track config view event
+  await analytics.trackEvent(c.req.raw, 'config_view', {
+    configFormat: config.original_format,
+    configType: config.type,
+    configName: config.name,
+  });
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -116,9 +133,22 @@ configsRouter.get('/:id/format/:format', async (c) => {
   const targetFormat = c.req.param('format') as AgentFormat;
 
   const service = new ConversionService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
 
   try {
     const result = await service.convertWithMetadata(id, targetFormat);
+
+    // Track config conversion event
+    const configService = new ConfigService(c.env);
+    const config = await configService.getConfig(id);
+    if (config) {
+      await analytics.trackEvent(c.req.raw, 'config_conversion', {
+        configFormat: targetFormat,
+        configType: config.type,
+        configName: config.name,
+        conversionTarget: targetFormat,
+      });
+    }
 
     return c.json({
       content: result.content,

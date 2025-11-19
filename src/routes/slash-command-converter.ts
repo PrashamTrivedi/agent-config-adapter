@@ -12,6 +12,8 @@ import {
   slashCommandConversionResultPartial,
   slashCommandNeedsInputPartial,
 } from '../views/slash-command-converter';
+import { AnalyticsService } from '../services/analytics-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   DB: D1Database;
@@ -28,6 +30,8 @@ type Bindings = {
   // Direct API keys for local development
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
+
+  ANALYTICS?: AnalyticsEngineDataset;
 };
 
 export const slashCommandConverterRouter = new Hono<{ Bindings: Bindings }>();
@@ -36,6 +40,10 @@ export const slashCommandConverterRouter = new Hono<{ Bindings: Bindings }>();
 // Main converter UI page with search support
 slashCommandConverterRouter.get('/convert', async (c) => {
   const configService = new ConfigService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track slash command converter page view
+  await analytics.trackPageView(c.req.raw);
 
   // Get search query
   const search = c.req.query('search');
@@ -108,6 +116,12 @@ slashCommandConverterRouter.get('/converter-form', async (c) => {
 // Response: { "convertedContent": "...", "needsUserInput": false, "analysis": {...} }
 slashCommandConverterRouter.post('/:id/convert', async (c) => {
   const configId = c.req.param('id');
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track slash command conversion event
+  await analytics.trackEvent(c.req.raw, 'slash_command_convert', {
+    configName: configId,
+  });
 
   // Get user arguments from request body (handle both JSON and form data)
   let userArguments: string | undefined;

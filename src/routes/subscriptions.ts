@@ -2,11 +2,14 @@ import { Hono } from 'hono';
 import { SubscriptionService } from '../services/subscription-service';
 import { EmailService } from '../services/email-service';
 import { subscriptionFormView } from '../views/subscriptions';
+import { AnalyticsService } from '../services/analytics-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   EMAIL_SUBSCRIPTIONS: KVNamespace;
   RESEND_API_KEY: string; // Resend API key
   ADMIN_EMAIL: string;
+  ANALYTICS?: AnalyticsEngineDataset;
 };
 
 /**
@@ -68,6 +71,10 @@ subscriptionsRouter.post('/subscribe', async (c) => {
         subscribed: true,
       });
     }
+
+    // Track email submit event
+    const analytics = new AnalyticsService(c.env.ANALYTICS);
+    await analytics.trackEvent(c.req.raw, 'email_submit');
 
     // Subscribe
     const ipAddress = c.req.header('CF-Connecting-IP');

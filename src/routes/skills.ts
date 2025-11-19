@@ -3,11 +3,14 @@ import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
 import { lockdownMiddleware } from '../middleware/lockdown';
+import { AnalyticsService } from '../services/analytics-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   DB: D1Database;
   EXTENSION_FILES: R2Bucket;
   EMAIL_SUBSCRIPTIONS: KVNamespace;
+  ANALYTICS?: AnalyticsEngineDataset;
 };
 
 export const skillsRouter = new Hono<{ Bindings: Bindings }>();
@@ -15,6 +18,11 @@ export const skillsRouter = new Hono<{ Bindings: Bindings }>();
 // List all skills
 skillsRouter.get('/', async (c) => {
   const service = new SkillsService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track skills browse event
+  await analytics.trackPageView(c.req.raw);
+
   const skills = await service.listSkills();
 
   const accept = c.req.header('Accept') || '';
@@ -47,11 +55,19 @@ skillsRouter.get('/:id/edit', async (c) => {
 skillsRouter.get('/:id', async (c) => {
   const id = c.req.param('id');
   const service = new SkillsService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
   const skill = await service.getSkillWithFiles(id);
 
   if (!skill) {
     return c.json({ error: 'Skill not found' }, 404);
   }
+
+  // Track skill view event
+  await analytics.trackEvent(c.req.raw, 'config_view', {
+    configType: 'skill',
+    configName: skill.name,
+    configFormat: skill.original_format,
+  });
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {
@@ -300,6 +316,10 @@ skillsRouter.delete('/:id/files/:fileId', lockdownMiddleware, async (c) => {
 skillsRouter.get('/:id/download', async (c) => {
   const id = c.req.param('id');
   const service = new SkillsService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track skill download event
+  await analytics.trackEvent(c.req.raw, 'skill_download');
 
   try {
     const zipData = await service.downloadAsZip(id);

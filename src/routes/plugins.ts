@@ -7,6 +7,8 @@ import {
 } from '../services';
 import { pluginBrowserView } from '../views/plugin-browser';
 import { lockdownMiddleware } from '../middleware/lockdown';
+import { AnalyticsService } from '../services/analytics-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   DB: D1Database;
@@ -16,6 +18,7 @@ type Bindings = {
   OPENAI_API_KEY?: string;
   ACCOUNT_ID: string;
   GATEWAY_ID: string;
+  ANALYTICS?: AnalyticsEngineDataset;
 };
 
 export const pluginsRouter = new Hono<{ Bindings: Bindings }>();
@@ -39,6 +42,10 @@ pluginsRouter.options('*', (c) => {
 pluginsRouter.get('/marketplaces/:marketplaceId/gemini/definition', async (c) => {
   const marketplaceId = c.req.param('marketplaceId');
   const startTime = Date.now();
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track marketplace browse event
+  await analytics.trackEvent(c.req.raw, 'marketplace_browse');
 
   console.log('[Marketplace Gemini] Starting Gemini definition request', {
     marketplaceId,
@@ -299,6 +306,12 @@ pluginsRouter.get('/:extensionId/gemini/definition', async (c) => {
 pluginsRouter.get('/:extensionId/:format/download', async (c) => {
   const extensionId = c.req.param('extensionId');
   const format = c.req.param('format') as 'claude_code' | 'gemini';
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track extension download event
+  await analytics.trackEvent(c.req.raw, 'extension_download', {
+    configFormat: format as any,
+  });
 
   if (format !== 'claude_code' && format !== 'gemini') {
     return c.json({ error: 'Invalid format. Must be claude_code or gemini' }, 400);
@@ -414,6 +427,12 @@ pluginsRouter.post('/:extensionId/:format/invalidate', lockdownMiddleware, async
 pluginsRouter.get('/:extensionId/:format', async (c) => {
   const extensionId = c.req.param('extensionId');
   const format = c.req.param('format') as 'claude_code' | 'gemini';
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+
+  // Track plugin browse event
+  await analytics.trackEvent(c.req.raw, 'plugin_browse', {
+    configFormat: format as any,
+  });
 
   if (format !== 'claude_code' && format !== 'gemini') {
     return c.json({ error: 'Invalid format. Must be claude_code or gemini' }, 400);
