@@ -13,7 +13,7 @@ export function noCodeBuildersPage(): string {
           Ship AI Products Faster
         </h2>
         <p style="font-size: 1.2em; margin: 0 auto; max-width: 700px; line-height: 1.7; color: rgba(255, 255, 255, 0.95);">
-          Stop tweaking prompts. Use proven configs from experienced developers to get professional-quality AI output without learning advanced prompt engineering.
+          Get professional AI output without the prompt engineering headache. Use battle-tested configs that just work.
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export function noCodeBuildersPage(): string {
               ${icons.sparkles('icon')} Use Proven Prompts & Commands
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you generate code with AI tools and get mediocre results, use proven slash commands and prompts from experienced developers to get professional-quality output without learning advanced prompt engineering.
+              When my AI outputs are mediocre, I want proven patterns that work, so I can ship professional quality without the learning curve.
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export function noCodeBuildersPage(): string {
               ${icons.save('icon')} Save Reusable Workflows
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you discover a great prompt or workflow that works, save it as a reusable skill with all companion files, so you can apply the same pattern to future projects without starting from scratch.
+              When I find a workflow that works, I want to save it for reuse, so I can apply proven patterns to future projects.
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export function noCodeBuildersPage(): string {
               ${icons.refresh('icon')} Use Same Workflow Everywhere
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you switch between different AI coding tools for different tasks, use the same custom commands and workflows everywhere to maintain consistency without rewriting configs for each platform.
+              When I switch between different AI tools, I want the same workflows everywhere, so I maintain consistency across platforms.
             </p>
           </div>
 
@@ -76,7 +76,7 @@ export function noCodeBuildersPage(): string {
               ${icons.package('icon')} Build Your Personal Toolkit
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you build a library of working configs that accelerate your shipping velocity, organize them into personal extensions with one-click installation to quickly set up new projects.
+              When I build my config library, I want to organize and install them easily, so I can set up new projects in seconds.
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export function noCodeBuildersPage(): string {
               ${icons.download('icon')} Install Community Configs
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you find useful configs shared by other builders, install them from curated marketplaces to adopt best practices without trial-and-error experimentation.
+              When I discover useful community configs, I want instant installation, so I can adopt best practices without experimentation.
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export function noCodeBuildersPage(): string {
               ${icons.file('icon')} Rich Context for AI
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you iterate on your AI-generated code, use multi-file skills with reference files and examples to provide rich context to the AI without manually pasting files.
+              When I provide context to AI, I want to include files automatically, so I avoid manual copying and pasting.
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export function noCodeBuildersPage(): string {
               ${icons.share('icon')} Share Your Success Patterns
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you share your successful patterns with the builder community, package your configs into distributable plugins to build reputation and help others while growing your audience.
+              When I share my successful patterns, I want easy distribution, so I can help others and build my reputation.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function noCodeBuildersPage(): string {
               ${icons.refresh('icon')} Cross-Platform Compatibility
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you need your configs to work across Claude Code, Cursor, and Gemini, convert between formats with semantic accuracy to use the best tool for each task without maintaining duplicate configs.
+              When I use different AI tools, I want my configs to work everywhere, so I can use the best tool for each task.
             </p>
           </div>
         </div>
@@ -129,16 +129,16 @@ export function noCodeBuildersPage(): string {
             <div>
               <strong style="color: var(--text-primary);">Focus on Shipping Products</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We handle config management infrastructure so you can focus on building features
+                Skip the setup and maintenance—spend your time building features that matter
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.code('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Cross-Platform Compatibility</strong>
+              <strong style="color: var(--text-primary);">One Config Library, Works Everywhere</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We handle format differences so your configs work across Claude Code, Codex, and Gemini
+                Your configs work perfectly across all platforms, every time
               </p>
             </div>
           </div>
@@ -147,25 +147,25 @@ export function noCodeBuildersPage(): string {
             <div>
               <strong style="color: var(--text-primary);">Battle-Tested Quality</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide community-validated configs that deliver consistent, professional results
+                Community-validated configs deliver consistent, professional results you can trust
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.share('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Built-In Distribution</strong>
+              <strong style="color: var(--text-primary);">Built-In Sharing & Discovery</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide marketplace infrastructure so you can reach other builders and grow your audience
+                Reach other builders, grow your audience, and discover what works
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.file('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Sophisticated File Management</strong>
+              <strong style="color: var(--text-primary);">Files Stay Organized Automatically</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We handle R2 storage and companion files so you can build complex multi-file skills
+                All your files stay together and organized without the hassle
               </p>
             </div>
           </div>
@@ -219,10 +219,10 @@ export function noCodeBuildersPage(): string {
         </p>
         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
           <a href="/subscriptions/form?return=/skills" class="btn ripple" style="background: white; color: var(--accent-primary); font-size: 1.1em; padding: 14px 28px;">
-            ${icons.mail('icon')} Get Early Access
+            ${icons.zap('icon')} Start Building Faster
           </a>
           <a href="/skills" class="btn ripple" style="background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid white; font-size: 1.1em; padding: 14px 28px;">
-            ${icons.star('icon')} Browse Skills
+            ${icons.star('icon')} Browse Proven Configs
           </a>
         </div>
       </div>
@@ -244,7 +244,7 @@ export function multiToolOrgsPage(): string {
           One Config Library. Any AI Tool.
         </h2>
         <p style="font-size: 1.2em; margin: 0 auto; max-width: 700px; line-height: 1.7; color: rgba(255, 255, 255, 0.95);">
-          Standardize AI coding across your engineering team without forcing everyone onto one platform. Manage quality and consistency when every dev uses different tools.
+          Let your team use their favorite AI tools. You get consistency, quality, and control—without the chaos.
         </p>
       </div>
 
@@ -280,7 +280,7 @@ export function multiToolOrgsPage(): string {
               ${icons.shield('icon')} Standardize Without Restricting
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you roll out AI coding assistants to your engineering team, create organization-approved slash commands and MCP configs to ensure quality standards without restricting tool choice.
+              When rolling out AI coding assistants, set organization-approved standards without restricting tool choice.
             </p>
           </div>
 
@@ -289,7 +289,7 @@ export function multiToolOrgsPage(): string {
               ${icons.database('icon')} Central Config Repository
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you maintain best practices across 50+ developers using different AI tools, manage one central config repository that converts to all formats to avoid fragmented tooling and 3x maintenance overhead.
+              When maintaining best practices across 50+ developers, manage one central source to avoid fragmentation and 3x maintenance overhead.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ export function multiToolOrgsPage(): string {
               ${icons.refresh('icon')} Auto-Push Updates
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you update organization-wide coding standards or security policies, invalidate caches and push updates to all formats automatically to ensure everyone uses current, compliant versions.
+              When updating organization-wide standards or security policies, push updates instantly to ensure everyone stays current and compliant.
             </p>
           </div>
 
@@ -307,25 +307,25 @@ export function multiToolOrgsPage(): string {
               ${icons.userPlus('icon')} Fast Onboarding
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you onboard new developers to AI-assisted workflows, provide curated extension packages with instant installation to reduce onboarding time from days to minutes with proven configs.
+              When onboarding new developers, provide curated packages with instant installation to reduce setup time from days to minutes.
             </p>
           </div>
 
           <div class="card" style="background: var(--bg-tertiary); padding: 20px; border-left: 3px solid var(--accent-violet);">
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">
-              ${icons.package('icon')} Multi-Format Support
+              ${icons.package('icon')} Support Any Tool
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you need to support developers on Claude Code, Cursor, Gemini, and Codex, distribute configs through format-specific plugins (ZIP, JSON) to provide native installation experiences.
+              When supporting developers on different AI tools, distribute configs that work natively everywhere without manual conversion.
             </p>
           </div>
 
           <div class="card" style="background: var(--bg-tertiary); padding: 20px; border-left: 3px solid var(--accent-violet);">
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">
-              ${icons.file('icon')} Sophisticated Tooling Distribution
+              ${icons.file('icon')} Distribute Complex Workflows
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you create organization-specific workflows with multiple companion files, package them as multi-file skills with R2-backed storage to distribute without email attachments or wiki pages.
+              When creating organization-specific workflows with multiple files, distribute them seamlessly without email attachments or wiki pages.
             </p>
           </div>
 
@@ -334,7 +334,7 @@ export function multiToolOrgsPage(): string {
               ${icons.checkCircle('icon')} Safe Adoption of Community Tools
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you discover useful community configs that fit your standards, test conversions, preview manifests, and validate before distribution to safely adopt external tools without compatibility surprises.
+              When discovering useful community configs, validate and preview before distribution to safely adopt external tools without surprises.
             </p>
           </div>
 
@@ -343,16 +343,7 @@ export function multiToolOrgsPage(): string {
               ${icons.barChart('icon')} Track Adoption & ROI
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you measure AI coding adoption and config usage across teams, track marketplace activity, downloads, and conversions to demonstrate ROI and optimize your AI tooling strategy.
-            </p>
-          </div>
-
-          <div class="card" style="background: var(--bg-tertiary); padding: 20px; border-left: 3px solid var(--accent-violet);">
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">
-              ${icons.settings('icon')} Accurate MCP Conversion
-            </h4>
-            <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you standardize MCP server configurations for your infrastructure, use rule-based conversion with field mapping (httpUrl, startup_timeout_ms) to ensure accurate structured data across different agent formats.
+              When measuring AI coding adoption across teams, track usage and engagement to demonstrate ROI and optimize your tooling strategy.
             </p>
           </div>
 
@@ -376,9 +367,9 @@ export function multiToolOrgsPage(): string {
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.clock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Production-Ready Infrastructure</strong>
+              <strong style="color: var(--text-primary);">Enterprise-Ready From Day One</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide battle-tested cross-platform conversion, caching, and distribution so you ship faster
+                Battle-tested platform built for teams—ship faster without the infrastructure headaches
               </p>
             </div>
           </div>
@@ -387,7 +378,7 @@ export function multiToolOrgsPage(): string {
             <div>
               <strong style="color: var(--text-primary);">Zero Maintenance Overhead</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We handle format specification changes and updates so your team stays productive
+                Updates and changes happen automatically—your team stays productive without interruptions
               </p>
             </div>
           </div>
@@ -396,25 +387,25 @@ export function multiToolOrgsPage(): string {
             <div>
               <strong style="color: var(--text-primary);">Instant Ecosystem Access</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide marketplace infrastructure so you leverage community configs and best practices
+                Tap into community configs and best practices without building from scratch
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.database('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Smart Cache Management</strong>
+              <strong style="color: var(--text-primary);">Updates Reach Everyone Instantly</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We handle cache invalidation across formats so updates propagate instantly
+                Changes propagate automatically—no manual distribution or version mismatches
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.cpu('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Guaranteed Conversion Accuracy</strong>
+              <strong style="color: var(--text-primary);">Configs That Work Reliably, Every Time</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We use AI Gateway with fallback chains so your configs convert reliably every time
+                Your configs work perfectly across all tools with zero compatibility issues
               </p>
             </div>
           </div>
@@ -468,7 +459,7 @@ export function multiToolOrgsPage(): string {
         </p>
         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
           <a href="/subscriptions/form?return=/extensions" class="btn ripple" style="background: white; color: var(--accent-violet); font-size: 1.1em; padding: 14px 28px;">
-            ${icons.mail('icon')} Request Demo
+            ${icons.users('icon')} See How Teams Standardize
           </a>
           <a href="/extensions" class="btn ripple" style="background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid white; font-size: 1.1em; padding: 14px 28px;">
             ${icons.package('icon')} Browse Extensions
@@ -493,7 +484,7 @@ export function aiPilotTeamsPage(): string {
           Ship Your Pilot with Governance Built In
         </h2>
         <p style="font-size: 1.2em; margin: 0 auto; max-width: 700px; line-height: 1.7; color: rgba(255, 255, 255, 0.95);">
-          Demonstrate governance, auditability, and best practices to leadership before broader rollout. Prove responsible AI usage with compliance-ready infrastructure.
+          Show leadership you're ready to scale. Built-in governance, compliance, and security from day one.
         </p>
       </div>
 
@@ -529,7 +520,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.shield('icon')} Demonstrate Governance
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you run an AI coding pilot with 10-20 developers, centrally manage approved configs, skills, and MCP servers to demonstrate governance and control to leadership before wider rollout.
+              When running an AI coding pilot with 10-20 developers, centrally manage approved tools and standards to demonstrate control to leadership before wider rollout.
             </p>
           </div>
 
@@ -538,7 +529,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.fileText('icon')} Auditable Config Distribution
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you need to prove responsible AI usage to security/compliance teams, provide auditable config distribution with email-gated CUD operations to show who created, updated, or deleted configs and when.
+              When proving responsible AI usage to security/compliance teams, provide auditable distribution logs showing who created, updated, or deleted configs and when.
             </p>
           </div>
 
@@ -547,7 +538,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.checkCircle('icon')} Ensure Quality Standards
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you evaluate AI coding quality across pilot participants, distribute battle-tested slash commands with AI-enhanced conversion to ensure consistent, high-quality output that justifies broader adoption.
+              When evaluating AI coding quality across pilot participants, distribute battle-tested configs to ensure consistent, high-quality output that justifies broader adoption.
             </p>
           </div>
 
@@ -556,7 +547,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.barChart('icon')} Track & Report ROI
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you present pilot results to VP/CTO for expansion approval, track marketplace downloads, conversion usage, and config adoption to demonstrate measurable productivity gains and ROI.
+              When presenting pilot results to VP/CTO for expansion approval, track usage and adoption metrics to demonstrate measurable productivity gains and ROI.
             </p>
           </div>
 
@@ -565,7 +556,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.lock('icon')} Enforce Security Policies
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you enforce security policies during the pilot phase, curate approved extensions with multi-level marketplace hierarchy to prevent unapproved tool usage while enabling developer productivity.
+              When enforcing security policies during the pilot phase, curate approved tools and configs to prevent unapproved usage while enabling developer productivity.
             </p>
           </div>
 
@@ -574,16 +565,16 @@ export function aiPilotTeamsPage(): string {
               ${icons.book('icon')} Document Best Practices
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you document best practices for AI-assisted development, package proven workflows as distributable plugin collections to create repeatable, documented processes that meet compliance requirements.
+              When documenting best practices for AI-assisted development, package proven workflows to create repeatable, documented processes that meet compliance requirements.
             </p>
           </div>
 
           <div class="card" style="background: var(--bg-tertiary); padding: 20px; border-left: 3px solid #f59e0b;">
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">
-              ${icons.trendingUp('icon')} Production-Grade Infrastructure
+              ${icons.trendingUp('icon')} Built to Scale
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you scale from pilot (20 devs) to department-wide (100+ devs), use production-grade infrastructure to avoid migration pain and prove the platform scales to enterprise needs.
+              When scaling from pilot (20 devs) to department-wide (100+ devs), rely on proven infrastructure to avoid migration pain and scale seamlessly to enterprise needs.
             </p>
           </div>
 
@@ -592,7 +583,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.users('icon')} Support Multi-Tool Evaluation
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you support multiple AI tool preferences during evaluation, provide one config source that works across Claude Code, Cursor, Gemini to compare tool effectiveness without fragmenting your config management.
+              When supporting multiple AI tool preferences during evaluation, provide one config source that works everywhere to compare tool effectiveness without fragmentation.
             </p>
           </div>
 
@@ -601,7 +592,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.settings('icon')} Enterprise Integration
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you integrate with enterprise auth and internal systems, leverage extensible infrastructure with proper bindings support to customize the platform for your specific compliance and security needs.
+              When integrating with enterprise auth and internal systems, customize the platform for your specific compliance and security needs.
             </p>
           </div>
 
@@ -610,7 +601,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.refresh('icon')} Fast Iteration
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you update pilot configs based on feedback and learnings, invalidate cached conversions and regenerate plugin files to iterate quickly without manual cache clearing or distribution overhead.
+              When updating pilot configs based on feedback and learnings, changes propagate instantly to iterate quickly without manual distribution overhead.
             </p>
           </div>
 
@@ -619,27 +610,19 @@ export function aiPilotTeamsPage(): string {
               ${icons.clipboardCheck('icon')} Demonstrate Control Systems
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you demonstrate governance to leadership with specific examples, show curated marketplaces, version control, and update mechanisms to prove you have control systems that enable safe organization-wide rollout.
+              When demonstrating governance to leadership with specific examples, show curated collections, version control, and update mechanisms to prove you have control systems for safe organization-wide rollout.
             </p>
           </div>
 
           <div class="card" style="background: var(--bg-tertiary); padding: 20px; border-left: 3px solid #f59e0b;">
             <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">
-              ${icons.code('icon')} Build Internal MCP Ecosystem
+              ${icons.code('icon')} Build Internal Tool Ecosystem
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you build internal MCP server ecosystem for proprietary tools, store and convert MCP configs with rule-based accuracy (no AI guessing) to ensure critical infrastructure configs are transformed correctly.
+              When building internal tool ecosystem for proprietary systems, store and manage configs reliably to ensure critical infrastructure is configured correctly.
             </p>
           </div>
 
-          <div class="card" style="background: var(--bg-tertiary); padding: 20px; border-left: 3px solid #f59e0b;">
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">
-              ${icons.cpu('icon')} AI-Enhanced Conversion
-            </h4>
-            <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you evaluate AI coding quality across pilot participants, distribute battle-tested slash commands with AI-enhanced conversion to ensure consistent, high-quality output that justifies broader adoption.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -652,27 +635,27 @@ export function aiPilotTeamsPage(): string {
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.lock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Built-In Compliance & Security</strong>
+              <strong style="color: var(--text-primary);">Compliance-Ready From Day One</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide auditable, email-gated access from day one so you meet governance requirements
+                Auditable access logs and controls built in—meet governance requirements without extra work
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.server('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Enterprise-Grade Infrastructure</strong>
+              <strong style="color: var(--text-primary);">Built for Enterprise Security</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide production-ready infrastructure so you avoid build costs and complexity
+                Production-ready platform that scales—avoid build costs and complexity
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.shield('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Complete Governance Framework</strong>
+              <strong style="color: var(--text-primary);">Governance That Leadership Trusts</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide marketplace curation, version control, and distribution tracking so you demonstrate control
+                Curation, version control, and distribution tracking—prove you're in control
               </p>
             </div>
           </div>
@@ -681,16 +664,16 @@ export function aiPilotTeamsPage(): string {
             <div>
               <strong style="color: var(--text-primary);">Proven Solution, Lower Risk</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide battle-tested platform so you focus on pilot success instead of infrastructure
+                Battle-tested platform—focus on pilot success, not infrastructure headaches
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.clock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Immediate Time to Value</strong>
+              <strong style="color: var(--text-primary);">Scale From Pilot to Production Seamlessly</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide ready-to-use infrastructure so you launch your pilot within days, not months
+                Launch your pilot within days, not months—ready to scale when you are
               </p>
             </div>
           </div>
