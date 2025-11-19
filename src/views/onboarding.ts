@@ -49,7 +49,7 @@ export function noCodeBuildersPage(): string {
               ${icons.sparkles('icon')} Use Proven Prompts & Commands
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When my AI outputs are mediocre, I want proven patterns that work, so I can ship professional quality without the learning curve.
+              When your AI outputs are mediocre, you want proven patterns that work, so you can ship professional quality without the learning curve.
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export function noCodeBuildersPage(): string {
               ${icons.save('icon')} Save Reusable Workflows
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I find a workflow that works, I want to save it for reuse, so I can apply proven patterns to future projects.
+              When you find a workflow that works, you want to save it for reuse, so you can apply proven patterns to future projects.
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export function noCodeBuildersPage(): string {
               ${icons.refresh('icon')} Use Same Workflow Everywhere
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I switch between different AI tools, I want the same workflows everywhere, so I maintain consistency across platforms.
+              When you switch between different AI tools, you want the same workflows everywhere, so you maintain consistency across platforms.
             </p>
           </div>
 
@@ -76,7 +76,7 @@ export function noCodeBuildersPage(): string {
               ${icons.package('icon')} Build Your Personal Toolkit
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I build my config library, I want to organize and install them easily, so I can set up new projects in seconds.
+              When you build your config library, you want to organize and install them easily, so you can set up new projects in seconds.
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export function noCodeBuildersPage(): string {
               ${icons.download('icon')} Install Community Configs
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I discover useful community configs, I want instant installation, so I can adopt best practices without experimentation.
+              When you discover useful community configs, you want instant installation, so you can adopt best practices without experimentation.
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export function noCodeBuildersPage(): string {
               ${icons.file('icon')} Rich Context for AI
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I provide context to AI, I want to include files automatically, so I avoid manual copying and pasting.
+              When you provide context to AI, you want to include files automatically, so you avoid manual copying and pasting.
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export function noCodeBuildersPage(): string {
               ${icons.share('icon')} Share Your Success Patterns
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I share my successful patterns, I want easy distribution, so I can help others and build my reputation.
+              When you share your successful patterns, you want easy distribution, so you can help others and build your reputation.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function noCodeBuildersPage(): string {
               ${icons.refresh('icon')} Cross-Platform Compatibility
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When I use different AI tools, I want my configs to work everywhere, so I can use the best tool for each task.
+              When you use different AI tools, you want your configs to work everywhere, so you can use the best tool for each task.
             </p>
           </div>
         </div>
@@ -280,7 +280,7 @@ export function multiToolOrgsPage(): string {
               ${icons.shield('icon')} Standardize Without Restricting
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When rolling out AI coding assistants, set organization-approved standards without restricting tool choice.
+              When you roll out AI coding to your team, you want organization-approved standards, so you can ensure quality without restricting tool choice.
             </p>
           </div>
 
@@ -289,7 +289,7 @@ export function multiToolOrgsPage(): string {
               ${icons.database('icon')} Central Config Repository
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When maintaining best practices across 50+ developers, manage one central source to avoid fragmentation and 3x maintenance overhead.
+              When you maintain best practices across 50+ developers, you want one central source, so you avoid fragmentation and 3x maintenance overhead.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ export function multiToolOrgsPage(): string {
               ${icons.refresh('icon')} Auto-Push Updates
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When updating organization-wide standards or security policies, push updates instantly to ensure everyone stays current and compliant.
+              When you update organization-wide standards, you want updates to reach everyone instantly, so everyone stays current and compliant.
             </p>
           </div>
 
@@ -307,7 +307,7 @@ export function multiToolOrgsPage(): string {
               ${icons.userPlus('icon')} Fast Onboarding
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When onboarding new developers, provide curated packages with instant installation to reduce setup time from days to minutes.
+              When you onboard new developers, you want curated packages with instant installation, so you reduce setup time from days to minutes.
             </p>
           </div>
 
@@ -316,7 +316,7 @@ export function multiToolOrgsPage(): string {
               ${icons.package('icon')} Support Any Tool
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When supporting developers on different AI tools, distribute configs that work natively everywhere without manual conversion.
+              When you support developers on different AI tools, you want configs that work natively everywhere, so you avoid manual conversion.
             </p>
           </div>
 
@@ -325,7 +325,7 @@ export function multiToolOrgsPage(): string {
               ${icons.file('icon')} Distribute Complex Workflows
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When creating organization-specific workflows with multiple files, distribute them seamlessly without email attachments or wiki pages.
+              When you create organization-specific workflows with multiple files, you want seamless distribution, so you avoid email attachments and wiki pages.
             </p>
           </div>
 
@@ -334,7 +334,7 @@ export function multiToolOrgsPage(): string {
               ${icons.checkCircle('icon')} Safe Adoption of Community Tools
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When discovering useful community configs, validate and preview before distribution to safely adopt external tools without surprises.
+              When you discover useful community configs, you want to validate and preview them, so you can safely adopt external tools without surprises.
             </p>
           </div>
 
@@ -343,7 +343,7 @@ export function multiToolOrgsPage(): string {
               ${icons.barChart('icon')} Track Adoption & ROI
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When measuring AI coding adoption across teams, track usage and engagement to demonstrate ROI and optimize your tooling strategy.
+              When you measure AI coding adoption across teams, you want to track usage and engagement, so you can demonstrate ROI and optimize your tooling strategy.
             </p>
           </div>
 
@@ -520,7 +520,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.shield('icon')} Demonstrate Governance
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When running an AI coding pilot with 10-20 developers, centrally manage approved tools and standards to demonstrate control to leadership before wider rollout.
+              When you run an AI coding pilot with 10-20 developers, you want centrally managed approved tools and standards, so you can demonstrate control to leadership before wider rollout.
             </p>
           </div>
 
@@ -529,7 +529,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.fileText('icon')} Auditable Config Distribution
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When proving responsible AI usage to security/compliance teams, provide auditable distribution logs showing who created, updated, or deleted configs and when.
+              When you prove responsible AI usage to security/compliance teams, you want auditable distribution logs, so you can show who created, updated, or deleted configs and when.
             </p>
           </div>
 
@@ -538,7 +538,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.checkCircle('icon')} Ensure Quality Standards
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When evaluating AI coding quality across pilot participants, distribute battle-tested configs to ensure consistent, high-quality output that justifies broader adoption.
+              When you evaluate AI coding quality across pilot participants, you want battle-tested configs, so you can ensure consistent, high-quality output that justifies broader adoption.
             </p>
           </div>
 
@@ -547,7 +547,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.barChart('icon')} Track & Report ROI
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When presenting pilot results to VP/CTO for expansion approval, track usage and adoption metrics to demonstrate measurable productivity gains and ROI.
+              When you present pilot results to VP/CTO for expansion approval, you want to track usage and adoption metrics, so you can demonstrate measurable productivity gains and ROI.
             </p>
           </div>
 
@@ -556,7 +556,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.lock('icon')} Enforce Security Policies
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When enforcing security policies during the pilot phase, curate approved tools and configs to prevent unapproved usage while enabling developer productivity.
+              When you enforce security policies during the pilot phase, you want curated approved tools and configs, so you can prevent unapproved usage while enabling developer productivity.
             </p>
           </div>
 
@@ -565,7 +565,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.book('icon')} Document Best Practices
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When documenting best practices for AI-assisted development, package proven workflows to create repeatable, documented processes that meet compliance requirements.
+              When you document best practices for AI-assisted development, you want to package proven workflows, so you can create repeatable, documented processes that meet compliance requirements.
             </p>
           </div>
 
@@ -574,7 +574,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.trendingUp('icon')} Built to Scale
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When scaling from pilot (20 devs) to department-wide (100+ devs), rely on proven infrastructure to avoid migration pain and scale seamlessly to enterprise needs.
+              When you scale from pilot (20 devs) to department-wide (100+ devs), you want proven infrastructure, so you can avoid migration pain and scale seamlessly to enterprise needs.
             </p>
           </div>
 
@@ -583,7 +583,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.users('icon')} Support Multi-Tool Evaluation
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When supporting multiple AI tool preferences during evaluation, provide one config source that works everywhere to compare tool effectiveness without fragmentation.
+              When you support multiple AI tool preferences during evaluation, you want one config source that works everywhere, so you can compare tool effectiveness without fragmentation.
             </p>
           </div>
 
@@ -592,7 +592,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.settings('icon')} Enterprise Integration
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When integrating with enterprise auth and internal systems, customize the platform for your specific compliance and security needs.
+              When you integrate with enterprise auth and internal systems, you want to customize the platform, so you can meet your specific compliance and security needs.
             </p>
           </div>
 
@@ -601,7 +601,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.refresh('icon')} Fast Iteration
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When updating pilot configs based on feedback and learnings, changes propagate instantly to iterate quickly without manual distribution overhead.
+              When you update pilot configs based on feedback and learnings, you want changes to propagate instantly, so you can iterate quickly without manual distribution overhead.
             </p>
           </div>
 
@@ -610,7 +610,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.clipboardCheck('icon')} Demonstrate Control Systems
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When demonstrating governance to leadership with specific examples, show curated collections, version control, and update mechanisms to prove you have control systems for safe organization-wide rollout.
+              When you demonstrate governance to leadership with specific examples, you want to show curated collections, version control, and update mechanisms, so you can prove you have control systems for safe organization-wide rollout.
             </p>
           </div>
 
@@ -619,7 +619,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.code('icon')} Build Internal Tool Ecosystem
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When building internal tool ecosystem for proprietary systems, store and manage configs reliably to ensure critical infrastructure is configured correctly.
+              When you build internal tool ecosystem for proprietary systems, you want to store and manage configs reliably, so you can ensure critical infrastructure is configured correctly.
             </p>
           </div>
 
