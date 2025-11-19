@@ -1445,6 +1445,85 @@ export function layout(title: string, content: string): string {
         <main>
           ${content}
         </main>
+
+        <!-- Footer -->
+        <footer style="background: var(--bg-secondary); border-top: 1px solid var(--border-accent); margin-top: 60px; padding: 48px 40px 32px 40px;">
+          <div style="max-width: 1400px; margin: 0 auto;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px;">
+              <!-- Product Column -->
+              <div>
+                <h4 style="margin: 0 0 16px 0; color: var(--accent-primary); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">
+                  Product
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <a href="/configs" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Configs</a>
+                  <a href="/skills" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Skills</a>
+                  <a href="/extensions" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Extensions</a>
+                  <a href="/marketplaces" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Marketplaces</a>
+                  <a href="/slash-commands/convert" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Converter</a>
+                  <a href="/mcp/info" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">MCP Server</a>
+                </div>
+              </div>
+
+              <!-- Resources Column -->
+              <div>
+                <h4 style="margin: 0 0 16px 0; color: var(--accent-primary); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">
+                  Resources
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <a href="https://github.com/PrashamTrivedi/agent-config-adapter" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Documentation</a>
+                  <a href="https://github.com/PrashamTrivedi/agent-config-adapter#readme" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">API Reference</a>
+                  <a href="https://github.com/PrashamTrivedi/agent-config-adapter/issues" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Community</a>
+                  <a href="https://github.com/PrashamTrivedi/agent-config-adapter" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">GitHub</a>
+                </div>
+              </div>
+
+              <!-- For Teams Column -->
+              <div>
+                <h4 style="margin: 0 0 16px 0; color: var(--accent-primary); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">
+                  For Teams
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <a href="/onboarding/no-code-builders" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">No-Code/Low-Code Builders</a>
+                  <a href="/onboarding/multi-tool-orgs" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Multi-Tool Organizations</a>
+                  <a href="/onboarding/ai-pilot-teams" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">AI Pilot Teams</a>
+                </div>
+              </div>
+
+              <!-- Legal Column -->
+              <div>
+                <h4 style="margin: 0 0 16px 0; color: var(--accent-primary); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">
+                  Legal
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <a href="#" onclick="event.preventDefault(); alert('Coming soon');" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Privacy Policy</a>
+                  <a href="#" onclick="event.preventDefault(); alert('Coming soon');" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Terms of Service</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div style="border-top: 1px solid var(--border-dim); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <p style="margin: 0; color: var(--text-tertiary); font-size: 0.9em;">
+                © 2025 Agent Config Adapter. All rights reserved.
+              </p>
+              <div style="display: flex; gap: 16px; align-items: center;">
+                <a href="https://github.com/PrashamTrivedi/agent-config-adapter" target="_blank" rel="noopener noreferrer" style="color: var(--text-tertiary); text-decoration: none; font-size: 0.9em; transition: color 0.2s ease; display: flex; align-items: center; gap: 6px;">
+                  ${icons.github('icon')} GitHub
+                </a>
+                <a href="/subscriptions/form" style="color: var(--accent-primary); text-decoration: none; font-size: 0.9em; transition: color 0.2s ease; display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                  ${icons.mail('icon')} Get Updates
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <style>
+            footer a:hover {
+              color: var(--accent-primary) !important;
+            }
+          </style>
+        </footer>
         <script>
           // ===== TOAST NOTIFICATION SYSTEM =====
           window.showToast = function(message, type = 'info', duration = 5000) {

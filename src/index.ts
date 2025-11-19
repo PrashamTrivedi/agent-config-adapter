@@ -9,6 +9,7 @@ import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { subscriptionsRouter } from './routes/subscriptions';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
+import { noCodeBuildersPage, multiToolOrgsPage, aiPilotTeamsPage } from './views/onboarding';
 import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
@@ -167,6 +168,19 @@ app.get('/', (c) => {
     </div>
   `;
   return c.html(layout('Home', content));
+});
+
+// Onboarding pages for ICPs
+app.get('/onboarding/no-code-builders', (c) => {
+  return c.html(layout('For No-Code Builders', noCodeBuildersPage()));
+});
+
+app.get('/onboarding/multi-tool-orgs', (c) => {
+  return c.html(layout('For Multi-Tool Organizations', multiToolOrgsPage()));
+});
+
+app.get('/onboarding/ai-pilot-teams', (c) => {
+  return c.html(layout('For AI Pilot Teams', aiPilotTeamsPage()));
 });
 
 // Mount API routes
