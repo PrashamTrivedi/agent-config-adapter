@@ -2,205 +2,271 @@
 
 ## Overview
 
-This analysis identifies 5 Ideal Customer Profiles (ICPs) for the Agent Config Adapter platform and maps the key jobs each ICP needs to accomplish using the Jobs To Be Done framework.
+This analysis identifies 3 Ideal Customer Profiles (ICPs) for the Agent Config Adapter platform and maps the key jobs each ICP needs to accomplish using the Jobs To Be Done framework.
 
-**Key Differentiator**: This platform solves problems that cannot be replicated over a weekend - it provides production-grade infrastructure (D1, KV, R2, AI Gateway), battle-tested conversion logic, and a growing ecosystem (marketplace, extensions, skills).
-
----
-
-## ICP 1: Multi-Agent Platform Teams
-
-**Profile**: Engineering teams building developer platforms or IDEs that need to support multiple AI coding agents (Claude Code, Codex, Gemini, etc.) without maintaining separate integration codebases.
-
-### Jobs To Be Done
-
-**When I** build a platform that supports multiple AI coding agents
-**I want to** delegate format conversion and config management to a universal adapter
-**So I can** focus on my core product features instead of maintaining conversion logic
-
-**When I** onboard a new AI agent provider to my platform
-**I want to** add support through a single API integration
-**So I can** reduce integration time from weeks to days
-
-**When I** need to ensure config portability across agents
-**I want to** rely on proven conversion infrastructure with caching and AI-enhanced accuracy
-**So I can** guarantee my users' workflows work across different agents
-
-**When I** scale my platform to thousands of users
-**I want to** leverage production-grade infrastructure (D1, KV, R2)
-**So I can** avoid building and maintaining storage and caching layers myself
-
-**When I** need to distribute curated tools to my users
-**I want to** use marketplace and extension systems
-**So I can** provide a vetted ecosystem without building a distribution platform
+**Key Differentiator**: This platform solves the "prompt quality ceiling" and "tool fragmentation" problems that plague AI coding adoption. It provides battle-tested configs, cross-platform portability, and governance infrastructure that can't be replicated by tweaking prompts or manually copy-pasting configs.
 
 ---
 
-## ICP 2: Agent Extension Developers
+## ICP #1: No-Code/Low-Code AI Builders
 
-**Profile**: Individual developers or small teams creating slash commands, skills, agents, and MCP servers for AI coding agents. They want maximum reach across different agent ecosystems.
+**Profile**: Non-technical founders and makers building products with Replit, Loveable, Bolt, v0, and similar AI-assisted development tools. Solo founders or small teams (1-3 people) shipping AI-generated applications who want professional results without deep technical expertise.
+
+**Pain**: Output quality is capped by prompt engineering skills. Spending hours tweaking prompts instead of building features. Starting from scratch every time instead of leveraging battle-tested templates. Can't use the same workflow across different AI tools.
+
+**Decision Maker**: Themselves - solo founder or technical co-founder. Self-serve signup, credit card decision.
 
 ### Jobs To Be Done
 
-**When I** build a powerful slash command or skill
-**I want to** publish it once and have it work across Claude Code, Codex, and Gemini
-**So I can** reach the entire AI agent user base instead of just one platform
+**When I** generate code with AI tools and get mediocre results
+**I want to** use proven slash commands and prompts from experienced developers
+**So I can** get professional-quality output without learning advanced prompt engineering
 
-**When I** create complex multi-file skills
-**I want to** manage companion files with gist-like editing and R2 storage
-**So I can** build sophisticated tools without worrying about file management infrastructure
+**When I** discover a great prompt or workflow that works
+**I want to** save it as a reusable skill with all companion files
+**So I can** apply the same pattern to future projects without starting from scratch
 
-**When I** distribute my extensions
-**I want to** package configs into installable plugins (ZIP for Claude, JSON for Gemini)
-**So I can** provide one-click installation experiences for users
+**When I** switch between different AI coding tools for different tasks
+**I want to** use the same custom commands and workflows everywhere
+**So I can** maintain consistency without rewriting configs for each platform
 
-**When I** update my extension
-**I want to** invalidate cached versions and regenerate plugin files
-**So I can** ensure users always get the latest version without manual cache clearing
+**When I** build a library of working configs that accelerate my shipping velocity
+**I want to** organize them into personal extensions with one-click installation
+**So I can** quickly set up new projects with my proven toolkit
 
-**When I** need to validate my extension works correctly
-**I want to** test conversions through API endpoints and preview generated manifests
-**So I can** catch issues before users download my plugin
+**When I** find useful configs shared by other builders
+**I want to** install them from curated marketplaces
+**So I can** adopt best practices without trial-and-error experimentation
 
-**When I** want to build an audience
-**I want to** get discovered through curated marketplaces
-**So I can** grow my user base beyond personal distribution channels
+**When I** iterate on my AI-generated code
+**I want to** use multi-file skills with reference files and examples
+**So I can** provide rich context to the AI without manually pasting files
+
+**When I** share my successful patterns with the builder community
+**I want to** package my configs into distributable plugins
+**So I can** build reputation and help others while growing my audience
+
+**When I** need my configs to work across Claude Code, Cursor, and Gemini
+**I want to** convert between formats with semantic accuracy
+**So I can** use the best tool for each task without maintaining duplicate configs
 
 ---
 
-## ICP 3: Enterprise Developer Tools Companies
+## ICP #2: Multi-Tool Engineering Organizations
 
-**Profile**: Companies building developer tools (testing frameworks, deployment platforms, monitoring tools) that need to integrate with AI coding agents to provide enhanced workflows.
+**Profile**: Platform/DevOps teams at 50-200 person companies where developers use different AI coding tools (Claude Code, Cursor, Gemini, Codex). Engineering teams that can't mandate one tool without developer revolt but need some standardization and consistency.
 
-### Jobs To Be Done
+**Pain**: Need standardization across AI tools without forcing everyone onto one platform. Can't ensure quality/consistency when every dev uses different prompts. Leadership asking "are we doing AI coding right?" No central management for approved configs and workflows.
 
-**When I** integrate AI coding assistance into my product
-**I want to** support all major AI agents through one integration point
-**So I can** maximize market reach without 3x engineering effort
-
-**When I** ship agent-enhanced features to customers
-**I want to** use AI Gateway with multi-provider support (OpenAI, Gemini)
-**So I can** ensure reliability and switch providers without changing integration code
-
-**When I** need to convert between agent formats programmatically
-**I want to** use REST API and MCP server endpoints with robust error handling
-**So I can** build reliable automation without edge case failures
-
-**When I** launch new workflows for different agent ecosystems
-**I want to** create extensions and distribute through marketplaces
-**So I can** reach customers across Claude Code, Gemini, and Codex ecosystems
-
-**When I** need to maintain compliance and observability
-**I want to** leverage built-in logging, caching, and analytics through AI Gateway
-**So I can** meet enterprise requirements without custom infrastructure
-
-**When I** evaluate build vs. buy for agent integration
-**I want to** see production-ready infrastructure that can't be replicated quickly
-**So I can** justify procurement over engineering resources
-
----
-
-## ICP 4: AI Agent Power Users
-
-**Profile**: Individual developers who use multiple AI coding agents (Claude Code in terminal, Gemini in IDE, Codex in editor) and want their custom workflows, slash commands, and tools to work everywhere.
+**Decision Maker**: Engineering Manager, DevOps Lead, Platform Engineering Lead. Requires demo + team trial. Budget approval needed but relatively straightforward ($500-1K/month range).
 
 ### Jobs To Be Done
 
-**When I** create custom slash commands for my workflow
-**I want to** use them in Claude Code, Gemini, and Codex without rewriting
-**So I can** maintain one source of truth for my productivity tools
+**When I** roll out AI coding assistants to my engineering team
+**I want to** create organization-approved slash commands and MCP configs
+**So I can** ensure quality standards without restricting tool choice
 
-**When I** switch between AI agents for different tasks
-**I want to** access the same tools and configurations
-**So I can** avoid context switching costs and duplicate work
+**When I** maintain best practices across 50+ developers using different AI tools
+**I want to** manage one central config repository that converts to all formats
+**So I can** avoid fragmented tooling and 3x maintenance overhead
 
-**When I** discover useful slash commands or skills from others
-**I want to** install them from marketplaces regardless of my agent
-**So I can** adopt best practices without manual format conversion
+**When I** update organization-wide coding standards or security policies
+**I want to** invalidate caches and push updates to all formats automatically
+**So I can** ensure everyone uses current, compliant versions without manual updates
 
-**When I** organize my growing collection of configs
-**I want to** manage them through web UI, API, or MCP tools
-**So I can** maintain my productivity toolkit as it scales
+**When I** onboard new developers to AI-assisted workflows
+**I want to** provide curated extension packages with instant installation
+**So I can** reduce onboarding time from days to minutes with proven configs
 
-**When I** share my workflows with teammates
-**I want to** export configs in any format with one click
-**So I can** enable my team regardless of their agent preference
+**When I** need to support developers on Claude Code, Cursor, Gemini, and Codex
+**I want to** distribute configs through format-specific plugins (ZIP, JSON)
+**So I can** provide native installation experiences regardless of developer preference
 
-**When I** need help with complex conversions
-**I want to** leverage AI-enhanced conversion for slash commands
-**So I can** get semantic accuracy beyond simple rule-based transformations
+**When I** create organization-specific workflows with multiple companion files
+**I want to** package them as multi-file skills with R2-backed storage
+**So I can** distribute sophisticated tooling without email attachments or wiki pages
 
----
+**When I** discover useful community configs that fit our standards
+**I want to** test conversions, preview manifests, and validate before distribution
+**So I can** safely adopt external tools without compatibility surprises
 
-## ICP 5: DevOps/Platform Engineering Teams
-
-**Profile**: Teams responsible for standardizing development tools, implementing guardrails, and enabling AI agent adoption across their engineering organization.
-
-### Jobs To Be Done
-
-**When I** standardize AI agent usage across my organization
-**I want to** centrally manage approved configs, skills, and MCP servers
-**So I can** ensure consistency and enforce security policies
-
-**When I** roll out AI coding assistants to 100+ developers
-**I want to** create curated marketplaces with vetted extensions
-**So I can** provide safe, approved tools without manual reviews for each team
-
-**When I** need to support multiple agent preferences across teams
-**I want to** maintain one config repository that works for all agents
-**So I can** avoid fragmented tooling and reduce maintenance overhead
-
-**When I** update organization-wide slash commands or workflows
-**I want to** invalidate caches and push updates to all formats
-**So I can** ensure everyone uses current, compliant versions
-
-**When I** onboard new developers
-**I want to** provide instant access to curated extension packages
-**So I can** reduce onboarding time from days to minutes
-
-**When I** measure AI agent adoption and usage
-**I want to** track config downloads, conversions, and marketplace activity
+**When I** measure AI coding adoption and config usage across teams
+**I want to** track marketplace activity, downloads, and conversions
 **So I can** demonstrate ROI and optimize our AI tooling strategy
 
-**When I** integrate with internal systems (auth, MCP servers, observability)
-**I want to** use extensible infrastructure with proper bindings support
-**So I can** customize the platform for enterprise needs
+**When I** standardize MCP server configurations for our infrastructure
+**I want to** use rule-based conversion with field mapping (httpUrl, startup_timeout_ms)
+**So I can** ensure accurate structured data across different agent formats
+
+**When I** integrate organization-approved AI tools with our development workflow
+**I want to** create private marketplaces with vetted extensions
+**So I can** provide developer autonomy within governance guardrails
 
 ---
 
-## Why These ICPs Can't Replicate This Over a Weekend
+## ICP #3: AI Pilot/Adoption Teams
 
-### Production Infrastructure
-- D1 database with migrations and optimized queries
-- KV caching with intelligent invalidation
-- R2 storage for multi-file skills and plugin distribution
-- AI Gateway with multi-provider routing (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
+**Profile**: Teams running AI coding pilots at 100-500+ person engineering organizations with security/compliance requirements. Need to demonstrate governance, auditability, and best practices to leadership before broader rollout.
 
-### Battle-Tested Conversion Logic
-- AI-enhanced slash command conversion (not just regex)
-- Rule-based MCP config conversion with TOML support
-- 24+ test suites covering edge cases
-- Semantic accuracy through AI fallback chains
+**Pain**: Leadership asking "how do we ensure quality, security, and consistency?" Need auditable documentation and governance framework to prove responsible AI usage. Can't roll out AI coding widely without demonstrating control and compliance.
 
-### Ecosystem Infrastructure
-- Extension packaging system with manifest generation
-- Marketplace discovery and curation
-- Plugin download system (ZIP for Claude, JSON for Gemini)
-- Multi-file skills with companion file management
+**Decision Maker**: Director/VP of Engineering, CTO, sometimes Security/Compliance teams involved. Long sales cycle (4-8 weeks). Requires enterprise features and compliance discussions before purchase.
 
-### Enterprise Features
-- Email gating for CUD operations (26+ endpoints)
-- Comprehensive caching strategy
-- MCP server with 6 tools, 3 resources, 3 prompts
-- REST API + MCP server dual interface
+### Jobs To Be Done
 
-### Domain Expertise
-- Understanding of Claude Code, Codex, and Gemini format nuances
-- Field mapping logic (type, httpUrl, startup_timeout_ms, etc.)
-- Agent definition and skill passthrough handling
-- Reference inlining for slash commands
+**When I** run an AI coding pilot with 10-20 developers
+**I want to** centrally manage approved configs, skills, and MCP servers
+**So I can** demonstrate governance and control to leadership before wider rollout
 
-**Bottom Line**: What looks like a simple "config converter" is actually a full-stack platform with production infrastructure, AI integration, ecosystem features, and months of domain knowledge baked in.
+**When I** need to prove responsible AI usage to security/compliance teams
+**I want to** provide auditable config distribution with email-gated CUD operations
+**So I can** show who created, updated, or deleted configs and when
+
+**When I** evaluate AI coding quality across pilot participants
+**I want to** distribute battle-tested slash commands with AI-enhanced conversion
+**So I can** ensure consistent, high-quality output that justifies broader adoption
+
+**When I** present pilot results to VP/CTO for expansion approval
+**I want to** track marketplace downloads, conversion usage, and config adoption
+**So I can** demonstrate measurable productivity gains and ROI
+
+**When I** enforce security policies during the pilot phase
+**I want to** curate approved extensions with multi-level marketplace hierarchy
+**So I can** prevent unapproved tool usage while enabling developer productivity
+
+**When I** document best practices for AI-assisted development
+**I want to** package proven workflows as distributable plugin collections
+**So I can** create repeatable, documented processes that meet compliance requirements
+
+**When I** scale from pilot (20 devs) to department-wide (100+ devs)
+**I want to** use production-grade infrastructure (D1, KV, R2, AI Gateway)
+**So I can** avoid migration pain and prove the platform scales to enterprise needs
+
+**When I** support multiple AI tool preferences during evaluation
+**I want to** provide one config source that works across Claude Code, Cursor, Gemini
+**So I can** compare tool effectiveness without fragmenting our config management
+
+**When I** integrate with enterprise auth and internal systems
+**I want to** leverage extensible infrastructure with proper bindings support
+**So I can** customize the platform for our specific compliance and security needs
+
+**When I** update pilot configs based on feedback and learnings
+**I want to** invalidate cached conversions and regenerate plugin files
+**So I can** iterate quickly without manual cache clearing or distribution overhead
+
+**When I** demonstrate governance to leadership with specific examples
+**I want to** show curated marketplaces, version control, and update mechanisms
+**So I can** prove we have control systems that enable safe organization-wide rollout
+
+**When I** build internal MCP server ecosystem for proprietary tools
+**I want to** store and convert MCP configs with rule-based accuracy (no AI guessing)
+**So I can** ensure critical infrastructure configs are transformed correctly
+
+---
+
+## Why These ICPs Can't Solve This Themselves
+
+### For No-Code/Low-Code Builders
+- **No Time to Build Infrastructure**: They're shipping products, not building config management platforms
+- **Limited Technical Depth**: Don't understand format differences between Claude Code, Codex, Gemini
+- **Quality Ceiling**: Manual prompt tweaking can't match battle-tested, community-validated configs
+- **No Distribution Channel**: Can't reach other builders without marketplace infrastructure
+- **File Management Complexity**: Multi-file skills require R2 storage and companion file handling
+
+### For Multi-Tool Engineering Organizations
+- **6+ Months of Engineering**: Building cross-platform conversion, caching, and distribution from scratch
+- **Ongoing Maintenance Burden**: Format specifications change, requiring constant adaptation
+- **No Ecosystem**: Can't leverage community configs without marketplace infrastructure
+- **DIY Cache Invalidation**: Complex logic for cache busting across multiple formats
+- **Conversion Accuracy Risk**: AI-enhanced conversion requires AI Gateway with fallback chains
+
+### For AI Pilot/Adoption Teams
+- **Compliance/Security Requirements**: Need auditable, email-gated access from day one
+- **Enterprise Infrastructure**: Production-grade stack (D1, KV, R2, AI Gateway) is expensive to build
+- **Governance Framework**: Need marketplace curation, version control, and distribution tracking
+- **Risk Mitigation**: Can't justify building custom platform when commercial solution exists
+- **Time to Value**: Pilot duration (8-12 weeks) doesn't allow time to build and test infrastructure
+
+---
+
+## Platform Features Mapped to ICP Jobs
+
+### Cross-Platform Config Conversion
+- **ICP #1**: Use same workflows across Replit, Loveable, Bolt without rewriting
+- **ICP #2**: Support team members on different tools without fragmentation
+- **ICP #3**: Evaluate multiple AI tools during pilot with unified config management
+
+### Battle-Tested Config Library
+- **ICP #1**: Access proven patterns from experienced developers
+- **ICP #2**: Distribute organization-approved best practices
+- **ICP #3**: Demonstrate quality standards to leadership
+
+### Marketplace & Extension System
+- **ICP #1**: Discover and install configs from builder community
+- **ICP #2**: Create private marketplaces for organizational distribution
+- **ICP #3**: Curate approved extensions with governance controls
+
+### Multi-File Skills with R2 Storage
+- **ICP #1**: Build sophisticated workflows with companion files
+- **ICP #2**: Distribute complex tooling without infrastructure setup
+- **ICP #3**: Package documented best practices for compliance
+
+### Email-Gated CUD Operations
+- **ICP #1**: Low-friction access (just email) without payment barrier
+- **ICP #2**: Track who manages organizational configs
+- **ICP #3**: Auditable access log for compliance requirements
+
+### AI-Enhanced + Rule-Based Conversion
+- **ICP #1**: Semantic accuracy for complex slash commands
+- **ICP #2**: Reliable MCP config conversion for critical infrastructure
+- **ICP #3**: Provable quality for leadership presentations
+
+### Production Infrastructure (D1, KV, R2, AI Gateway)
+- **ICP #1**: "Just works" reliability without DevOps knowledge
+- **ICP #2**: Scales to 50-200 developers without performance issues
+- **ICP #3**: Enterprise-grade foundation that justifies procurement
+
+---
+
+## Revenue Model by ICP
+
+### ICP #1: No-Code/Low-Code AI Builders
+- **Freemium**: Free config conversions + marketplace access
+- **Premium ($19-49/month)**: Unlimited skills, private extensions, priority conversion
+- **Creator Revenue Share**: 70/30 split on paid marketplace extensions
+
+### ICP #2: Multi-Tool Engineering Organizations
+- **Team Plan ($500-1K/month)**: 50-200 seats, private marketplaces, SSO integration
+- **Usage-Based**: Additional API calls beyond included quota
+- **Professional Services**: Custom integration, training, config migration
+
+### ICP #3: AI Pilot/Adoption Teams
+- **Pilot Package ($2-5K)**: 8-12 week pilot with compliance documentation
+- **Enterprise License ($10-25K/year)**: Dedicated instance, SLA, audit logs
+- **Success Package**: Onboarding, best practice workshops, executive reporting
+
+---
+
+## Competitive Moats
+
+### Network Effect
+- More builders share configs → More users discover value → More builders join
+
+### Data Moat
+- AI conversion quality improves with usage data
+- Community-validated configs become increasingly valuable
+
+### Infrastructure Moat
+- Production-grade stack (D1, KV, R2, AI Gateway) is expensive and time-consuming to replicate
+- Domain expertise in format conversion is non-trivial
+
+### Ecosystem Moat
+- Marketplaces create lock-in through content availability
+- Extension developers multi-home only if distribution justifies effort
+
+### Compliance Moat
+- Email gating, audit trails, and governance features become table stakes for enterprise
+- Early compliance features create switching costs for pilot-to-production transitions
 
 ---
 
@@ -208,23 +274,37 @@ This analysis identifies 5 Ideal Customer Profiles (ICPs) for the Agent Config A
 
 ### Value Proposition by ICP
 
-1. **Multi-Agent Platform Teams**: Avoid 6+ months of integration engineering
-2. **Extension Developers**: 3x reach with 1x effort
-3. **Enterprise Tools Companies**: Ship faster, maintain less, support more
-4. **Power Users**: One workflow, any agent
-5. **DevOps Teams**: Standardize without restricting choice
+1. **No-Code/Low-Code Builders**: "Stop tweaking prompts. Use proven configs that work."
+2. **Multi-Tool Organizations**: "One config library. Any AI tool. Zero fragmentation."
+3. **AI Pilot/Adoption Teams**: "Ship your pilot with governance built in. Scale with confidence."
 
-### Revenue Opportunities
+### Sales Motion by ICP
 
-- **Platform Teams**: B2B SaaS licensing based on API calls
-- **Extension Developers**: Marketplace revenue sharing (70/30 split)
-- **Enterprise**: Custom deployment, SLA, dedicated support
-- **Power Users**: Freemium (free conversions) → Premium (private marketplaces, unlimited skills)
-- **DevOps Teams**: Site licenses, dedicated instances, custom integrations
+1. **No-Code/Low-Code Builders**: Self-serve, PLG, community-driven growth
+2. **Multi-Tool Organizations**: Demo → Team trial → Expansion, 2-4 week sales cycle
+3. **AI Pilot/Adoption Teams**: Consultative, compliance-focused, 4-8 week sales cycle
 
-### Competitive Moats
+### Product Priorities by ICP
 
-- **Network Effect**: More extension developers → More users → More developers
-- **Data Moat**: Conversion quality improves with usage (AI training data)
-- **Infrastructure Moat**: Production-grade stack is expensive to replicate
-- **Ecosystem Moat**: Marketplaces create lock-in through content
+- **Q1 Focus (ICP #1)**: Marketplace quality, creator tools, community features
+- **Q2 Focus (ICP #2)**: Private marketplaces, team management, bulk operations
+- **Q3 Focus (ICP #3)**: Audit logs, compliance reporting, enterprise SSO
+
+---
+
+## Go-To-Market Fit
+
+### ICP #1: No-Code/Low-Code AI Builders
+- **Channels**: X/Twitter, Product Hunt, Replit community, indie hacker forums
+- **Content**: "Here's the exact prompt that generated this feature"
+- **Conversion**: Viral marketplace configs, creator spotlights, before/after demos
+
+### ICP #2: Multi-Tool Engineering Organizations
+- **Channels**: Engineering blogs, DevOps conferences, platform engineering Slack groups
+- **Content**: "How we standardized AI coding across 100 developers"
+- **Conversion**: Team trial with ROI calculator, engineering leader testimonials
+
+### ICP #3: AI Pilot/Adoption Teams
+- **Channels**: CTO networks, enterprise sales, analyst relations (Gartner)
+- **Content**: "AI coding governance framework for regulated industries"
+- **Conversion**: Pilot success stories, compliance white papers, executive briefings
