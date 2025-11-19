@@ -118,54 +118,54 @@ export function noCodeBuildersPage(): string {
         </div>
       </div>
 
-      <!-- Why Us Section -->
+      <!-- How We Help Section -->
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%); border: 2px solid var(--accent-violet);">
         <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: var(--accent-violet);">
-          ${icons.zap('icon')} Why You Can't Build This Yourself
+          ${icons.zap('icon')} How We Help You Succeed
         </h3>
         <div style="display: grid; gap: 16px;">
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.clock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">No Time to Build Infrastructure</strong>
+              <strong style="color: var(--text-primary);">Focus on Shipping Products</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                You're shipping products, not building config management platforms
+                We handle config management infrastructure so you can focus on building features
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.code('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Limited Technical Depth</strong>
+              <strong style="color: var(--text-primary);">Cross-Platform Compatibility</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Don't understand format differences between Claude Code, Codex, Gemini
+                We handle format differences so your configs work across Claude Code, Codex, and Gemini
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.barChart('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Quality Ceiling</strong>
+              <strong style="color: var(--text-primary);">Battle-Tested Quality</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Manual prompt tweaking can't match battle-tested, community-validated configs
+                We provide community-validated configs that deliver consistent, professional results
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.share('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">No Distribution Channel</strong>
+              <strong style="color: var(--text-primary);">Built-In Distribution</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Can't reach other builders without marketplace infrastructure
+                We provide marketplace infrastructure so you can reach other builders and grow your audience
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.file('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">File Management Complexity</strong>
+              <strong style="color: var(--text-primary);">Sophisticated File Management</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Multi-file skills require R2 storage and companion file handling
+                We handle R2 storage and companion files so you can build complex multi-file skills
               </p>
             </div>
           </div>
@@ -380,54 +380,54 @@ export function multiToolOrgsPage(): string {
         </div>
       </div>
 
-      <!-- Why Us Section -->
+      <!-- How We Help Section -->
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%); border: 2px solid var(--accent-violet);">
         <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: var(--accent-violet);">
-          ${icons.zap('icon')} Why You Can't Build This Yourself
+          ${icons.zap('icon')} How We Help You Succeed
         </h3>
         <div style="display: grid; gap: 16px;">
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.clock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">6+ Months of Engineering</strong>
+              <strong style="color: var(--text-primary);">Production-Ready Infrastructure</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Building cross-platform conversion, caching, and distribution from scratch
+                We provide battle-tested cross-platform conversion, caching, and distribution so you ship faster
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.wrench('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Ongoing Maintenance Burden</strong>
+              <strong style="color: var(--text-primary);">Zero Maintenance Overhead</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Format specifications change, requiring constant adaptation
+                We handle format specification changes and updates so your team stays productive
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.users('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">No Ecosystem</strong>
+              <strong style="color: var(--text-primary);">Instant Ecosystem Access</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Can't leverage community configs without marketplace infrastructure
+                We provide marketplace infrastructure so you leverage community configs and best practices
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.database('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">DIY Cache Invalidation</strong>
+              <strong style="color: var(--text-primary);">Smart Cache Management</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Complex logic for cache busting across multiple formats
+                We handle cache invalidation across formats so updates propagate instantly
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: var(--accent-violet); margin-top: 2px;">${icons.cpu('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Conversion Accuracy Risk</strong>
+              <strong style="color: var(--text-primary);">Guaranteed Conversion Accuracy</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                AI-enhanced conversion requires AI Gateway with fallback chains
+                We use AI Gateway with fallback chains so your configs convert reliably every time
               </p>
             </div>
           </div>
@@ -669,54 +669,54 @@ export function aiPilotTeamsPage(): string {
         </div>
       </div>
 
-      <!-- Why Us Section -->
+      <!-- How We Help Section -->
       <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 2px solid #f59e0b;">
         <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: #f59e0b;">
-          ${icons.zap('icon')} Why You Can't Build This Yourself
+          ${icons.zap('icon')} How We Help You Succeed
         </h3>
         <div style="display: grid; gap: 16px;">
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.lock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Compliance/Security Requirements</strong>
+              <strong style="color: var(--text-primary);">Built-In Compliance & Security</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Need auditable, email-gated access from day one
+                We provide auditable, email-gated access from day one so you meet governance requirements
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.server('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Enterprise Infrastructure</strong>
+              <strong style="color: var(--text-primary);">Enterprise-Grade Infrastructure</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Production-grade stack (D1, KV, R2, AI Gateway) is expensive to build
+                We provide production-ready stack (D1, KV, R2, AI Gateway) so you avoid build costs and complexity
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.shield('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Governance Framework</strong>
+              <strong style="color: var(--text-primary);">Complete Governance Framework</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Need marketplace curation, version control, and distribution tracking
+                We provide marketplace curation, version control, and distribution tracking so you demonstrate control
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
-            <div style="color: #f59e0b; margin-top: 2px;">${icons.alertTriangle('icon')}</div>
+            <div style="color: #f59e0b; margin-top: 2px;">${icons.checkCircle('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Risk Mitigation</strong>
+              <strong style="color: var(--text-primary);">Proven Solution, Lower Risk</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Can't justify building custom platform when commercial solution exists
+                We provide battle-tested platform so you focus on pilot success instead of infrastructure
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="color: #f59e0b; margin-top: 2px;">${icons.clock('icon')}</div>
             <div>
-              <strong style="color: var(--text-primary);">Time to Value</strong>
+              <strong style="color: var(--text-primary);">Immediate Time to Value</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                Pilot duration (8-12 weeks) doesn't allow time to build and test infrastructure
+                We provide ready-to-use infrastructure so you launch your pilot within days, not months
               </p>
             </div>
           </div>
