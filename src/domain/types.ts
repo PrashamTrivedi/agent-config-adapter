@@ -311,3 +311,47 @@ export interface SubscriptionRecord {
   subscribedAt: string;  // ISO datetime
   ipAddress?: string;
 }
+
+// Analytics types
+export interface AnalyticsEngineDataset {
+  writeDataPoint(data: {
+    indexes?: string[];
+    blobs?: string[];
+    doubles?: number[];
+  }): void;
+}
+
+export type AnalyticsEventType =
+  | 'landing'
+  | 'page_view'
+  | 'onboarding_view'
+  | 'configs_browse'
+  | 'config_view'
+  | 'config_conversion'
+  | 'slash_command_convert'
+  | 'email_gate_view'
+  | 'email_submit'
+  | 'plugin_browse'
+  | 'marketplace_browse'
+  | 'extension_download'
+  | 'skill_download';
+
+export interface UTMParams {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  term?: string;
+  content?: string;
+}
+
+export interface AnalyticsMetadata {
+  userId?: string;
+  sessionId?: string;
+  configFormat?: AgentFormat;
+  configType?: ConfigType;
+  configName?: string;
+  onboardingICP?: 'no-code-builders' | 'multi-tool-orgs' | 'ai-pilot-teams';
+  conversionTarget?: string;
+  timeSpent?: number;
+  [key: string]: string | number | undefined;
+}

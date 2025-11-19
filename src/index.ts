@@ -13,6 +13,7 @@ import { noCodeBuildersPage, multiToolOrgsPage, aiPilotTeamsPage } from './views
 import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
+import type { AnalyticsEngineDataset } from './domain/types';
 
 type Bindings = {
   DB: D1Database;
@@ -41,6 +42,10 @@ type Bindings = {
   // MCP Admin Token (SHA-256 hash)
   // Temporary security measure until full user auth is implemented
   MCP_ADMIN_TOKEN_HASH?: string;
+
+  // Analytics Configuration
+  ANALYTICS?: AnalyticsEngineDataset; // Workers Analytics Engine dataset
+  WEB_ANALYTICS_TOKEN?: string; // Web Analytics beacon token
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
