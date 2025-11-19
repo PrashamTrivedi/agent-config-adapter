@@ -14,6 +14,7 @@ import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
 import type { AnalyticsEngineDataset } from './domain/types';
+import { AnalyticsService } from './services/analytics-service';
 
 type Bindings = {
   DB: D1Database;
@@ -51,7 +52,10 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Home page
-app.get('/', (c) => {
+app.get('/', async (c) => {
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  await analytics.trackEvent(c.req.raw, 'landing');
+
   const content = `
     <div class="fade-in">
       <div style="text-align: center; margin-bottom: 40px;">
@@ -176,15 +180,27 @@ app.get('/', (c) => {
 });
 
 // Onboarding pages for ICPs
-app.get('/onboarding/no-code-builders', (c) => {
+app.get('/onboarding/no-code-builders', async (c) => {
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  await analytics.trackEvent(c.req.raw, 'onboarding_view', {
+    onboardingICP: 'no-code-builders',
+  });
   return c.html(layout('For No-Code Builders', noCodeBuildersPage()));
 });
 
-app.get('/onboarding/multi-tool-orgs', (c) => {
+app.get('/onboarding/multi-tool-orgs', async (c) => {
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  await analytics.trackEvent(c.req.raw, 'onboarding_view', {
+    onboardingICP: 'multi-tool-orgs',
+  });
   return c.html(layout('For Multi-Tool Organizations', multiToolOrgsPage()));
 });
 
-app.get('/onboarding/ai-pilot-teams', (c) => {
+app.get('/onboarding/ai-pilot-teams', async (c) => {
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  await analytics.trackEvent(c.req.raw, 'onboarding_view', {
+    onboardingICP: 'ai-pilot-teams',
+  });
   return c.html(layout('For AI Pilot Teams', aiPilotTeamsPage()));
 });
 
