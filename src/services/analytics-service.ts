@@ -37,8 +37,9 @@ export class AnalyticsService {
     eventType: AnalyticsEventType,
     metadata?: AnalyticsMetadata
   ): Promise<void> {
-    // Skip if analytics not configured
-    if (!this.analytics) {
+    // Skip if analytics not configured or writeDataPoint not available (local dev)
+    if (!this.analytics || typeof this.analytics.writeDataPoint !== 'function') {
+      console.log(`[Analytics] Skipping event tracking (local dev): ${eventType}`);
       return;
     }
 

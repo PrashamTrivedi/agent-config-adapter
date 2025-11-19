@@ -51,7 +51,7 @@
     // Analytics Configuration
     // Get Web Analytics token from Cloudflare Dashboard → Analytics → Web Analytics
     // For local dev: Set WEB_ANALYTICS_TOKEN in .dev.vars
-    "WEB_ANALYTICS_TOKEN": ""
+    "WEB_ANALYTICS_TOKEN": "237ffdb132264235834bc2574f51f289"
 
     // MCP Admin Token Hash (INTERNAL DOCS ONLY - NOT PUBLIC)
     // SHA-256 hash of admin token for /mcp/admin endpoint
