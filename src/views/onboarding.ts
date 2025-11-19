@@ -227,19 +227,6 @@ export function noCodeBuildersPage(): string {
         </div>
       </div>
 
-      <!-- Pricing Mention -->
-      <div class="card slide-up" style="background: var(--bg-secondary); border: 1px solid var(--border-dim); padding: 24px; text-align: center;">
-        <h4 style="margin: 0 0 12px 0; color: var(--text-primary);">Flexible Pricing for Builders</h4>
-        <p style="margin: 0 0 16px 0; color: var(--text-secondary);">
-          <strong style="color: var(--accent-primary);">Free:</strong> Config conversions + marketplace access
-        </p>
-        <p style="margin: 0 0 16px 0; color: var(--text-secondary);">
-          <strong style="color: var(--accent-primary);">Premium ($19-49/month):</strong> Unlimited skills, private extensions, priority conversion
-        </p>
-        <p style="margin: 0; color: var(--text-secondary);">
-          <strong style="color: var(--accent-primary);">Creator Revenue Share:</strong> 70/30 split on paid marketplace extensions
-        </p>
-      </div>
     </div>
   `;
 }
@@ -489,19 +476,6 @@ export function multiToolOrgsPage(): string {
         </div>
       </div>
 
-      <!-- Pricing Mention -->
-      <div class="card slide-up" style="background: var(--bg-secondary); border: 1px solid var(--border-dim); padding: 24px; text-align: center;">
-        <h4 style="margin: 0 0 12px 0; color: var(--text-primary);">Team Pricing</h4>
-        <p style="margin: 0 0 16px 0; color: var(--text-secondary);">
-          <strong style="color: var(--accent-violet);">Team Plan ($500-1K/month):</strong> 50-200 seats, private marketplaces, SSO integration
-        </p>
-        <p style="margin: 0 0 16px 0; color: var(--text-secondary);">
-          <strong style="color: var(--accent-violet);">Usage-Based:</strong> Additional API calls beyond included quota
-        </p>
-        <p style="margin: 0; color: var(--text-secondary);">
-          <strong style="color: var(--accent-violet);">Professional Services:</strong> Custom integration, training, config migration
-        </p>
-      </div>
     </div>
   `;
 }
@@ -609,7 +583,7 @@ export function aiPilotTeamsPage(): string {
               ${icons.trendingUp('icon')} Production-Grade Infrastructure
             </h4>
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.95em;">
-              When you scale from pilot (20 devs) to department-wide (100+ devs), use production-grade infrastructure (D1, KV, R2, AI Gateway) to avoid migration pain and prove the platform scales to enterprise needs.
+              When you scale from pilot (20 devs) to department-wide (100+ devs), use production-grade infrastructure to avoid migration pain and prove the platform scales to enterprise needs.
             </p>
           </div>
 
@@ -689,7 +663,7 @@ export function aiPilotTeamsPage(): string {
             <div>
               <strong style="color: var(--text-primary);">Enterprise-Grade Infrastructure</strong>
               <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
-                We provide production-ready stack (D1, KV, R2, AI Gateway) so you avoid build costs and complexity
+                We provide production-ready infrastructure so you avoid build costs and complexity
               </p>
             </div>
           </div>
@@ -766,16 +740,16 @@ export function aiPilotTeamsPage(): string {
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px; text-align: center;">
             <div style="color: #f59e0b; margin-bottom: 8px;">${icons.cpu('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; font-size: 1em;">AI-Enhanced Conversion</h4>
+            <h4 style="margin: 0 0 8px 0; font-size: 1em;">Reliable Conversion</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Provable quality for leadership presentations
+              Consistent quality for leadership presentations
             </p>
           </div>
           <div class="card" style="background: var(--bg-primary); padding: 16px; text-align: center;">
             <div style="color: #f59e0b; margin-bottom: 8px;">${icons.server('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; font-size: 1em;">Production Infrastructure</h4>
+            <h4 style="margin: 0 0 8px 0; font-size: 1em;">Scalable Infrastructure</h4>
             <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Enterprise-grade foundation that justifies procurement
+              Enterprise-grade foundation that grows with you
             </p>
           </div>
         </div>
@@ -799,19 +773,6 @@ export function aiPilotTeamsPage(): string {
         </div>
       </div>
 
-      <!-- Pricing Mention -->
-      <div class="card slide-up" style="background: var(--bg-secondary); border: 1px solid var(--border-dim); padding: 24px; text-align: center;">
-        <h4 style="margin: 0 0 12px 0; color: var(--text-primary);">Enterprise Pricing</h4>
-        <p style="margin: 0 0 16px 0; color: var(--text-secondary);">
-          <strong style="color: #f59e0b;">Pilot Package ($2-5K):</strong> 8-12 week pilot with compliance documentation
-        </p>
-        <p style="margin: 0 0 16px 0; color: var(--text-secondary);">
-          <strong style="color: #f59e0b;">Enterprise License ($10-25K/year):</strong> Dedicated instance, SLA, audit logs
-        </p>
-        <p style="margin: 0; color: var(--text-secondary);">
-          <strong style="color: #f59e0b;">Success Package:</strong> Onboarding, best practice workshops, executive reporting
-        </p>
-      </div>
     </div>
   `;
 }
