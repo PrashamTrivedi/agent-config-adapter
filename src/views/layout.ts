@@ -1,6 +1,6 @@
 import { icons } from './icons';
 
-export function layout(title: string, content: string): string {
+export function layout(title: string, content: string, c?: any): string {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -1967,6 +1967,65 @@ export function layout(title: string, content: string): string {
               } catch (e) {
                 // Not JSON response
               }
+            }
+          });
+        </script>
+
+        <!-- Cloudflare Web Analytics -->
+        ${c?.env?.WEB_ANALYTICS_TOKEN ? `
+        <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+                data-cf-beacon='{"token": "${c.env.WEB_ANALYTICS_TOKEN}"}'></script>
+        ` : ''}
+
+        <!-- Analytics Event Tracking -->
+        <script>
+          // Enhanced email gate with analytics tracking
+          const originalShowEmailGate = window.showEmailGate;
+          window.showEmailGate = function(callback) {
+            // Track email gate view
+            fetch('/api/analytics/track', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event: 'email_gate_view',
+                metadata: { path: window.location.pathname }
+              })
+            }).catch(() => {});
+
+            // Call original function
+            if (originalShowEmailGate) {
+              originalShowEmailGate(callback);
+            }
+          };
+
+          // Track time spent on page (send on unload)
+          let pageLoadTime = Date.now();
+          window.addEventListener('beforeunload', function() {
+            const timeSpent = Math.floor((Date.now() - pageLoadTime) / 1000);
+            navigator.sendBeacon('/api/analytics/track', JSON.stringify({
+              event: 'page_unload',
+              metadata: {
+                path: window.location.pathname,
+                timeSpent: timeSpent
+              }
+            }));
+          });
+
+          // Track HTMX page transitions (for hx-push-url navigation)
+          let previousPath = window.location.pathname;
+          document.addEventListener('htmx:afterSettle', function(evt) {
+            // Track as page view if URL changed
+            if (window.location.pathname !== previousPath) {
+              fetch('/api/analytics/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  event: 'page_view',
+                  metadata: { path: window.location.pathname }
+                })
+              }).catch(() => {});
+              previousPath = window.location.pathname;
+              pageLoadTime = Date.now(); // Reset timer for new page
             }
           });
         </script>

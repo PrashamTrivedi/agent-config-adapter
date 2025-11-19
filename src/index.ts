@@ -7,9 +7,9 @@ import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { subscriptionsRouter } from './routes/subscriptions';
+import onboardingRoutes from './routes/onboarding';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
-import { noCodeBuildersPage, multiToolOrgsPage, aiPilotTeamsPage } from './views/onboarding';
 import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
@@ -53,7 +53,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 // Home page
 app.get('/', async (c) => {
-  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  const analytics = new AnalyticsService(c.env);
   await analytics.trackEvent(c.req.raw, 'landing');
 
   const content = `
@@ -176,33 +176,11 @@ app.get('/', async (c) => {
       </div>
     </div>
   `;
-  return c.html(layout('Home', content));
+  return c.html(layout('Home', content, c));
 });
 
-// Onboarding pages for ICPs
-app.get('/onboarding/no-code-builders', async (c) => {
-  const analytics = new AnalyticsService(c.env.ANALYTICS);
-  await analytics.trackEvent(c.req.raw, 'onboarding_view', {
-    onboardingICP: 'no-code-builders',
-  });
-  return c.html(layout('For No-Code Builders', noCodeBuildersPage()));
-});
-
-app.get('/onboarding/multi-tool-orgs', async (c) => {
-  const analytics = new AnalyticsService(c.env.ANALYTICS);
-  await analytics.trackEvent(c.req.raw, 'onboarding_view', {
-    onboardingICP: 'multi-tool-orgs',
-  });
-  return c.html(layout('For Multi-Tool Organizations', multiToolOrgsPage()));
-});
-
-app.get('/onboarding/ai-pilot-teams', async (c) => {
-  const analytics = new AnalyticsService(c.env.ANALYTICS);
-  await analytics.trackEvent(c.req.raw, 'onboarding_view', {
-    onboardingICP: 'ai-pilot-teams',
-  });
-  return c.html(layout('For AI Pilot Teams', aiPilotTeamsPage()));
-});
+// Mount onboarding routes
+app.route('/', onboardingRoutes);
 
 // Mount API routes
 app.route('/api/configs', configsRouter);
@@ -212,6 +190,21 @@ app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 app.route('/api/slash-commands', slashCommandConverterRouter);
 app.route('/api/subscriptions', subscriptionsRouter);
+
+// Client-side analytics tracking endpoint
+app.post('/api/analytics/track', async (c) => {
+  try {
+    const analytics = new AnalyticsService(c.env);
+    const { event, metadata } = await c.req.json();
+
+    await analytics.trackEvent(c.req.raw, event, metadata);
+
+    return c.json({ success: true });
+  } catch (error) {
+    // Silent fail for analytics
+    return c.json({ success: false }, 500);
+  }
+});
 
 // Mount UI routes (same routes without /api prefix for HTML)
 app.route('/configs', configsRouter);
