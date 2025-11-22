@@ -1,0 +1,2 @@
+2811901 | 2025-11-20 | 🐛 fix: Add graceful Analytics Engine handling for local development
+f71d0cd | 2025-11-20 | Apply patch /tmp/970ce9f5-4ef3-4a85-9f87-12e4c2ccaf8f.patch
