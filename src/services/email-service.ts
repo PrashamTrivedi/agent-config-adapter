@@ -1,11 +1,11 @@
-const EMAIL_API_ENDPOINT = 'https://email-sender.prashamhtrivedi.in/api/send';
+const EMAIL_API_ENDPOINT = 'https://email-sender.prashamhtrivedi.in/api/send'
 
 interface EmailPayload {
-  from: string;
-  to: string[];
-  subject: string;
-  htmlBody?: string;
-  textBody?: string;
+  from: string
+  to: string[]
+  subject: string
+  htmlBody?: string
+  textBody?: string
 }
 
 /**
@@ -15,13 +15,13 @@ export class EmailService {
   constructor(
     private emailApiKey: string,
     private adminEmail: string,
-    private senderEmail: string = 'notifications@agent-config.prashamhtrivedi.app'
-  ) {}
+    private senderEmail: string = 'agent-config@prashamhtrivedi.in'
+  ) { }
 
   /**
    * Send email via custom email API
    */
-  private async sendEmail(payload: EmailPayload): Promise<void> {
+  private async sendEmail(payload: EmailPayload): Promise<void> { 
     const response = await fetch(EMAIL_API_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -29,11 +29,11 @@ export class EmailService {
         'x-api-key': this.emailApiKey,
       },
       body: JSON.stringify(payload),
-    });
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Email API error: ${response.status} - ${errorText}`);
+      const errorText = await response.text()
+      throw new Error(`Email API error: ${response.status} - ${errorText}`)
     }
   }
 
@@ -78,7 +78,7 @@ export class EmailService {
           </body>
         </html>
       `,
-    });
+    })
   }
 
   /**
@@ -120,6 +120,6 @@ export class EmailService {
           </body>
         </html>
       `,
-    });
+    })
   }
 }
