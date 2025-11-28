@@ -7,7 +7,7 @@ import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   EMAIL_SUBSCRIPTIONS: KVNamespace;
-  RESEND_API_KEY: string; // Resend API key
+  EMAIL_API_KEY: string; // Custom email service API key
   ADMIN_EMAIL: string;
   ANALYTICS?: AnalyticsEngineDataset;
 };
@@ -83,7 +83,7 @@ subscriptionsRouter.post('/subscribe', async (c) => {
     // Send emails (admin notification + welcome email to user)
     try {
       const emailService = new EmailService(
-        c.env.RESEND_API_KEY,
+        c.env.EMAIL_API_KEY,
         c.env.ADMIN_EMAIL
       );
 

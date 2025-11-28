@@ -37,7 +37,7 @@ type Bindings = {
   GEMINI_API_KEY?: string; // For local dev
 
   // Email Configuration
-  RESEND_API_KEY: string; // Resend API key for sending emails
+  EMAIL_API_KEY: string; // Custom email service API key
   ADMIN_EMAIL: string;
 
   // MCP Admin Token (SHA-256 hash)

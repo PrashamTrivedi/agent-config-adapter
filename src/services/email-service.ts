@@ -1,17 +1,40 @@
-import { Resend } from 'resend';
+const EMAIL_API_ENDPOINT = 'https://email-sender.prashamhtrivedi.in/api/send';
+
+interface EmailPayload {
+  from: string;
+  to: string[];
+  subject: string;
+  htmlBody?: string;
+  textBody?: string;
+}
 
 /**
- * Email service for sending notifications via Resend
+ * Email service for sending notifications via custom email API
  */
 export class EmailService {
-  private resend: Resend;
-
   constructor(
-    private resendApiKey: string,
+    private emailApiKey: string,
     private adminEmail: string,
     private senderEmail: string = 'notifications@agent-config.prashamhtrivedi.app'
-  ) {
-    this.resend = new Resend(resendApiKey);
+  ) {}
+
+  /**
+   * Send email via custom email API
+   */
+  private async sendEmail(payload: EmailPayload): Promise<void> {
+    const response = await fetch(EMAIL_API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.emailApiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Email API error: ${response.status} - ${errorText}`);
+    }
   }
 
   /**
@@ -21,11 +44,11 @@ export class EmailService {
     subscriberEmail: string,
     subscribedAt: string
   ): Promise<void> {
-    await this.resend.emails.send({
+    await this.sendEmail({
       from: `Agent Config Adapter <${this.senderEmail}>`,
-      to: this.adminEmail,
+      to: [this.adminEmail],
       subject: 'New Waitlist Signup - Agent Config Adapter',
-      html: `
+      htmlBody: `
         <html>
           <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0;">
@@ -62,11 +85,11 @@ export class EmailService {
    * Send welcome email to new subscriber (waitlist)
    */
   async sendWelcomeEmail(subscriberEmail: string): Promise<void> {
-    await this.resend.emails.send({
+    await this.sendEmail({
       from: `Agent Config Adapter <${this.senderEmail}>`,
-      to: subscriberEmail,
+      to: [subscriberEmail],
       subject: 'Welcome to Agent Config Adapter!',
-      html: `
+      htmlBody: `
         <html>
           <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0;">

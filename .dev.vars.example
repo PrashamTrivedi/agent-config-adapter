@@ -78,11 +78,10 @@ GEMINI_API_KEY=
 # For local testing, you can set it here
 # ADMIN_EMAIL=your-admin-email@example.com
 
-# Resend API Key (for email notifications)
+# Email Service API Key (for email notifications)
 # Required for both local development and production
-# Get your API key from: https://resend.com/api-keys
-# This is a Worker SECRET - set via: npx wrangler secret put RESEND_API_KEY
-RESEND_API_KEY=
+# This is a Worker SECRET - set via: npx wrangler secret put EMAIL_API_KEY
+EMAIL_API_KEY=
 
 # ============================================================================
 # MCP Admin Access (Temporary Security Measure)
