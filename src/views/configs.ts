@@ -184,47 +184,65 @@ export function configDetailView(config: Config): string {
       </div>
     </div>
 
-    ${isSlashCommand ? `
-      <div class="card slide-up" style="margin-bottom: 20px; padding: 20px;">
-        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
-          ${icons.clipboard('icon')} Slash Command Analysis
+    <!-- Copy Prompt Section - Primary Action -->
+    <div class="card slide-up" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%); border: 1px solid var(--border-accent);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+          ${icons.clipboard('icon')} Copy This Prompt
         </h3>
-        <ul style="margin-left: 20px; line-height: 1.8;">
-          <li><strong>Requires arguments:</strong> ${config.has_arguments ? '<span class="status-indicator status-warning">Yes</span>' : '<span class="status-indicator status-success">No</span>'}</li>
-          ${config.argument_hint ? `<li><strong>Argument hint:</strong> <code>${escapeHtml(config.argument_hint)}</code></li>` : ''}
-          ${config.agent_references ? `
-            <li><strong>Agent references:</strong> ${JSON.parse(config.agent_references).map((a: string) => `<span class="badge">${escapeHtml(a)}</span>`).join(' ')}</li>
-          ` : '<li><strong>Agent references:</strong> <span class="status-indicator status-info">None</span></li>'}
-          ${config.skill_references ? `
-            <li><strong>Skill references:</strong> ${JSON.parse(config.skill_references).map((s: string) => `<span class="badge">${escapeHtml(s)}</span>`).join(' ')}</li>
-          ` : '<li><strong>Skill references:</strong> <span class="status-indicator status-info">None</span></li>'}
-          ${config.analysis_version ? `<li><strong>Analysis version:</strong> ${config.analysis_version}</li>` : ''}
-        </ul>
-
         <button
-          id="refresh-analysis-btn"
-          class="btn btn-secondary ripple"
-          hx-post="/api/configs/${config.id}/refresh-analysis"
-          hx-target="#analysis-status"
-          hx-swap="innerHTML"
-          data-success-message="Analysis refreshed successfully"
-          data-error-message="Failed to refresh analysis"
-          style="margin-top: 15px; display: inline-flex; align-items: center; gap: 8px;">
-          ${icons.refresh('icon')} Refresh Analysis
+          class="btn ripple copy-btn"
+          id="copy-prompt-btn"
+          onclick="copyPromptContent()"
+          style="display: inline-flex; align-items: center; gap: 8px;">
+          ${icons.clipboard('icon')} Copy to Clipboard
         </button>
-        <span class="help-text" style="display: inline-block; margin-left: 10px;">
-          Re-analyzes command for arguments and references
-        </span>
-
-        <div id="analysis-status" style="margin-top: 10px;"></div>
-        <div id="refresh-progress" class="progress-bar indeterminate" style="margin-top: 10px; display: none;">
-          <div class="progress-bar-fill"></div>
-        </div>
       </div>
-    ` : ''}
+      <pre id="prompt-content" style="margin: 0; max-height: 400px; overflow-y: auto;">${escapeHtml(config.content)}</pre>
+    </div>
 
-    <h3>Original Content</h3>
-    <pre>${escapeHtml(config.content)}</pre>
+    ${isSlashCommand ? `
+      <!-- Slash Command Analysis - Collapsed by Default -->
+      <details class="card slide-up" style="margin-bottom: 20px;">
+        <summary style="cursor: pointer; padding: 16px; font-weight: 600; list-style: none; user-select: none; display: flex; align-items: center; gap: 10px;">
+          ${icons.barChart('icon')} Slash Command Analysis
+          <span style="margin-left: auto; font-size: 0.875em; color: var(--text-secondary);">▶</span>
+        </summary>
+        <div style="padding: 0 20px 20px 20px;">
+          <ul style="margin-left: 20px; line-height: 1.8;">
+            <li><strong>Requires arguments:</strong> ${config.has_arguments ? '<span class="status-indicator status-warning">Yes</span>' : '<span class="status-indicator status-success">No</span>'}</li>
+            ${config.argument_hint ? `<li><strong>Argument hint:</strong> <code>${escapeHtml(config.argument_hint)}</code></li>` : ''}
+            ${config.agent_references ? `
+              <li><strong>Agent references:</strong> ${JSON.parse(config.agent_references).map((a: string) => `<span class="badge">${escapeHtml(a)}</span>`).join(' ')}</li>
+            ` : '<li><strong>Agent references:</strong> <span class="status-indicator status-info">None</span></li>'}
+            ${config.skill_references ? `
+              <li><strong>Skill references:</strong> ${JSON.parse(config.skill_references).map((s: string) => `<span class="badge">${escapeHtml(s)}</span>`).join(' ')}</li>
+            ` : '<li><strong>Skill references:</strong> <span class="status-indicator status-info">None</span></li>'}
+            ${config.analysis_version ? `<li><strong>Analysis version:</strong> ${config.analysis_version}</li>` : ''}
+          </ul>
+
+          <button
+            id="refresh-analysis-btn"
+            class="btn btn-secondary ripple"
+            hx-post="/api/configs/${config.id}/refresh-analysis"
+            hx-target="#analysis-status"
+            hx-swap="innerHTML"
+            data-success-message="Analysis refreshed successfully"
+            data-error-message="Failed to refresh analysis"
+            style="margin-top: 15px; display: inline-flex; align-items: center; gap: 8px;">
+            ${icons.refresh('icon')} Refresh Analysis
+          </button>
+          <span class="help-text" style="display: inline-block; margin-left: 10px;">
+            Re-analyzes command for arguments and references
+          </span>
+
+          <div id="analysis-status" style="margin-top: 10px;"></div>
+          <div id="refresh-progress" class="progress-bar indeterminate" style="margin-top: 10px; display: none;">
+            <div class="progress-bar-fill"></div>
+          </div>
+        </div>
+      </details>
+    ` : ''}
 
     <h3 style="display: flex; align-items: center; gap: 10px;">
       ${icons.refresh('icon')} Convert to Different Formats
@@ -277,6 +295,23 @@ export function configDetailView(config: Config): string {
     </div>
 
     <script>
+      // Copy prompt content function
+      function copyPromptContent() {
+        const content = document.getElementById('prompt-content').textContent;
+        const btn = document.getElementById('copy-prompt-btn');
+        window.copyToClipboard(content, btn);
+      }
+
+      // Toggle arrow for details/summary
+      document.querySelectorAll('details').forEach(details => {
+        details.addEventListener('toggle', function() {
+          const arrow = this.querySelector('summary span[style*="margin-left: auto"]');
+          if (arrow) {
+            arrow.textContent = this.open ? '▼' : '▶';
+          }
+        });
+      });
+
       // Handle converted content display
       document.body.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'converted') {
