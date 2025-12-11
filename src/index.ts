@@ -58,121 +58,169 @@ app.get('/', async (c) => {
 
   const content = `
     <div class="fade-in">
-      <div style="text-align: center; margin-bottom: 40px;">
-        <h2 style="font-size: 2.5em; margin: 0 0 16px 0; background: linear-gradient(135deg, var(--accent-primary), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: flex; align-items: center; justify-content: center; gap: 12px;">
-          ${icons.refresh('icon-lg')} Agent Config Adapter
+      <!-- Hero Section - New Value Proposition -->
+      <div style="text-align: center; margin-bottom: 48px; padding: 20px 0;">
+        <h2 style="font-size: 2.8em; margin: 0 0 20px 0; background: linear-gradient(135deg, var(--accent-primary), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
+          Find Working Prompts & Configs<br>for Your Coding Agent
         </h2>
-        <p style="font-size: 1.15em; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6;">
-          Universal adapter for AI coding agent configurations. Store once, deploy everywhere.
+        <p style="font-size: 1.25em; color: var(--text-secondary); max-width: 700px; margin: 0 auto 24px auto; line-height: 1.6;">
+          Discover ready-to-use workflows, slash commands, and configurations for
+          <strong style="color: var(--agent-claude);">Claude Code</strong>,
+          <strong style="color: var(--agent-gemini);">Gemini CLI</strong>,
+          <strong style="color: var(--agent-codex);">Codex</strong>, and more.
         </p>
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+          <a href="/skills" class="btn ripple" style="padding: 14px 28px; font-size: 1.05em;">
+            ${icons.star('icon')} Browse Skills & Prompts
+          </a>
+          <a href="/configs" class="btn btn-secondary ripple" style="padding: 14px 28px; font-size: 1.05em;">
+            ${icons.file('icon')} View All Configs
+          </a>
+        </div>
       </div>
 
-      <!-- Public Access & Upload Notice -->
-      <div class="card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border: 2px solid var(--accent-primary); margin-bottom: 30px;">
-        <div style="text-align: center; padding: 20px;">
-          <h2 style="margin: 0 0 12px 0; color: var(--accent-primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
-            ${icons.star('icon')} Welcome to Agent Config Adapter
-          </h2>
-          <p style="font-size: 1.1em; color: var(--text-primary); margin: 0 0 16px 0; line-height: 1.6;">
-            Browse and explore <strong>configs</strong>, <strong>skills</strong>, and <strong>extensions</strong> for Claude Code, Gemini, and Codex agents.
-          </p>
-          <div style="display: inline-block; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 20px; margin-bottom: 16px;">
-            <p style="margin: 0; color: var(--text-primary);">
-              <strong>🚀 Coming Soon:</strong> User authentication & personal config management
+      <!-- What's Here - Section Navigator -->
+      <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-accent);">
+        <h3 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px; color: var(--accent-primary);">
+          ${icons.compass('icon')}
+          <span>What You'll Find Here</span>
+        </h3>
+        <p style="margin: 0 0 24px 0; color: var(--text-secondary); font-size: 0.95em;">
+          Not sure where to start? Here's a quick guide to what's available:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+          <!-- Skills Section -->
+          <a href="/skills" class="card" style="background: var(--bg-primary); padding: 20px; text-decoration: none; border: 1px solid var(--border-dim); transition: all 0.3s ease; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="padding: 10px; background: rgba(139, 92, 246, 0.15); border-radius: 10px; color: var(--accent-violet);">
+                ${icons.star('icon-lg')}
+              </div>
+              <div>
+                <h4 style="margin: 0; color: var(--text-primary); font-size: 1.1em;">Skills</h4>
+                <span style="font-size: 0.8em; color: var(--accent-violet);">Most Popular</span>
+              </div>
+            </div>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary); line-height: 1.5;">
+              <strong>Reusable prompt templates</strong> that teach your coding agent new capabilities.
+              Like "code review", "refactor", or "write tests" - copy and use directly.
             </p>
+          </a>
+
+          <!-- Slash Commands Section -->
+          <a href="/configs" class="card" style="background: var(--bg-primary); padding: 20px; text-decoration: none; border: 1px solid var(--border-dim); transition: all 0.3s ease; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="padding: 10px; background: rgba(6, 182, 212, 0.15); border-radius: 10px; color: var(--accent-primary);">
+                ${icons.terminal('icon-lg')}
+              </div>
+              <div>
+                <h4 style="margin: 0; color: var(--text-primary); font-size: 1.1em;">Slash Commands</h4>
+                <span style="font-size: 0.8em; color: var(--accent-primary);">Quick Actions</span>
+              </div>
+            </div>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary); line-height: 1.5;">
+              <strong>Type /command to trigger workflows</strong>. Things like <code>/review</code>, <code>/deploy</code>,
+              or <code>/test</code>. Works in Claude Code, Codex, and other agents.
+            </p>
+          </a>
+
+          <!-- Converter Section -->
+          <a href="/slash-commands/convert" class="card" style="background: var(--bg-primary); padding: 20px; text-decoration: none; border: 1px solid var(--border-dim); transition: all 0.3s ease; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="padding: 10px; background: rgba(245, 158, 11, 0.15); border-radius: 10px; color: var(--accent-amber);">
+                ${icons.repeat('icon-lg')}
+              </div>
+              <div>
+                <h4 style="margin: 0; color: var(--text-primary); font-size: 1.1em;">Converter</h4>
+                <span style="font-size: 0.8em; color: var(--accent-amber);">Cross-Platform</span>
+              </div>
+            </div>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary); line-height: 1.5;">
+              <strong>Convert configs between agents</strong>. Take a Claude Code slash command and convert it
+              to work in Gemini CLI, Codex, Jules, Lovable, v0, or other web-based coding agents.
+            </p>
+          </a>
+
+          <!-- Extensions Section -->
+          <a href="/extensions" class="card" style="background: var(--bg-primary); padding: 20px; text-decoration: none; border: 1px solid var(--border-dim); transition: all 0.3s ease; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="padding: 10px; background: rgba(20, 184, 166, 0.15); border-radius: 10px; color: var(--success);">
+                ${icons.package('icon-lg')}
+              </div>
+              <div>
+                <h4 style="margin: 0; color: var(--text-primary); font-size: 1.1em;">Extensions</h4>
+                <span style="font-size: 0.8em; color: var(--success);">Bundles</span>
+              </div>
+            </div>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary); line-height: 1.5;">
+              <strong>Curated collections</strong> of commands and skills bundled together.
+              Download a complete "React Development" or "Backend API" extension pack.
+            </p>
+          </a>
+
+        </div>
+      </div>
+
+      <!-- Supported Agents -->
+      <div class="card slide-up" style="margin-bottom: 32px; text-align: center; padding: 32px;">
+        <h3 style="margin: 0 0 20px 0; color: var(--text-primary); font-size: 1.1em;">
+          Works With Your Favorite Coding Agents
+        </h3>
+        <div style="display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: rgba(230, 126, 34, 0.1); border-radius: 8px; border: 1px solid rgba(230, 126, 34, 0.3);">
+            <span style="font-size: 1.5em;">🟠</span>
+            <span style="font-weight: 600; color: var(--agent-claude);">Claude Code</span>
           </div>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
-            <a href="/skills" class="btn ripple">
-              ${icons.star('icon')} Browse Skills
-            </a>
-            <a href="/configs" class="btn ripple">
-              ${icons.file('icon')} View Configs
-            </a>
-            <a href="/subscriptions/form" class="btn" style="background: var(--accent-primary); color: white;">
-              ${icons.mail('icon')} Get Upload Access
-            </a>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.3);">
+            <span style="font-size: 1.5em;">💎</span>
+            <span style="font-weight: 600; color: var(--agent-gemini);">Gemini CLI</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: rgba(6, 182, 212, 0.1); border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.3);">
+            <span style="font-size: 1.5em;">🔷</span>
+            <span style="font-weight: 600; color: var(--agent-codex);">OpenAI Codex</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: rgba(100, 116, 139, 0.1); border-radius: 8px; border: 1px solid rgba(100, 116, 139, 0.3);">
+            <span style="font-size: 1.5em;">🌐</span>
+            <span style="font-weight: 600; color: var(--text-secondary);">Jules, Lovable, v0...</span>
           </div>
         </div>
       </div>
 
-      <div class="card slide-up" style="margin-bottom: 32px; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);">
+      <!-- Quick Start Actions -->
+      <div class="card slide-up" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid var(--border-accent);">
         <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
-          ${icons.sparkles('icon')}
-          <span>Features</span>
+          ${icons.zap('icon')} Quick Start
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-          <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="margin-bottom: 8px; color: var(--accent-primary);">${icons.file('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Config Management</h4>
-            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Store slash commands, agents, and MCP configs
-            </p>
-          </div>
-          <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="margin-bottom: 8px; color: var(--accent-primary);">${icons.refresh('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Format Conversion</h4>
-            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Convert between Claude Code, Codex, and Gemini
-            </p>
-          </div>
-          <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="margin-bottom: 8px; color: var(--accent-primary);">${icons.target('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Multi-file Skills</h4>
-            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Skills with ZIP upload/download support
-            </p>
-          </div>
-          <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="margin-bottom: 8px; color: var(--accent-violet);">${icons.store('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Marketplace</h4>
-            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Bundle and share extension collections
-            </p>
-          </div>
-          <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="margin-bottom: 8px; color: var(--success);">${icons.refresh('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Fast Caching</h4>
-            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              Optimized retrieval with KV caching
-            </p>
-          </div>
-          <div class="card" style="background: var(--bg-primary); padding: 16px;">
-            <div style="margin-bottom: 8px; color: var(--accent-blue);">${icons.code('icon-lg')}</div>
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">MCP Server</h4>
-            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">
-              AI agent integration via MCP protocol
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card slide-up">
-        <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
-          ${icons.target('icon')} Quick Actions
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-          <a href="/configs" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${icons.file('icon')} View Configs
-          </a>
-          <a href="#" onclick="event.preventDefault(); requireEmail(() => { window.location.href = '/configs/new'; });" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${icons.plus('icon')} New Config
-          </a>
-          <a href="/slash-commands/convert" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${icons.refresh('icon')} Converter
-          </a>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
           <a href="/skills" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${icons.star('icon')} Skills
+            ${icons.star('icon')} Browse Skills
           </a>
-          <a href="/extensions" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <a href="/configs" class="btn btn-secondary ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.file('icon')} All Configs
+          </a>
+          <a href="/slash-commands/convert" class="btn btn-secondary ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.repeat('icon')} Convert
+          </a>
+          <a href="/extensions" class="btn btn-secondary ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
             ${icons.package('icon')} Extensions
           </a>
-          <a href="/marketplaces" class="btn ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <a href="/marketplaces" class="btn btn-secondary ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
             ${icons.store('icon')} Marketplaces
           </a>
           <a href="/mcp/info" class="btn ripple" style="text-align: center; padding: 16px; background: #6366f1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${icons.code('icon')} MCP Server
+            ${icons.link('icon')} MCP Server
           </a>
         </div>
+      </div>
+
+      <!-- Coming Soon Notice (smaller, less prominent) -->
+      <div style="text-align: center; margin-top: 40px; padding: 20px;">
+        <p style="margin: 0 0 12px 0; color: var(--text-tertiary); font-size: 0.9em;">
+          Want to contribute your own prompts and configs?
+        </p>
+        <a href="/subscriptions/form" class="btn btn-secondary" style="font-size: 0.9em;">
+          ${icons.mail('icon')} Get Notified When Uploads Launch
+        </a>
       </div>
     </div>
   `;

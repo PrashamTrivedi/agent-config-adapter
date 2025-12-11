@@ -131,11 +131,31 @@ export function slashCommandConverterFormPartial(config: Config): string {
         </span>
       </div>
 
-      <!-- Analysis info box (collapsible) -->
-      <details class="card" style="margin-bottom: 20px; background: rgba(88, 166, 255, 0.05); border-left: 4px solid var(--accent-primary);" open>
+      <!-- Copy Original Prompt Section - Primary Action -->
+      <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%); border: 1px solid var(--border-accent);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <label style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+            ${icons.clipboard('icon')} Original Prompt (Copy Verbatim)
+          </label>
+          <button
+            class="btn ripple copy-btn"
+            id="copy-original-btn"
+            onclick="copyOriginalContent()"
+            style="display: inline-flex; align-items: center; gap: 8px;">
+            ${icons.clipboard('icon')} Copy Original
+          </button>
+        </div>
+        <pre id="original-content" style="margin: 0; max-height: 250px; overflow-y: auto; font-size: 0.85em;">${escapeHtml(config.content)}</pre>
+        <p style="margin: 10px 0 0 0; font-size: 0.85em; color: var(--text-tertiary);">
+          Use this to copy the prompt as-is without any conversion or processing.
+        </p>
+      </div>
+
+      <!-- Analysis info box (collapsible) - Collapsed by Default -->
+      <details class="card" style="margin-bottom: 20px; background: rgba(88, 166, 255, 0.05); border-left: 4px solid var(--accent-primary);">
         <summary style="cursor: pointer; padding: 15px; font-weight: 600; list-style: none; user-select: none;">
-          ${icons.clipboard('icon')} Analysis Results
-          <span style="float: right; font-size: 0.875em; color: var(--text-secondary);">▼</span>
+          ${icons.barChart('icon')} Analysis Results
+          <span style="float: right; font-size: 0.875em; color: var(--text-secondary);">▶</span>
         </summary>
         <div style="padding: 0 15px 15px 15px;">
           <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
@@ -227,6 +247,13 @@ export function slashCommandConverterFormPartial(config: Config): string {
       </div>
 
       <script>
+        // Copy original content function
+        function copyOriginalContent() {
+          const content = document.getElementById('original-content').textContent;
+          const btn = document.getElementById('copy-original-btn');
+          window.copyToClipboard(content, btn);
+        }
+
         // Form validation
         const form = document.getElementById('convert-form');
         if (form) {

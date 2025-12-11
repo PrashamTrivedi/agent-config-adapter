@@ -45,6 +45,20 @@ export const icons = {
     </svg>
   `,
 
+  compass: (className: string = 'icon') => `
+    <svg class="${className}" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10"/>
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+    </svg>
+  `,
+
+  terminal: (className: string = 'icon') => `
+    <svg class="${className}" viewBox="0 0 24 24">
+      <polyline points="4 17 10 11 4 5"/>
+      <line x1="12" y1="19" x2="20" y2="19"/>
+    </svg>
+  `,
+
   warning: (className: string = 'icon') => `
     <svg class="${className}" viewBox="0 0 24 24">
       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
