@@ -15,6 +15,7 @@ import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
 import type { AnalyticsEngineDataset } from './domain/types';
 import { AnalyticsService } from './services/analytics-service';
+import { utmPersistenceMiddleware } from './middleware/utm-persistence';
 
 type Bindings = {
   DB: D1Database;
@@ -51,9 +52,14 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// UTM persistence middleware - captures first-touch attribution from marketing links
+// This runs on all requests to set/read UTM cookies for journey tracking
+app.use('*', utmPersistenceMiddleware);
+
 // Home page
 app.get('/', async (c) => {
-  const analytics = new AnalyticsService(c.env);
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  // UTM cookie is set by middleware - analytics will read from cookie for attribution
   await analytics.trackEvent(c.req.raw, 'landing');
 
   const content = `
@@ -242,7 +248,7 @@ app.route('/api/subscriptions', subscriptionsRouter);
 // Client-side analytics tracking endpoint
 app.post('/api/analytics/track', async (c) => {
   try {
-    const analytics = new AnalyticsService(c.env);
+    const analytics = new AnalyticsService(c.env.ANALYTICS);
     const { event, metadata } = await c.req.json();
 
     await analytics.trackEvent(c.req.raw, event, metadata);

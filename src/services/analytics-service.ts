@@ -5,13 +5,17 @@ import type {
   AnalyticsMetadata,
 } from '../domain/types';
 
+// Cookie name for UTM persistence (30-day first-touch attribution)
+const UTM_COOKIE_NAME = '_utm_first';
+const UTM_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
+
 export class AnalyticsService {
   constructor(private analytics?: AnalyticsEngineDataset) {}
 
   /**
-   * Extract UTM parameters from URL
+   * Extract UTM parameters from URL query string
    */
-  extractUTMParams(url: URL): UTMParams {
+  extractUTMFromURL(url: URL): UTMParams {
     return {
       source: url.searchParams.get('utm_source') || undefined,
       medium: url.searchParams.get('utm_medium') || undefined,
@@ -19,6 +23,82 @@ export class AnalyticsService {
       term: url.searchParams.get('utm_term') || undefined,
       content: url.searchParams.get('utm_content') || undefined,
     };
+  }
+
+  /**
+   * Extract UTM parameters from cookie
+   */
+  extractUTMFromCookie(request: Request): UTMParams | null {
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) return null;
+
+    const cookies = cookieHeader.split(';').map((c) => c.trim());
+    const utmCookie = cookies.find((c) => c.startsWith(`${UTM_COOKIE_NAME}=`));
+    if (!utmCookie) return null;
+
+    try {
+      const value = decodeURIComponent(utmCookie.split('=')[1]);
+      return JSON.parse(value) as UTMParams;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Check if UTM params have any meaningful values
+   */
+  hasUTMParams(utm: UTMParams): boolean {
+    return !!(utm.source || utm.medium || utm.campaign || utm.term || utm.content);
+  }
+
+  /**
+   * Get UTM params with persistence: URL first, then cookie fallback
+   * This ensures first-touch attribution is preserved across the journey
+   */
+  getPersistedUTM(request: Request): UTMParams {
+    const url = new URL(request.url);
+    const urlUTM = this.extractUTMFromURL(url);
+
+    // If URL has UTM params, use them (and they should be persisted by caller)
+    if (this.hasUTMParams(urlUTM)) {
+      return urlUTM;
+    }
+
+    // Fall back to cookie for persisted first-touch UTM
+    const cookieUTM = this.extractUTMFromCookie(request);
+    if (cookieUTM && this.hasUTMParams(cookieUTM)) {
+      return cookieUTM;
+    }
+
+    // No UTM found
+    return {};
+  }
+
+  /**
+   * Create Set-Cookie header value for UTM persistence
+   * Only call this when landing with UTM params and no existing cookie
+   */
+  createUTMCookie(utm: UTMParams): string {
+    const value = encodeURIComponent(JSON.stringify(utm));
+    return `${UTM_COOKIE_NAME}=${value}; Path=/; Max-Age=${UTM_COOKIE_MAX_AGE}; SameSite=Lax; Secure`;
+  }
+
+  /**
+   * Check if we should set a UTM cookie (has URL params, no existing cookie)
+   */
+  shouldSetUTMCookie(request: Request): { shouldSet: boolean; utm: UTMParams } {
+    const url = new URL(request.url);
+    const urlUTM = this.extractUTMFromURL(url);
+
+    // Only set if URL has UTM and no existing cookie (first-touch attribution)
+    if (this.hasUTMParams(urlUTM)) {
+      const existingCookie = this.extractUTMFromCookie(request);
+      if (!existingCookie || !this.hasUTMParams(existingCookie)) {
+        return { shouldSet: true, utm: urlUTM };
+      }
+    }
+
+    return { shouldSet: false, utm: {} };
   }
 
   /**
@@ -30,7 +110,7 @@ export class AnalyticsService {
   }
 
   /**
-   * Track analytics event
+   * Track analytics event with UTM persistence
    */
   async trackEvent(
     request: Request,
@@ -46,7 +126,8 @@ export class AnalyticsService {
     try {
       const url = new URL(request.url);
       const cf = request.cf as IncomingRequestCfProperties | undefined;
-      const utm = this.extractUTMParams(url);
+      // Use persisted UTM (URL first, then cookie fallback)
+      const utm = this.getPersistedUTM(request);
       const sessionId = metadata?.sessionId || this.getSessionId(request);
 
       // Write data point to Analytics Engine
