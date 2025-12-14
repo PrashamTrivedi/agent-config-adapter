@@ -109,7 +109,7 @@ export class GeminiProvider implements AIProvider {
 
 		try {
 			const response = await this.client.models.generateContent({
-				model: 'gemini-2.5-flash',
+				model: 'gemini-3-pro-preview',
 				contents: prompt,
 				config: {
 					httpOptions: {
@@ -131,7 +131,7 @@ export class GeminiProvider implements AIProvider {
 			const {textContent, thinkingTokens} = this.parseResponse(response)
 
 			console.log('[Gemini] Conversion successful', {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-3-pro-preview',
 				thinkingBudget: this.thinkingBudget,
 				inputTokens: response.usageMetadata?.promptTokenCount,
 				outputTokens: response.usageMetadata?.candidatesTokenCount,
@@ -145,7 +145,7 @@ export class GeminiProvider implements AIProvider {
 				fallbackUsed: false,
 				metadata: {
 					provider: 'gemini',
-					model: 'gemini-2.5-flash',
+					model: 'gemini-3-pro-preview',
 					inputTokens: response.usageMetadata?.promptTokenCount,
 					outputTokens: response.usageMetadata?.candidatesTokenCount,
 					durationMs,
@@ -184,7 +184,7 @@ export class GeminiProvider implements AIProvider {
 			})
 
 			const response = await this.client.models.generateContent({
-				model: 'gemini-2.5-pro',
+				model: 'gemini-3-pro-preview',
 				contents: geminiMessages,
 				config: {
 					httpOptions: {
@@ -236,7 +236,7 @@ export class GeminiProvider implements AIProvider {
 			const functionCalls = this.extractFunctionCalls(response)
 
 			console.log('[Gemini] Chat with tools successful', {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-3-pro-preview',
 				thinkingBudget: this.thinkingBudget,
 				inputTokens: response.usageMetadata?.promptTokenCount,
 				outputTokens: response.usageMetadata?.candidatesTokenCount,
@@ -254,10 +254,12 @@ export class GeminiProvider implements AIProvider {
 						name: fc.name,
 						arguments: JSON.stringify(fc.args),
 					},
+					// Preserve thought signature for multi-turn conversations (Gemini 3+ requirement)
+					thought_signature: fc.thoughtSignature,
 				})),
 				metadata: {
 					provider: 'gemini',
-					model: 'gemini-2.5-flash',
+					model: 'gemini-3-pro-preview',
 					inputTokens: response.usageMetadata?.promptTokenCount,
 					outputTokens: response.usageMetadata?.candidatesTokenCount,
 					durationMs,
@@ -286,6 +288,7 @@ export class GeminiProvider implements AIProvider {
 
 	/**
 	 * Extract function calls from Gemini response
+	 * Preserves thoughtSignature for multi-turn reasoning continuity (Gemini 3+ requirement)
 	 */
 	private extractFunctionCalls(response: any): any[] {
 		const functionCalls: any[] = []
@@ -295,7 +298,11 @@ export class GeminiProvider implements AIProvider {
 			for (const part of parts) {
 				// Check if part has functionCall
 				if (part.functionCall) {
-					functionCalls.push(part.functionCall)
+					functionCalls.push({
+						...part.functionCall,
+						// Preserve thought signature for multi-turn conversations
+						thoughtSignature: part.thoughtSignature,
+					})
 				}
 			}
 		} catch (error) {
@@ -411,12 +418,17 @@ export class GeminiProvider implements AIProvider {
 				// Add function calls if present
 				if (m.tool_calls && m.tool_calls.length > 0) {
 					for (const toolCall of m.tool_calls) {
-						parts.push({
+						const part: any = {
 							functionCall: {
 								name: toolCall.function.name,
 								args: JSON.parse(toolCall.function.arguments),
 							},
-						})
+						}
+						// Include thought signature if present (Gemini 3+ requirement)
+						if (toolCall.thought_signature) {
+							part.thoughtSignature = toolCall.thought_signature
+						}
+						parts.push(part)
 					}
 				}
 

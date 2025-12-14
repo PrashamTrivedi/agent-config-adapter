@@ -108,6 +108,8 @@ export interface ToolCall {
 		name: string
 		arguments: string
 	}
+	/** Gemini thought signature for multi-turn reasoning continuity (Gemini 3+ only) */
+	thought_signature?: string
 }
 
 /**

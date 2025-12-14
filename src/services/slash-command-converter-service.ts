@@ -159,14 +159,15 @@ export class SlashCommandConverterService {
         // Execute tool calls
         const toolResults = await this.executeToolCalls(response.tool_calls)
 
-        // Add assistant message with tool calls
+        // Add assistant message with tool calls (preserve thought_signature for Gemini 3+)
         messages.push({
           role: "assistant",
           content: response.content || null,
           tool_calls: response.tool_calls.map(tc => ({
             id: tc.id,
             type: "function",
-            function: tc.function
+            function: tc.function,
+            thought_signature: tc.thought_signature,
           }))
         })
 

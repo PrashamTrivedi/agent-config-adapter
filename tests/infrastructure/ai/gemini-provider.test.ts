@@ -117,7 +117,7 @@ describe('GeminiProvider', () => {
       expect(result.usedAI).toBe(true);
       expect(result.fallbackUsed).toBe(false);
       expect(result.metadata?.provider).toBe('gemini');
-      expect(result.metadata?.model).toBe('gemini-2.5-flash');
+      expect(result.metadata?.model).toBe('gemini-3-pro-preview');
       expect(result.metadata?.inputTokens).toBe(100);
       expect(result.metadata?.outputTokens).toBe(50);
       expect(result.metadata?.durationMs).toBeGreaterThanOrEqual(0);
@@ -229,7 +229,7 @@ describe('GeminiProvider', () => {
 
       expect(mockGenerateContent).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3-pro-preview',
           contents: expect.any(String),
           config: expect.objectContaining({
             httpOptions: expect.objectContaining({

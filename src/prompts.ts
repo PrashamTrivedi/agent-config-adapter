@@ -165,66 +165,35 @@ export function buildSlashCommandSystemPrompt(params: {
     : 'Skills: (none available)'
 
   return `
+
 # Purpose
 
-Convert Claude Code slash commands to standalone prompts with SURGICAL changes only
+Convert Claude Code Slash Commands to Standalone Prompts
 
 ## Inputs
-
-You will be provided following inputs
-
-- The Claude Code Slash Command definition
-- Optional: User request
+- Claude Code slash command definition
+- Optional: User request with arguments
 
 ## Available References
-
 ${agentsList}
 ${skillsList}
 
-Use these names to detect references accurately and avoid false positives.
+## MUST REMOVE (sandbox guarantees these)
+- ❌ "Is this a git repo?" checks — **always yes**
+- ❌ "Is working directory clean?" checks — **always yes**
+- ❌ Stash/uncommitted change handling — **never needed**
+- ✅ Latest contents from main branch — **always checked out**
+- ✅ In a different branch — **almost always available, and you can verify it by running proper git command**
 
-### Tools
-
-You have access to \`read_configs\` tool which accepts a JSON in following shape
-
-[{name:configName, type: one of agent or skill}]
-
-The tool will fetch the config of given type and return with exact content. If it doesn't it will return blank, indicating the absense of the config
-
-## Environment
-
-The converted prompt will run in a coding agent in a sandboxed environment. 
-
-This is how sandbox works:
-
-## Environment
-
-The converted prompt will run in a coding agent in a sandboxed environment.
-
-This is how sandbox works:
-- Sandbox is a linux virtual machine or container with many development tools installed.
-- The coding agent has all the permissions to run the tool it has access to.
-- Sandbox works in a Checked out git repository, with a non-main branch and is always clean state.
-- Sandbox always in the codebase directory.
-- It works with terminal agent in Command line, and there is a chat intface to interact with the agent.
-- It does not have Github access or wider internet access. **Therefore, any tool, agent, skill, or command that requires network access (e.g., \`gh\`, \`curl\`, web search) is invalid and must be completely removed from the workflow.** The logic must be adapted to work with only the information provided by the user and the local file system.
--  **Crucially, when a file is created for user review, the workflow must be: 1. Write the file. 2. commit, and push the file. 3. Announce that the file is ready for review in the branch.The prompt must NOT instruct the agent to display the file's contents in the chat.**
 
 ## Workflow
+1. Parse slash command, strip frontmatter
+2. Replace \`$ARGUMENTS\` with user-provided values
+3. Remove/rewrite sandbox-incompatible operations (network calls, interactive user prompts, git status checks) and present that form to user before calling any tool.
 
-    - Read given slash command content
-      - Check out $ARGUMENTS, replace smartly with user provided arguments
-        - Rewrite or remove any references which are invalid with the sandbox
-          - Call the tool and add the content of Agents or skill in their respective XML section after converted prompt. 
-    - Strip out frontmater from the agent and skill definition.
-    - For XML tags, follow this format < Agent / Skill - Kebab - Case - Name - Of - Agent >
-    - Strip out frontmatter from the prompt
-
-## Conversion rules
-
-    - Preserve formatting, structure, tone, personality, emphasis and details from slash command.
-- Preserve workflows, structure, procedural content
-    - When injecting Agent or Skill content, you ** MUST ** remove persona - defining phrases like "You are...", "Your role is...", "Act as...".The content should state the purpose directly, not assign a persona.
+## Conversion Rules
+- Preserve: formatting, structure, tone, emphasis, workflows, procedural content
+- Strip persona phrases ("You are...", "Act as...") from injected agent/skill content — state purpose directly
 
 `
 }

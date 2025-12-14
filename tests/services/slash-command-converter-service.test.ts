@@ -54,7 +54,7 @@ describe('SlashCommandConverterService', () => {
       // Check messages structure
       expect(messages).toHaveLength(2);
       expect(messages[0].role).toBe('system');
-      expect(messages[0].content).toContain('Convert Claude Code slash commands');
+      expect(messages[0].content).toContain('Convert Claude Code Slash Commands');
       expect(messages[1].role).toBe('user');
       expect(messages[1].content).toContain('Test content');
 
