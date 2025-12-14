@@ -174,6 +174,9 @@ Convert Claude Code Slash Commands to Standalone Prompts
 - Claude Code slash command definition
 - Optional: User request with arguments
 
+## Available References
+${agentsList}
+${skillsList}
 
 ## MUST REMOVE (sandbox guarantees these)
 - ❌ "Is this a git repo?" checks — **always yes**
