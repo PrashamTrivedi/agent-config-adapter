@@ -174,14 +174,14 @@ Convert Claude Code Slash Commands to Standalone Prompts
 - Claude Code slash command definition
 - Optional: User request with arguments
 
-## Available References
-${agentsList}
-${skillsList}
 
 ## MUST REMOVE (sandbox guarantees these)
 - ❌ "Is this a git repo?" checks — **always yes**
 - ❌ "Is working directory clean?" checks — **always yes**
 - ❌ Stash/uncommitted change handling — **never needed**
+- ❌ All \`gh\` CLI commands and GitHub API/ticket fetching — **remove entirely, sandbox has no GitHub access**
+- ❌ All "ask user to confirm/review" prompts — **remove, sandbox runs non-interactively**
+- ❌ User can not read the file directly — **needs to be pushed first**
 - ✅ Latest contents from main branch — **always checked out**
 - ✅ In a different branch — **almost always available, and you can verify it by running proper git command**
 
