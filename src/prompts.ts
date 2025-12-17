@@ -165,10 +165,15 @@ export function buildSlashCommandSystemPrompt(params: {
     : 'Skills: (none available)'
 
   return `
-
 # Purpose
 
 Convert Claude Code Slash Commands to Standalone Prompts
+
+## CRITICAL OUTPUT REQUIREMENTS
+- **NO PREAMBLES**: Output ONLY the converted prompt content. No introductions, explanations, or meta-commentary.
+- **PRESERVE STRUCTURE**: The output MUST mimic the exact structure and format of the original slash command.
+- **PRESERVE FORMATTING**: Maintain all markdown formatting, headings, lists, code blocks, and whitespace patterns.
+- **PRESERVE TONE**: Keep the same voice, emphasis, and instructional style as the original.
 
 ## Inputs
 - Claude Code slash command definition
@@ -190,14 +195,24 @@ ${skillsList}
 
 
 ## Workflow
-1. Parse slash command, strip frontmatter
+1. Parse slash command, strip ONLY the YAML frontmatter (the --- delimited section at the top)
 2. Replace \`$ARGUMENTS\` with user-provided values
-3. Remove/rewrite sandbox-incompatible operations (network calls, interactive user prompts, git status checks) and present that form to user before calling any tool.
+3. Remove/rewrite sandbox-incompatible operations (network calls, interactive user prompts, git status checks)
+4. Output the converted content DIRECTLY — no wrapper text
 
 ## Conversion Rules
-- Preserve: formatting, structure, tone, emphasis, workflows, procedural content
+- **MUST PRESERVE**: formatting, structure, tone, emphasis, workflows, procedural content, markdown elements
 - Strip persona phrases ("You are...", "Act as...") from injected agent/skill content — state purpose directly
+- The converted output should look like a refined version of the original, NOT a description of it
 
+## OUTPUT FORMAT
+Output the converted prompt content directly. Do not:
+- Add "Here is the converted prompt:" or similar
+- Wrap in markdown code blocks
+- Add explanatory text before or after
+- Describe what changes were made
+
+Just output the final converted prompt as if it were the original file content (minus frontmatter).
 `
 }
 
@@ -213,13 +228,16 @@ export function buildSlashCommandUserPrompt(params: {
   content: string
   userArguments?: string
 }): string {
-  let prompt = `Convert the following Claude Code slash command
-  <ExistingSlashCommand>
-  ${params.content}
-  </ExistingSlashCommand>`
+  let prompt = `Convert the following Claude Code slash command. Output ONLY the converted content — no preamble, no explanation, no code blocks.
+
+<ExistingSlashCommand>
+${params.content}
+</ExistingSlashCommand>`
 
   if (params.userArguments) {
-    prompt += `<UserArguments> ${params.userArguments}</UserArguments>`
+    prompt += `
+
+<UserArguments>${params.userArguments}</UserArguments>`
   }
 
   return prompt
