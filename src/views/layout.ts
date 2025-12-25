@@ -1935,11 +1935,15 @@ export function layout(title: string, content: string, c?: any): string {
             }
           };
 
-          // Gate a CUD action - ALWAYS show coming soon modal (uploads locked until auth)
+          // Gate an action behind email subscription
           window.requireEmail = function(callback) {
-            // Features are locked until full authentication is implemented
-            // Email subscription is only for waitlist notifications
-            window.showComingSoonModal();
+            if (window.hasValidEmail()) {
+              // User has valid email subscription - proceed with action
+              callback();
+            } else {
+              // No valid email - show subscription modal
+              window.showEmailGate(callback);
+            }
           };
 
           // Auto-add X-Subscriber-Email header to HTMX requests for CUD operations
