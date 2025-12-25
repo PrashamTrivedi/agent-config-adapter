@@ -248,13 +248,13 @@ export function configDetailView(config: Config): string {
       ${icons.refresh('icon')} Convert to Different Formats
     </h3>
     <div style="margin-bottom: 20px;">
-      <button class="btn ripple" hx-get="/api/configs/${config.id}/format/claude_code" hx-target="#converted" hx-indicator="#convert-spinner">
+      <button class="btn ripple" onclick="requireEmail(() => htmx.ajax('GET', '/api/configs/${config.id}/format/claude_code', {target:'#converted', indicator:'#convert-spinner'}))">
         Claude Code
       </button>
-      <button class="btn ripple" hx-get="/api/configs/${config.id}/format/codex" hx-target="#converted" hx-indicator="#convert-spinner">
+      <button class="btn ripple" onclick="requireEmail(() => htmx.ajax('GET', '/api/configs/${config.id}/format/codex', {target:'#converted', indicator:'#convert-spinner'}))">
         Codex
       </button>
-      <button class="btn ripple" hx-get="/api/configs/${config.id}/format/gemini" hx-target="#converted" hx-indicator="#convert-spinner">
+      <button class="btn ripple" onclick="requireEmail(() => htmx.ajax('GET', '/api/configs/${config.id}/format/gemini', {target:'#converted', indicator:'#convert-spinner'}))">
         Gemini
       </button>
       <span id="convert-spinner" class="htmx-indicator">

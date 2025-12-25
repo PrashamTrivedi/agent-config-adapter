@@ -227,10 +227,10 @@ export function slashCommandConverterFormPartial(config: Config): string {
 
         <div style="padding-top: 15px; border-top: 1px solid var(--border-color);">
           <button
-            type="submit"
+            type="button"
             id="convert-btn"
             class="btn ripple"
-            hx-disabled-elt="this"
+            onclick="requireEmail(() => htmx.trigger('#convert-form', 'submit'))"
             data-loading-text="⏳ Converting...">
             ${icons.sparkles('icon')} Convert Command
           </button>
