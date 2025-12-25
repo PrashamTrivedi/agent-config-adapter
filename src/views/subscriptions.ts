@@ -69,6 +69,32 @@ export function subscriptionFormView(returnUrl?: string): string {
             </span>
           </div>
 
+          <div class="form-group" style="margin-top: 16px;">
+            <label for="referral_source">How did you find us?</label>
+            <select
+              id="referral_source"
+              name="referral_source"
+              style="width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-primary); font-size: 1em; cursor: pointer;"
+              onchange="document.getElementById('referral-other-container').style.display = this.value === 'other' ? 'block' : 'none'">
+              <option value="">Select an option...</option>
+              <option value="prasham">Straight from Prasham</option>
+              <option value="reddit">Reddit</option>
+              <option value="x">X (Twitter)</option>
+              <option value="friend">Friend</option>
+              <option value="other">Somewhere else...</option>
+            </select>
+          </div>
+
+          <div id="referral-other-container" class="form-group" style="margin-top: 16px; display: none;">
+            <label for="referral_other">Please specify:</label>
+            <input
+              type="text"
+              id="referral_other"
+              name="referral_other"
+              placeholder="Where did you hear about us?"
+              style="width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-primary); font-size: 1em;">
+          </div>
+
           <div id="subscription-result" style="margin-bottom: 16px;"></div>
 
           <button type="submit" class="btn ripple" style="width: 100%; padding: 14px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">

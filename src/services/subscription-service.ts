@@ -1,4 +1,4 @@
-import type { SubscriptionRecord } from '../domain/types';
+import type { SubscriptionRecord, ReferralSource } from '../domain/types';
 
 /**
  * Service for managing email subscriptions in KV storage
@@ -11,7 +11,9 @@ export class SubscriptionService {
    */
   async subscribe(
     email: string,
-    ipAddress?: string
+    ipAddress?: string,
+    referralSource?: ReferralSource,
+    referralOther?: string
   ): Promise<SubscriptionRecord> {
     // Normalize email (lowercase, trim)
     const normalizedEmail = email.toLowerCase().trim();
@@ -21,6 +23,8 @@ export class SubscriptionService {
       projectName: 'agentConfig',
       subscribedAt: new Date().toISOString(),
       ipAddress,
+      referralSource,
+      referralOther: referralSource === 'other' ? referralOther : undefined,
     };
 
     // Store in KV with email as key

@@ -38,12 +38,30 @@ export class EmailService {
   }
 
   /**
+   * Format referral source for display
+   */
+  private formatReferralSource(source?: string, other?: string): string {
+    const labels: Record<string, string> = {
+      prasham: 'Straight from Prasham',
+      reddit: 'Reddit',
+      x: 'X (Twitter)',
+      friend: 'Friend',
+      other: other || 'Other',
+    };
+    return source ? labels[source] || source : 'Not specified';
+  }
+
+  /**
    * Send admin notification about new subscriber
    */
   async sendSubscriptionNotification(
     subscriberEmail: string,
-    subscribedAt: string
+    subscribedAt: string,
+    referralSource?: string,
+    referralOther?: string
   ): Promise<void> {
+    const referralDisplay = this.formatReferralSource(referralSource, referralOther);
+
     await this.sendEmail({
       from: `Agent Config Adapter <${this.senderEmail}>`,
       to: [this.adminEmail],
@@ -59,6 +77,10 @@ export class EmailService {
                 <tr>
                   <td style="padding: 12px 0; font-weight: 600; color: #374151; width: 140px;">Email:</td>
                   <td style="padding: 12px 0; color: #6b7280;">${subscriberEmail}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; font-weight: 600; color: #374151;">Found us via:</td>
+                  <td style="padding: 12px 0; color: #6b7280;">${referralDisplay}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 0; font-weight: 600; color: #374151;">Project:</td>

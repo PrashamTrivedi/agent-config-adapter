@@ -3,7 +3,7 @@ import { SubscriptionService } from '../services/subscription-service';
 import { EmailService } from '../services/email-service';
 import { subscriptionFormView } from '../views/subscriptions';
 import { AnalyticsService } from '../services/analytics-service';
-import type { AnalyticsEngineDataset } from '../domain/types';
+import type { AnalyticsEngineDataset, ReferralSource } from '../domain/types';
 
 type Bindings = {
   EMAIL_SUBSCRIPTIONS: KVNamespace;
@@ -32,6 +32,11 @@ subscriptionsRouter.get('/form', async (c) => {
 });
 
 /**
+ * Valid referral sources
+ */
+const VALID_REFERRAL_SOURCES: ReferralSource[] = ['prasham', 'reddit', 'x', 'friend', 'other'];
+
+/**
  * POST /api/subscriptions/subscribe
  * Subscribe a new email address
  */
@@ -39,15 +44,21 @@ subscriptionsRouter.post('/subscribe', async (c) => {
   try {
     // Parse request body (handle both JSON and form data)
     let email: string;
+    let referralSource: ReferralSource | undefined;
+    let referralOther: string | undefined;
     const contentType = c.req.header('content-type') || '';
 
     if (contentType.includes('application/json')) {
       const body = await c.req.json();
       email = body.email;
+      referralSource = body.referral_source;
+      referralOther = body.referral_other;
     } else {
       // Form data
       const formData = await c.req.parseBody();
       email = formData.email as string;
+      referralSource = formData.referral_source as ReferralSource | undefined;
+      referralOther = formData.referral_other as string | undefined;
     }
 
     // Validate email
@@ -57,6 +68,11 @@ subscriptionsRouter.post('/subscribe', async (c) => {
 
     if (!isValidEmail(email)) {
       return c.json({ error: 'Invalid email format' }, 400);
+    }
+
+    // Validate referral source if provided
+    if (referralSource && !VALID_REFERRAL_SOURCES.includes(referralSource)) {
+      referralSource = undefined;
     }
 
     // Check if already subscribed
@@ -78,7 +94,12 @@ subscriptionsRouter.post('/subscribe', async (c) => {
 
     // Subscribe
     const ipAddress = c.req.header('CF-Connecting-IP');
-    const subscription = await subscriptionService.subscribe(email, ipAddress);
+    const subscription = await subscriptionService.subscribe(
+      email,
+      ipAddress,
+      referralSource,
+      referralOther
+    );
 
     // Send emails (admin notification + welcome email to user)
     try {
@@ -91,7 +112,9 @@ subscriptionsRouter.post('/subscribe', async (c) => {
       // Send admin notification about new subscriber
       await emailService.sendSubscriptionNotification(
         email,
-        subscription.subscribedAt
+        subscription.subscribedAt,
+        subscription.referralSource,
+        subscription.referralOther
       );
       console.log('[Email] Admin notification sent successfully');
 

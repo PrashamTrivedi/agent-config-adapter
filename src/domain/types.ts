@@ -305,11 +305,15 @@ export interface SlashCommandConversionResult {
 }
 
 // Email subscription types
+export type ReferralSource = 'prasham' | 'reddit' | 'x' | 'friend' | 'other';
+
 export interface SubscriptionRecord {
   email: string;
   projectName: 'agentConfig';
   subscribedAt: string;  // ISO datetime
   ipAddress?: string;
+  referralSource?: ReferralSource;  // How they found us
+  referralOther?: string;  // Custom text if "other" selected
 }
 
 // Analytics types
