@@ -1383,6 +1383,32 @@ export function layout(title: string, content: string, c?: any): string {
                   </span>
                 </div>
 
+                <div class="form-group" style="margin-top: 12px;">
+                  <label for="gate-referral">How did you find us?</label>
+                  <select
+                    id="gate-referral"
+                    name="referral_source"
+                    style="width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-primary); font-size: 1em; cursor: pointer;"
+                    onchange="document.getElementById('gate-referral-other-container').style.display = this.value === 'other' ? 'block' : 'none'">
+                    <option value="">Select an option...</option>
+                    <option value="prasham">Straight from Prasham</option>
+                    <option value="reddit">Reddit</option>
+                    <option value="x">X (Twitter)</option>
+                    <option value="friend">Friend</option>
+                    <option value="other">Somewhere else...</option>
+                  </select>
+                </div>
+
+                <div id="gate-referral-other-container" class="form-group" style="margin-top: 12px; display: none;">
+                  <label for="gate-referral-other">Please specify:</label>
+                  <input
+                    type="text"
+                    id="gate-referral-other"
+                    name="referral_other"
+                    placeholder="Where did you hear about us?"
+                    style="width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-primary); font-size: 1em;">
+                </div>
+
                 <div id="email-gate-result" style="margin-bottom: 16px;"></div>
 
                 <div style="display: flex; gap: 10px;">
@@ -1836,6 +1862,9 @@ export function layout(title: string, content: string, c?: any): string {
             modal.style.display = 'none';
             document.getElementById('email-gate-result').innerHTML = '';
             document.getElementById('gate-email').value = '';
+            document.getElementById('gate-referral').value = '';
+            document.getElementById('gate-referral-other').value = '';
+            document.getElementById('gate-referral-other-container').style.display = 'none';
             pendingAction = null;
           };
 
@@ -1858,6 +1887,8 @@ export function layout(title: string, content: string, c?: any): string {
           window.submitEmailGate = async function(event) {
             event.preventDefault();
             const email = document.getElementById('gate-email').value.trim();
+            const referralSource = document.getElementById('gate-referral').value;
+            const referralOther = document.getElementById('gate-referral-other').value.trim();
             const resultDiv = document.getElementById('email-gate-result');
             const submitBtn = event.target.querySelector('button[type="submit"]');
 
@@ -1888,7 +1919,11 @@ export function layout(title: string, content: string, c?: any): string {
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({
+                  email,
+                  referral_source: referralSource || undefined,
+                  referral_other: referralSource === 'other' ? referralOther : undefined
+                }),
               });
               const data = await response.json();
 
