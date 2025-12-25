@@ -83,9 +83,9 @@ export function skillsListView(skills: Config[]): string {
                 <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn btn-secondary" style="flex: 1; text-align: center;">
                   Edit
                 </button>
-                <a href="/api/skills/${skill.id}/download" class="btn btn-secondary" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;" download>
+                <button onclick="requireEmail(() => window.location.href='/api/skills/${skill.id}/download')" class="btn btn-secondary" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
                   ${icons.download('icon')} ZIP
-                </a>
+                </button>
               </div>
 
               <button
@@ -136,9 +136,9 @@ export function skillDetailView(skill: SkillWithFiles): string {
           <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.edit('icon')} Edit
           </button>
-          <a href="/api/skills/${skill.id}/download" class="btn ripple" download="${skill.name}.zip" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireEmail(() => window.location.href='/api/skills/${skill.id}/download')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.download('icon')} Download ZIP
-          </a>
+          </button>
           <a href="/skills" class="btn btn-secondary">← Back</a>
         </div>
       </div>
