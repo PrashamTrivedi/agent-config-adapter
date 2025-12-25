@@ -131,6 +131,11 @@ export class AnalyticsService {
       const sessionId = metadata?.sessionId || this.getSessionId(request);
 
       // Write data point to Analytics Engine
+      // Blob mapping:
+      // blob1: eventType, blob2: pathname, blob3: referer, blob4: country, blob5: city
+      // blob6: utm_source, blob7: utm_medium, blob8: utm_campaign
+      // blob9: onboardingICP, blob10: configFormat, blob11: configType, blob12: configName
+      // blob13: userAgent (for bot detection)
       this.analytics.writeDataPoint({
         indexes: [sessionId],
         blobs: [
@@ -146,6 +151,7 @@ export class AnalyticsService {
           metadata?.configFormat || '',
           metadata?.configType || '',
           metadata?.configName || '',
+          request.headers.get('user-agent') || 'unknown',
         ],
         doubles: [
           Date.now(),
