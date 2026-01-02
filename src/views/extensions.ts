@@ -231,7 +231,7 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
             <div class="card fade-in">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h4 style="margin: 0;">${icons.file('icon')} Manifest Content</h4>
-                <button class="btn btn-secondary copy-btn" onclick="copyManifest(\\\`\${jsonStr.replace(/\`/g, '\\\\\`')}\\\`)">
+                <button class="btn btn-secondary copy-btn" onclick="requireEmail(() => copyManifest(\\\`\${jsonStr.replace(/\`/g, '\\\\\`')}\\\`))">
                   ${icons.clipboard('icon')} Copy
                 </button>
               </div>

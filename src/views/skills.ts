@@ -152,7 +152,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
           <button
             class="btn btn-secondary"
             style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
-            onclick="copyToClipboard(\`${escapeHtml(skill.content).replace(/`/g, '\\`')}\`, this)">
+            onclick="requireEmail(() => copyToClipboard(\`${escapeHtml(skill.content).replace(/`/g, '\\`')}\`, this))">
             ${icons.clipboard('icon')} Copy Content
           </button>
         </div>

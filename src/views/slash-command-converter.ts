@@ -140,7 +140,7 @@ export function slashCommandConverterFormPartial(config: Config): string {
           <button
             class="btn ripple copy-btn"
             id="copy-original-btn"
-            onclick="copyOriginalContent()"
+            onclick="requireEmail(() => copyOriginalContent())"
             style="display: inline-flex; align-items: center; gap: 8px;">
             ${icons.clipboard('icon')} Copy Original
           </button>
@@ -375,7 +375,7 @@ export function slashCommandConversionResultPartial(
         >${escapeHtml(convertedContent)}</textarea>
         <button
           class="btn btn-secondary copy-btn ripple"
-          onclick="copyOutput()"
+          onclick="requireEmail(() => copyOutput())"
           style="margin-top: 15px;">
           ${icons.clipboard('icon')} Copy to Clipboard
         </button>

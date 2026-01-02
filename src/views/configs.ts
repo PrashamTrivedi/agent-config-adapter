@@ -193,7 +193,7 @@ export function configDetailView(config: Config): string {
         <button
           class="btn ripple copy-btn"
           id="copy-prompt-btn"
-          onclick="copyPromptContent()"
+          onclick="requireEmail(() => copyPromptContent())"
           style="display: inline-flex; align-items: center; gap: 8px;">
           ${icons.clipboard('icon')} Copy to Clipboard
         </button>
@@ -331,7 +331,7 @@ export function configDetailView(config: Config): string {
             <div class="card fade-in" style="margin-top: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">${icons.checkCircle('icon')} Converted Content</h3>
-                <button class="btn btn-secondary copy-btn" onclick="copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this)" style="display: inline-flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary copy-btn" onclick="requireEmail(() => copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this))" style="display: inline-flex; align-items: center; gap: 6px;">
                   ${icons.clipboard('icon')} Copy
                 </button>
               </div>

@@ -185,7 +185,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
               <button
-                onclick="copyMarketplaceUrl()"
+                onclick="requireEmail(() => copyMarketplaceUrl())"
                 class="btn ripple copy-btn"
                 style="width: 100%; text-align: center;">
                 ${icons.clipboard('icon')} Copy Marketplace URL
