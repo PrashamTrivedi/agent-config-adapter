@@ -53,5 +53,8 @@
   "bugs": {
     "url": "https://github.com/PrashamTrivedi/agent-config-adapter/issues"
   },
-  "homepage": "https://github.com/PrashamTrivedi/agent-config-adapter#readme"
+  "homepage": "https://github.com/PrashamTrivedi/agent-config-adapter#readme",
+  "overrides": {
+    "qs": "^6.14.1"
+  }
 }
