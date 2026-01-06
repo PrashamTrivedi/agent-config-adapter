@@ -15,7 +15,7 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
           </p>
         </div>
         <div style="display: flex; gap: 10px;">
-          <button onclick="requireEmail(() => window.location.href='/marketplaces/new')" class="btn ripple">
+          <button onclick="requireAuth(() => window.location.href='/marketplaces/new')" class="btn ripple">
             ${icons.plus('icon')} Create Marketplace
           </button>
           <a href="/" class="btn btn-secondary">← Home</a>
@@ -29,7 +29,7 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
           </div>
           <h3 style="margin: 10px 0; color: var(--text-primary);">No marketplaces yet</h3>
           <p style="margin-bottom: 20px;">Create your first marketplace to distribute extension collections!</p>
-          <button onclick="requireEmail(() => window.location.href='/marketplaces/new')" class="btn">Create Marketplace</button>
+          <button onclick="requireAuth(() => window.location.href='/marketplaces/new')" class="btn">Create Marketplace</button>
         </div>
       ` : `
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px; margin-top: 20px;">
@@ -92,7 +92,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button onclick="requireEmail(() => window.location.href='/marketplaces/${marketplace.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireAuth(() => window.location.href='/marketplaces/${marketplace.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.edit('icon')} Edit
           </button>
           <a href="/marketplaces" class="btn btn-secondary">← Back</a>
@@ -185,7 +185,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
               <button
-                onclick="requireEmail(() => copyMarketplaceUrl())"
+                onclick="requireAuth(() => copyMarketplaceUrl())"
                 class="btn ripple copy-btn"
                 style="width: 100%; text-align: center;">
                 ${icons.clipboard('icon')} Copy Marketplace URL
@@ -277,7 +277,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
         </p>
         <button
           class="btn btn-danger ripple"
-          onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+          onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
           hx-delete="/api/marketplaces/${marketplace.id}"
           hx-trigger="click-confirmed"
           hx-confirm="Are you sure you want to delete this marketplace?"

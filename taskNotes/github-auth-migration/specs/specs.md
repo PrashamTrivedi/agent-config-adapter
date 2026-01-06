@@ -16,6 +16,9 @@ Phase 1 (Database) ─────┐
                         │
                         ▼
               Phase 6 (Migration & Cleanup)
+                        │
+                        ▼
+              Phase 7 (Frontend Auth)
 ```
 
 ## Phases Overview
@@ -28,6 +31,7 @@ Phase 1 (Database) ─────┐
 | 4 | MCP OAuth | 6 files | Phase 3 |
 | 5 | Ownership Enforcement | 8 files | Phase 2, 4 |
 | 6 | Migration & Cleanup | 3 files | All previous |
+| 7 | Frontend Auth | 7 files | Phase 2, 3 |
 
 ## Spec Files
 
@@ -37,6 +41,7 @@ Phase 1 (Database) ─────┐
 4. [spec-04-mcp-oauth.md](./spec-04-mcp-oauth.md) - MCP OAuth 2.0 with PKCE
 5. [spec-05-ownership.md](./spec-05-ownership.md) - Ownership enforcement
 6. [spec-06-migration.md](./spec-06-migration.md) - Data migration & cleanup
+7. [spec-07-frontend-auth.md](./spec-07-frontend-auth.md) - Frontend auth migration
 
 ## Critical Path
 

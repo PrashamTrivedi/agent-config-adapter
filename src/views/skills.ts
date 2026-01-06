@@ -29,7 +29,7 @@ export function skillsListView(skills: Config[]): string {
           </p>
         </div>
         <div>
-          <button onclick="requireEmail(() => window.location.href='/skills/new')" class="btn ripple">
+          <button onclick="requireAuth(() => window.location.href='/skills/new')" class="btn ripple">
             <span style="font-size: 1.1em;">+</span> Create New Skill
           </button>
           <a href="/" class="btn btn-secondary">← Home</a>
@@ -45,7 +45,7 @@ export function skillsListView(skills: Config[]): string {
           </div>
           <h3 style="margin: 10px 0; color: var(--text-primary);">No skills yet</h3>
           <p style="margin-bottom: 20px;">Create your first multi-file skill to get started!</p>
-          <button onclick="requireEmail(() => window.location.href='/skills/new')" class="btn">Create Skill</button>
+          <button onclick="requireAuth(() => window.location.href='/skills/new')" class="btn">Create Skill</button>
         </div>
       `
           : `
@@ -80,10 +80,10 @@ export function skillsListView(skills: Config[]): string {
                 <a href="/skills/${skill.id}" class="btn btn-secondary" style="flex: 1; text-align: center;">
                   View
                 </a>
-                <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn btn-secondary" style="flex: 1; text-align: center;">
+                <button onclick="requireAuth(() => window.location.href='/skills/${skill.id}/edit')" class="btn btn-secondary" style="flex: 1; text-align: center;">
                   Edit
                 </button>
-                <button onclick="requireEmail(() => window.location.href='/api/skills/${skill.id}/download')" class="btn btn-secondary" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button onclick="requireAuth(() => window.location.href='/api/skills/${skill.id}/download')" class="btn btn-secondary" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
                   ${icons.download('icon')} ZIP
                 </button>
               </div>
@@ -91,7 +91,7 @@ export function skillsListView(skills: Config[]): string {
               <button
                 class="btn btn-danger"
                 style="position: absolute; top: 12px; right: 12px; padding: 4px 10px; font-size: 0.85em; margin: 0;"
-                onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+                onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
                 hx-delete="/api/skills/${skill.id}"
                 hx-trigger="click-confirmed"
                 hx-confirm="Are you sure you want to delete this skill and all its files?"
@@ -133,10 +133,10 @@ export function skillDetailView(skill: SkillWithFiles): string {
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireAuth(() => window.location.href='/skills/${skill.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.edit('icon')} Edit
           </button>
-          <button onclick="requireEmail(() => window.location.href='/api/skills/${skill.id}/download')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireAuth(() => window.location.href='/api/skills/${skill.id}/download')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.download('icon')} Download ZIP
           </button>
           <a href="/skills" class="btn btn-secondary">← Back</a>
@@ -152,7 +152,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
           <button
             class="btn btn-secondary"
             style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
-            onclick="requireEmail(() => copyToClipboard(\`${escapeHtml(skill.content).replace(/`/g, '\\`')}\`, this))">
+            onclick="requireAuth(() => copyToClipboard(\`${escapeHtml(skill.content).replace(/`/g, '\\`')}\`, this))">
             ${icons.clipboard('icon')} Copy Content
           </button>
         </div>
@@ -188,7 +188,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
                   <button
                     class="btn btn-danger"
                     style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
-                    onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+                    onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
                     hx-delete="/api/skills/${skill.id}/files/${file.id}"
                     hx-trigger="click-confirmed"
                     hx-confirm="Delete this file?"
@@ -214,7 +214,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
           <p style="color: var(--text-secondary); margin-bottom: 20px;">
             Add companion files to enhance this skill
           </p>
-          <button onclick="requireEmail(() => window.location.href='/skills/${skill.id}/edit')" class="btn">Add Files</button>
+          <button onclick="requireAuth(() => window.location.href='/skills/${skill.id}/edit')" class="btn">Add Files</button>
         </div>
       `
       }
@@ -230,7 +230,7 @@ export function skillDetailView(skill: SkillWithFiles): string {
         <button
           class="btn btn-danger ripple"
           style="display: inline-flex; align-items: center; gap: 8px;"
-          onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+          onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
           hx-delete="/api/skills/${skill.id}"
           hx-trigger="click-confirmed"
           hx-confirm="Are you sure you want to permanently delete this skill and all its files? This cannot be undone."
@@ -489,7 +489,7 @@ export function skillEditView(skill: SkillWithFiles): string {
                 <button
                   class="btn btn-danger"
                   style="padding: 6px 12px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;"
-                  onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+                  onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
                   hx-delete="/api/skills/${skill.id}/files/${file.id}"
                   hx-trigger="click-confirmed"
                   hx-confirm="Delete this file?"

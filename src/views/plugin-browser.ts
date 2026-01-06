@@ -53,7 +53,7 @@ export function pluginBrowserView(
           <a href="${pluginUrl}/download" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
             ${icons.download('icon')} Download Complete Plugin (ZIP)
           </a>
-          <button onclick="requireEmail(() => copyToClipboard('${pluginUrl}'))" class="btn" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireAuth(() => copyToClipboard('${pluginUrl}'))" class="btn" style="display: flex; align-items: center; gap: 8px;">
             ${icons.clipboard('icon')} Copy Plugin URL
           </button>
         ` : `
@@ -68,7 +68,7 @@ export function pluginBrowserView(
               <a href="${pluginUrl}/download" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; text-align: center;">
                 ${icons.download('icon')} Download Full ZIP
               </a>
-              <button onclick="requireEmail(() => copyToClipboard('${pluginUrl}'))" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+              <button onclick="requireAuth(() => copyToClipboard('${pluginUrl}'))" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
                 ${icons.clipboard('icon')} Copy Plugin URL
               </button>
             </div>
