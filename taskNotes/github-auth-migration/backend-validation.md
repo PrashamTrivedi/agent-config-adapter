@@ -37,6 +37,18 @@
 - `scripts/migrate-ownership.ts` - Migration guidance script
 - Updated `.dev.vars.example` - Added auth environment variables documentation
 
+### Phase 7: Frontend Auth Migration ✅
+- Updated `src/views/layout.ts` - Replaced email gate modal with auth gate modal
+- Updated `src/views/layout.ts` - Replaced requireEmail() with requireAuth()
+- Updated `src/views/layout.ts` - Added window.__user injection for client-side auth checks
+- Updated `src/views/configs.ts` - Changed requireEmail to requireAuth
+- Updated `src/views/extensions.ts` - Changed requireEmail to requireAuth
+- Updated `src/views/marketplaces.ts` - Changed requireEmail to requireAuth
+- Updated `src/views/skills.ts` - Changed requireEmail to requireAuth
+- Updated `src/views/plugin-browser.ts` - Changed requireEmail to requireAuth
+- Updated `src/views/slash-command-converter.ts` - Changed requireEmail to requireAuth
+- Added `taskNotes/github-auth-migration/specs/spec-07-frontend-auth.md` - Frontend auth spec
+
 ## Dependencies Added
 - `better-auth` - Authentication framework
 - `jose` - JWT signing/verification
@@ -44,12 +56,14 @@
 ## Test Results
 All 583 tests pass with no regressions.
 
-## Commits (5 total)
+## Commits (8 total)
 1. `d41ac1d` - ✨ feat: Add Better Auth integration with GitHub OAuth and Email OTP
 2. `502332f` - ✨ feat: Add profile management and API key service
 3. `62a3132` - ✨ feat: Add MCP OAuth 2.0 with PKCE support
 4. `3f40df9` - 🔒 security: Add ownership enforcement to configs CRUD operations
 5. `87b054b` - 📝 docs: Add migration script and auth env vars documentation
+6. `cb62b03` - 📝 docs: Add backend validation notes and commit tracking
+7. `b59ba27` - ✨ feat: Migrate frontend from email gating to session-based auth
 
 ## Pre-existing Type Errors (Not Addressed - Out of Scope)
 - `src/adapters/index.ts` - Missing metadata property in AIConversionResult
@@ -59,4 +73,3 @@ All 583 tests pass with no regressions.
 - Update skills, extensions, and marketplaces routes with ownership checks
 - Update UI to show owner information on detail pages
 - Implement "Claim Config" feature for orphaned resources
-- Send notification emails to existing subscribers about the auth change
