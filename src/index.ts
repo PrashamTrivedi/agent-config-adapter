@@ -8,6 +8,7 @@ import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { subscriptionsRouter } from './routes/subscriptions';
 import { authRouter, authUIRouter } from './routes/auth';
+import { profileRouter } from './routes/profile';
 import onboardingRoutes from './routes/onboarding';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
@@ -252,6 +253,10 @@ app.route('/', onboardingRoutes);
 // Mount auth routes
 app.route('/api/auth', authRouter);
 app.route('/auth', authUIRouter);
+
+// Mount profile routes (handles /profile/* and /api/profile/*)
+app.route('/profile', profileRouter);
+app.route('/api/profile', profileRouter);
 
 // Mount API routes
 app.route('/api/configs', configsRouter);

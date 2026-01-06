@@ -1,6 +1,8 @@
 import { icons } from './icons';
 
 export function layout(title: string, content: string, c?: any): string {
+  // Get user from context if available
+  const user = c?.get?.('user') || null;
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -1467,6 +1469,28 @@ export function layout(title: string, content: string, c?: any): string {
                 ${icons.link('icon')}
                 <span>MCP</span>
               </a>
+              <!-- Auth Section -->
+              ${
+                user
+                  ? `
+                <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px; padding-left: 16px; border-left: 1px solid var(--border-dim);">
+                  <a href="/profile" class="${title === 'Profile' ? 'active' : ''}" style="display: flex; align-items: center; gap: 8px;">
+                    ${
+                      user.image
+                        ? `<img src="${user.image}" alt="${user.name}" style="width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border-accent);">`
+                        : icons.user('icon')
+                    }
+                    <span>${user.name?.split(' ')[0] || 'Profile'}</span>
+                  </a>
+                </div>
+              `
+                  : `
+                <a href="/auth/login" style="margin-left: 8px; padding-left: 16px; border-left: 1px solid var(--border-dim);">
+                  ${icons.user('icon')}
+                  <span>Sign In</span>
+                </a>
+              `
+              }
             </nav>
           </div>
         </header>
