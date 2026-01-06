@@ -15,6 +15,7 @@ import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
+import { mcpOAuthRouter, getOAuthMetadata } from './mcp/oauth';
 import type { AnalyticsEngineDataset } from './domain/types';
 import { AnalyticsService } from './services/analytics-service';
 import { utmPersistenceMiddleware } from './middleware/utm-persistence';
@@ -292,6 +293,15 @@ app.route('/subscriptions', subscriptionsRouter);
 
 // Mount plugins routes (for serving plugin files and downloads)
 app.route('/plugins', pluginsRouter);
+
+// OAuth 2.0 Authorization Server Metadata (RFC 8414)
+app.get('/.well-known/oauth-authorization-server', (c) => {
+  const baseUrl = new URL(c.req.url).origin;
+  return c.json(getOAuthMetadata(baseUrl));
+});
+
+// MCP OAuth 2.0 endpoints
+app.route('/mcp/oauth', mcpOAuthRouter);
 
 // MCP Server endpoints
 
