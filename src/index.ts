@@ -7,6 +7,7 @@ import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { subscriptionsRouter } from './routes/subscriptions';
+import { authRouter, authUIRouter } from './routes/auth';
 import onboardingRoutes from './routes/onboarding';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
@@ -16,12 +17,14 @@ import { validateMCPAdminToken } from './mcp/auth';
 import type { AnalyticsEngineDataset } from './domain/types';
 import { AnalyticsService } from './services/analytics-service';
 import { utmPersistenceMiddleware } from './middleware/utm-persistence';
+import { sessionMiddleware } from './auth/session-middleware';
 
 type Bindings = {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
   EXTENSION_FILES: R2Bucket;
   EMAIL_SUBSCRIPTIONS: KVNamespace;
+  OAUTH_TOKENS: KVNamespace; // OAuth auth codes and refresh tokens
 
   // Cloudflare Configuration
   ACCOUNT_ID: string;
@@ -45,6 +48,13 @@ type Bindings = {
   // Temporary security measure until full user auth is implemented
   MCP_ADMIN_TOKEN_HASH?: string;
 
+  // Better Auth Configuration
+  BETTER_AUTH_SECRET?: string;
+  BETTER_AUTH_URL?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  JWT_SECRET?: string;
+
   // Analytics Configuration
   ANALYTICS?: AnalyticsEngineDataset; // Workers Analytics Engine dataset
   WEB_ANALYTICS_TOKEN?: string; // Web Analytics beacon token
@@ -55,6 +65,9 @@ const app = new Hono<{ Bindings: Bindings }>();
 // UTM persistence middleware - captures first-touch attribution from marketing links
 // This runs on all requests to set/read UTM cookies for journey tracking
 app.use('*', utmPersistenceMiddleware);
+
+// Session middleware - attaches user session to context on all requests
+app.use('*', sessionMiddleware);
 
 // Home page
 app.get('/', async (c) => {
@@ -235,6 +248,10 @@ app.get('/', async (c) => {
 
 // Mount onboarding routes
 app.route('/', onboardingRoutes);
+
+// Mount auth routes
+app.route('/api/auth', authRouter);
+app.route('/auth', authUIRouter);
 
 // Mount API routes
 app.route('/api/configs', configsRouter);

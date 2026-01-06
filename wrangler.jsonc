@@ -21,6 +21,10 @@
     {
       "binding": "EMAIL_SUBSCRIPTIONS",
       "id": "1978914df8c641389e283b49eb023a77"
+    },
+    {
+      "binding": "OAUTH_TOKENS",
+      "id": "TODO_CREATE_KV_NAMESPACE"
     }
   ],
   "r2_buckets": [
@@ -39,6 +43,8 @@
     // Cloudflare Configuration
     "ACCOUNT_ID": "b286748abb233ddf7bf942f876f11eac",
     "GATEWAY_ID": "ai-agent-adapter",
+    // Better Auth Configuration
+    "BETTER_AUTH_URL": "https://agent-config-adapter.workers.dev",
     // Multi-Provider Configuration
     // Provider Selection: 'openai' | 'gemini' | 'auto' (auto = prefer Gemini, fallback to OpenAI)
     "AI_PROVIDER": "auto",
