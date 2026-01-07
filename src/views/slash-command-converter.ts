@@ -172,12 +172,10 @@ export function slashCommandConverterFormPartial(config: Config): string {
           </ul>
 
           <button
+            type="button"
             id="refresh-analysis-btn"
             class="btn btn-secondary ripple"
-            hx-post="/api/configs/${config.id}/refresh-analysis"
-            hx-target="#refresh-status"
-            hx-swap="innerHTML"
-            hx-indicator="#refresh-spinner"
+            onclick="requireAuth(() => htmx.ajax('POST', '/api/configs/${config.id}/refresh-analysis', {target: '#refresh-status', swap: 'innerHTML', indicator: '#refresh-spinner'}))"
             data-success-message="Analysis refreshed successfully"
             style="margin-top: 15px;">
             🔄 Refresh Analysis

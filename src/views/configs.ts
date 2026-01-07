@@ -223,11 +223,10 @@ export function configDetailView(config: Config, c?: any): string {
           </ul>
 
           <button
+            type="button"
             id="refresh-analysis-btn"
             class="btn btn-secondary ripple"
-            hx-post="/api/configs/${config.id}/refresh-analysis"
-            hx-target="#analysis-status"
-            hx-swap="innerHTML"
+            onclick="requireAuth(() => htmx.ajax('POST', '/api/configs/${config.id}/refresh-analysis', {target: '#analysis-status', swap: 'innerHTML'}))"
             data-success-message="Analysis refreshed successfully"
             data-error-message="Failed to refresh analysis"
             style="margin-top: 15px; display: inline-flex; align-items: center; gap: 8px;">
@@ -268,10 +267,9 @@ export function configDetailView(config: Config, c?: any): string {
     <h3>Actions</h3>
     <div style="margin-bottom: 20px;">
       <button
+        type="button"
         class="btn"
-        hx-post="/api/configs/${config.id}/invalidate"
-        hx-target="#cache-status"
-        hx-swap="innerHTML">
+        onclick="requireAuth(() => htmx.ajax('POST', '/api/configs/${config.id}/invalidate', {target: '#cache-status', swap: 'innerHTML'}))">
         Refresh Conversions
       </button>
       <span style="font-size: 0.875em; color: var(--text-secondary); margin-left: 10px;">
