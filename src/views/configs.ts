@@ -29,7 +29,7 @@ export function configListContainerPartial(
             <div style="font-size: 0.875em; margin-top: 8px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
               <span>Created: ${new Date(c.created_at).toLocaleDateString()}</span>
               <div class="quick-actions" style="opacity: 0; transition: opacity 0.2s;">
-                <button onclick="event.stopPropagation(); requireEmail(() => window.location.href='/configs/${c.id}/edit')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.875em; margin-right: 5px;">Edit</button>
+                <button onclick="event.stopPropagation(); requireAuth(() => window.location.href='/configs/${c.id}/edit')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.875em; margin-right: 5px;">Edit</button>
                 <a href="/configs/${c.id}" class="btn" style="padding: 4px 10px; font-size: 0.875em;">View →</a>
               </div>
             </div>
@@ -47,7 +47,8 @@ export function configListContainerPartial(
 
 export function configListView(
   configs: Config[],
-  currentFilters?: { type?: string; format?: string; search?: string }
+  currentFilters?: { type?: string; format?: string; search?: string },
+  c?: any
 ): string {
   const activeFilters = currentFilters || {};
   const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
@@ -55,7 +56,7 @@ export function configListView(
   const content = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 style="margin: 0;">All Configurations</h2>
-      <button onclick="requireEmail(() => window.location.href='/configs/new')" class="btn ripple">+ Add New Config</button>
+      <button onclick="requireAuth(() => window.location.href='/configs/new')" class="btn ripple">+ Add New Config</button>
     </div>
 
     <!-- Filter Controls -->
@@ -166,10 +167,10 @@ export function configListView(
       });
     </script>
   `;
-  return layout('Configurations', content);
+  return layout('Configurations', content, c);
 }
 
-export function configDetailView(config: Config): string {
+export function configDetailView(config: Config, c?: any): string {
   const isSlashCommand = config.type === 'slash_command';
 
   const content = `
@@ -193,7 +194,7 @@ export function configDetailView(config: Config): string {
         <button
           class="btn ripple copy-btn"
           id="copy-prompt-btn"
-          onclick="requireEmail(() => copyPromptContent())"
+          onclick="requireAuth(() => copyPromptContent())"
           style="display: inline-flex; align-items: center; gap: 8px;">
           ${icons.clipboard('icon')} Copy to Clipboard
         </button>
@@ -248,13 +249,13 @@ export function configDetailView(config: Config): string {
       ${icons.refresh('icon')} Convert to Different Formats
     </h3>
     <div style="margin-bottom: 20px;">
-      <button class="btn ripple" onclick="requireEmail(() => htmx.ajax('GET', '/api/configs/${config.id}/format/claude_code', {target:'#converted', indicator:'#convert-spinner'}))">
+      <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/claude_code', {target:'#converted', indicator:'#convert-spinner'}))">
         Claude Code
       </button>
-      <button class="btn ripple" onclick="requireEmail(() => htmx.ajax('GET', '/api/configs/${config.id}/format/codex', {target:'#converted', indicator:'#convert-spinner'}))">
+      <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/codex', {target:'#converted', indicator:'#convert-spinner'}))">
         Codex
       </button>
-      <button class="btn ripple" onclick="requireEmail(() => htmx.ajax('GET', '/api/configs/${config.id}/format/gemini', {target:'#converted', indicator:'#convert-spinner'}))">
+      <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/gemini', {target:'#converted', indicator:'#convert-spinner'}))">
         Gemini
       </button>
       <span id="convert-spinner" class="htmx-indicator">
@@ -280,13 +281,13 @@ export function configDetailView(config: Config): string {
     <div id="cache-status"></div>
 
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <button onclick="requireEmail(() => window.location.href='/configs/${config.id}/edit')" class="btn ripple" style="display: inline-flex; align-items: center; gap: 8px;">
+      <button onclick="requireAuth(() => window.location.href='/configs/${config.id}/edit')" class="btn ripple" style="display: inline-flex; align-items: center; gap: 8px;">
         ${icons.edit('icon')} Edit
       </button>
       <a href="/configs" class="btn btn-secondary">← Back to List</a>
       <button
         class="btn btn-danger ripple"
-        onclick="requireEmail(() => confirmAction('Are you sure you want to delete this config? This action cannot be undone.', () => {
+        onclick="requireAuth(() => confirmAction('Are you sure you want to delete this config? This action cannot be undone.', () => {
           htmx.ajax('DELETE', '/api/configs/${config.id}', {target:'body', swap:'outerHTML'});
         }))"
         style="display: inline-flex; align-items: center; gap: 8px;">
@@ -331,7 +332,7 @@ export function configDetailView(config: Config): string {
             <div class="card fade-in" style="margin-top: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">${icons.checkCircle('icon')} Converted Content</h3>
-                <button class="btn btn-secondary copy-btn" onclick="requireEmail(() => copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this))" style="display: inline-flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary copy-btn" onclick="requireAuth(() => copyToClipboard(\\\`\${data.content.replace(/\`/g, '\\\\\`')}\\\`, this))" style="display: inline-flex; align-items: center; gap: 6px;">
                   ${icons.clipboard('icon')} Copy
                 </button>
               </div>
@@ -368,10 +369,10 @@ export function configDetailView(config: Config): string {
       });
     </script>
   `;
-  return layout(config.name, content);
+  return layout(config.name, content, c);
 }
 
-export function configCreateView(): string {
+export function configCreateView(c?: any): string {
   const content = `
     <div class="fade-in">
       <h2 style="display: flex; align-items: center; gap: 12px;">
@@ -462,10 +463,10 @@ export function configCreateView(): string {
       });
     </script>
   `;
-  return layout('Add Config', content);
+  return layout('Add Config', content, c);
 }
 
-export function configEditView(config: Config): string {
+export function configEditView(config: Config, c?: any): string {
   const content = `
     <div class="fade-in">
       <h2 style="display: flex; align-items: center; gap: 12px;">
@@ -532,7 +533,7 @@ export function configEditView(config: Config): string {
       });
     </script>
   `;
-  return layout('Edit Config', content);
+  return layout('Edit Config', content, c);
 }
 
 function escapeHtml(text: string): string {

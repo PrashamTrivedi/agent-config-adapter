@@ -2,14 +2,14 @@ import { ExtensionWithConfigs, Config } from '../domain/types';
 import { layout } from './layout';
 import { icons } from './icons';
 
-export function extensionListView(extensions: ExtensionWithConfigs[]): string {
+export function extensionListView(extensions: ExtensionWithConfigs[], c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
           ${icons.package('icon')} Extensions
         </h2>
-        <button onclick="requireEmail(() => window.location.href='/extensions/new')" class="btn ripple">+ Create Extension</button>
+        <button onclick="requireAuth(() => window.location.href='/extensions/new')" class="btn ripple">+ Create Extension</button>
       </div>
 
       ${extensions.length === 0 ? `
@@ -19,7 +19,7 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
           </div>
           <h3>No extensions yet</h3>
           <p style="color: var(--text-secondary); margin-bottom: 20px;">Extensions bundle multiple configs into distributable packages</p>
-          <button onclick="requireEmail(() => window.location.href='/extensions/new')" class="btn">Create your first extension</button>
+          <button onclick="requireAuth(() => window.location.href='/extensions/new')" class="btn">Create your first extension</button>
         </div>
       ` : `
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
@@ -64,10 +64,10 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
       `}
     </div>
   `;
-  return layout('Extensions', content);
+  return layout('Extensions', content, c);
 }
 
-export function extensionDetailView(extension: ExtensionWithConfigs): string {
+export function extensionDetailView(extension: ExtensionWithConfigs, c?: any): string {
   const content = `
     <h2>${escapeHtml(extension.name)}</h2>
     <div style="margin-bottom: 20px;">
@@ -206,11 +206,11 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
 
     <h3>Actions</h3>
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-      <button onclick="requireEmail(() => window.location.href='/extensions/${extension.id}/edit')" class="btn ripple">${icons.edit('icon')} Edit</button>
+      <button onclick="requireAuth(() => window.location.href='/extensions/${extension.id}/edit')" class="btn ripple">${icons.edit('icon')} Edit</button>
       <a href="/extensions" class="btn btn-secondary">← Back to List</a>
       <button
         class="btn btn-danger ripple"
-        onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+        onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
         hx-delete="/api/extensions/${extension.id}"
         hx-trigger="click-confirmed"
         hx-confirm="Are you sure you want to delete this extension? This will not delete the configs."
@@ -231,7 +231,7 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
             <div class="card fade-in">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h4 style="margin: 0;">${icons.file('icon')} Manifest Content</h4>
-                <button class="btn btn-secondary copy-btn" onclick="requireEmail(() => copyManifest(\\\`\${jsonStr.replace(/\`/g, '\\\\\`')}\\\`))">
+                <button class="btn btn-secondary copy-btn" onclick="requireAuth(() => copyManifest(\\\`\${jsonStr.replace(/\`/g, '\\\\\`')}\\\`))">
                   ${icons.clipboard('icon')} Copy
                 </button>
               </div>
@@ -247,12 +247,13 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
       }
     </script>
   `;
-  return layout(extension.name, content);
+  return layout(extension.name, content, c);
 }
 
 export function extensionCreateView(
   availableConfigs: Config[],
-  currentFilters?: { type?: string; format?: string; search?: string }
+  currentFilters?: { type?: string; format?: string; search?: string },
+  c?: any
 ): string {
   const activeFilters = currentFilters || {};
   const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
@@ -437,13 +438,14 @@ export function extensionCreateView(
       });
     </script>
   `;
-  return layout('Create Extension', content);
+  return layout('Create Extension', content, c);
 }
 
 export function extensionEditView(
   extension: ExtensionWithConfigs,
   availableConfigs: Config[],
-  currentFilters?: { type?: string; format?: string; search?: string }
+  currentFilters?: { type?: string; format?: string; search?: string },
+  c?: any
 ): string {
   const selectedConfigIds = new Set(extension.configs.map(c => c.id));
   const activeFilters = currentFilters || {};
@@ -635,7 +637,7 @@ export function extensionEditView(
       });
     </script>
   `;
-  return layout('Edit Extension', content);
+  return layout('Edit Extension', content, c);
 }
 
 function escapeHtml(text: string): string {

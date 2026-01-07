@@ -140,7 +140,7 @@ export function slashCommandConverterFormPartial(config: Config): string {
           <button
             class="btn ripple copy-btn"
             id="copy-original-btn"
-            onclick="requireEmail(() => copyOriginalContent())"
+            onclick="requireAuth(() => copyOriginalContent())"
             style="display: inline-flex; align-items: center; gap: 8px;">
             ${icons.clipboard('icon')} Copy Original
           </button>
@@ -230,7 +230,7 @@ export function slashCommandConverterFormPartial(config: Config): string {
             type="button"
             id="convert-btn"
             class="btn ripple"
-            onclick="requireEmail(() => htmx.trigger('#convert-form', 'submit'))"
+            onclick="requireAuth(() => htmx.trigger('#convert-form', 'submit'))"
             data-loading-text="⏳ Converting...">
             ${icons.sparkles('icon')} Convert Command
           </button>
@@ -375,7 +375,7 @@ export function slashCommandConversionResultPartial(
         >${escapeHtml(convertedContent)}</textarea>
         <button
           class="btn btn-secondary copy-btn ripple"
-          onclick="requireEmail(() => copyOutput())"
+          onclick="requireAuth(() => copyOutput())"
           style="margin-top: 15px;">
           ${icons.clipboard('icon')} Copy to Clipboard
         </button>

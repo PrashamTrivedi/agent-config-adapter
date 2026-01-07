@@ -2,7 +2,7 @@ import { MarketplaceWithExtensions, ExtensionWithConfigs } from '../domain/types
 import { layout } from './layout';
 import { icons } from './icons';
 
-export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): string {
+export function marketplaceListView(marketplaces: MarketplaceWithExtensions[], c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -15,7 +15,7 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
           </p>
         </div>
         <div style="display: flex; gap: 10px;">
-          <button onclick="requireEmail(() => window.location.href='/marketplaces/new')" class="btn ripple">
+          <button onclick="requireAuth(() => window.location.href='/marketplaces/new')" class="btn ripple">
             ${icons.plus('icon')} Create Marketplace
           </button>
           <a href="/" class="btn btn-secondary">← Home</a>
@@ -29,7 +29,7 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
           </div>
           <h3 style="margin: 10px 0; color: var(--text-primary);">No marketplaces yet</h3>
           <p style="margin-bottom: 20px;">Create your first marketplace to distribute extension collections!</p>
-          <button onclick="requireEmail(() => window.location.href='/marketplaces/new')" class="btn">Create Marketplace</button>
+          <button onclick="requireAuth(() => window.location.href='/marketplaces/new')" class="btn">Create Marketplace</button>
         </div>
       ` : `
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px; margin-top: 20px;">
@@ -65,10 +65,10 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
       `}
     </div>
   `;
-  return layout('Marketplaces', content);
+  return layout('Marketplaces', content, c);
 }
 
-export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, origin?: string): string {
+export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, origin?: string, c?: any): string {
   const totalConfigs = marketplace.extensions.reduce((sum, ext) => sum + ext.configs.length, 0);
   const baseUrl = origin || '';
 
@@ -92,7 +92,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
           </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button onclick="requireEmail(() => window.location.href='/marketplaces/${marketplace.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="requireAuth(() => window.location.href='/marketplaces/${marketplace.id}/edit')" class="btn ripple" style="display: flex; align-items: center; gap: 8px;">
             ${icons.edit('icon')} Edit
           </button>
           <a href="/marketplaces" class="btn btn-secondary">← Back</a>
@@ -185,7 +185,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
               <button
-                onclick="requireEmail(() => copyMarketplaceUrl())"
+                onclick="requireAuth(() => copyMarketplaceUrl())"
                 class="btn ripple copy-btn"
                 style="width: 100%; text-align: center;">
                 ${icons.clipboard('icon')} Copy Marketplace URL
@@ -277,7 +277,7 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
         </p>
         <button
           class="btn btn-danger ripple"
-          onclick="requireEmail(() => htmx.trigger(this, 'click-confirmed'))"
+          onclick="requireAuth(() => htmx.trigger(this, 'click-confirmed'))"
           hx-delete="/api/marketplaces/${marketplace.id}"
           hx-trigger="click-confirmed"
           hx-confirm="Are you sure you want to delete this marketplace?"
@@ -296,10 +296,10 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
       }
     </script>
   `;
-  return layout(marketplace.name, content);
+  return layout(marketplace.name, content, c);
 }
 
-export function marketplaceCreateView(availableExtensions: ExtensionWithConfigs[]): string {
+export function marketplaceCreateView(availableExtensions: ExtensionWithConfigs[], c?: any): string {
   const content = `
     <h2>Create Marketplace</h2>
     <form hx-post="/api/marketplaces" hx-target="body" hx-swap="outerHTML">
@@ -383,10 +383,10 @@ export function marketplaceCreateView(availableExtensions: ExtensionWithConfigs[
       });
     </script>
   `;
-  return layout('Create Marketplace', content);
+  return layout('Create Marketplace', content, c);
 }
 
-export function marketplaceEditView(marketplace: MarketplaceWithExtensions, availableExtensions: ExtensionWithConfigs[]): string {
+export function marketplaceEditView(marketplace: MarketplaceWithExtensions, availableExtensions: ExtensionWithConfigs[], c?: any): string {
   const selectedExtensionIds = new Set(marketplace.extensions.map(e => e.id));
 
   const content = `
@@ -504,7 +504,7 @@ export function marketplaceEditView(marketplace: MarketplaceWithExtensions, avai
       });
     </script>
   `;
-  return layout('Edit Marketplace', content);
+  return layout('Edit Marketplace', content, c);
 }
 
 function escapeHtml(text: string): string {

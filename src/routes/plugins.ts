@@ -6,7 +6,6 @@ import {
   MarketplaceService,
 } from '../services';
 import { pluginBrowserView } from '../views/plugin-browser';
-import { lockdownMiddleware } from '../middleware/lockdown';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
 
@@ -405,7 +404,7 @@ pluginsRouter.get('/:extensionId/:format/*', async (c) => {
 });
 
 // Invalidate/regenerate plugin files
-pluginsRouter.post('/:extensionId/:format/invalidate', lockdownMiddleware, async (c) => {
+pluginsRouter.post('/:extensionId/:format/invalidate', async (c) => {
   const extensionId = c.req.param('extensionId');
   const format = c.req.param('format') as 'claude_code' | 'gemini';
 

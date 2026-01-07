@@ -98,3 +98,25 @@ EMAIL_API_KEY=
 #
 # Production: Generate a strong random token (32+ characters)
 MCP_ADMIN_TOKEN_HASH=bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721
+
+# ============================================================================
+# Authentication Configuration (Better Auth)
+# ============================================================================
+# Required for GitHub OAuth and Email OTP authentication
+
+# Better Auth Secret (required, 32+ character random string)
+# Generate: openssl rand -hex 32
+BETTER_AUTH_SECRET=
+
+# Base URL for Better Auth (defaults to localhost for dev)
+# Production: Set in wrangler.jsonc vars
+BETTER_AUTH_URL=http://localhost:8787
+
+# GitHub OAuth (required for GitHub login)
+# Create at: https://github.com/settings/developers
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# JWT Secret for MCP OAuth access tokens (required)
+# Generate: openssl rand -hex 32
+JWT_SECRET=

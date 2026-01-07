@@ -11,6 +11,7 @@ export interface Config {
   content: string;
   created_at: string;
   updated_at: string;
+  user_id?: string | null; // Owner of this config (null for legacy/public)
   // Slash command metadata (for conversion)
   has_arguments?: boolean;
   argument_hint?: string | null;
@@ -24,6 +25,7 @@ export interface CreateConfigInput {
   type: ConfigType;
   original_format: AgentFormat;
   content: string;
+  user_id?: string; // Owner of the config
 }
 
 export interface UpdateConfigInput {

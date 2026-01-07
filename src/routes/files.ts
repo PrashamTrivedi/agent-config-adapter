@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { FileStorageService } from '../services';
-import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
@@ -25,7 +24,7 @@ filesRouter.get('/extensions/:extensionId', async (c) => {
 });
 
 // Upload file to extension
-filesRouter.post('/extensions/:extensionId', lockdownMiddleware, async (c) => {
+filesRouter.post('/extensions/:extensionId', async (c) => {
   const extensionId = c.req.param('extensionId');
 
   // Parse multipart form data
@@ -107,7 +106,7 @@ filesRouter.get('/:fileId/download', async (c) => {
 });
 
 // Delete file
-filesRouter.delete('/:fileId', lockdownMiddleware, async (c) => {
+filesRouter.delete('/:fileId', async (c) => {
   const fileId = c.req.param('fileId');
   const service = new FileStorageService(c.env);
 

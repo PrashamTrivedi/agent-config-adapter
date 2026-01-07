@@ -15,8 +15,8 @@ export class ConfigRepository {
           `INSERT INTO configs (
             id, name, type, original_format, content,
             has_arguments, argument_hint, agent_references, skill_references, analysis_version,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            user_id, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .bind(
           id,
@@ -29,6 +29,7 @@ export class ConfigRepository {
           analysis.agentReferences.length > 0 ? JSON.stringify(analysis.agentReferences) : null,
           analysis.skillReferences.length > 0 ? JSON.stringify(analysis.skillReferences) : null,
           '1.0',
+          input.user_id || null,
           now,
           now
         )
@@ -42,6 +43,7 @@ export class ConfigRepository {
         content: input.content,
         created_at: now,
         updated_at: now,
+        user_id: input.user_id || null,
         has_arguments: analysis.hasArguments,
         argument_hint: analysis.argumentHint || null,
         agent_references: analysis.agentReferences.length > 0 ? JSON.stringify(analysis.agentReferences) : undefined,
@@ -53,10 +55,10 @@ export class ConfigRepository {
     // No analysis - original behavior
     await this.db
       .prepare(
-        `INSERT INTO configs (id, name, type, original_format, content, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO configs (id, name, type, original_format, content, user_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(id, input.name, input.type, input.original_format, input.content, now, now)
+      .bind(id, input.name, input.type, input.original_format, input.content, input.user_id || null, now, now)
       .run();
 
     return {
@@ -67,7 +69,29 @@ export class ConfigRepository {
       content: input.content,
       created_at: now,
       updated_at: now,
+      user_id: input.user_id || null,
     };
+  }
+
+  /**
+   * Get the owner of a config
+   */
+  async getOwnerId(id: string): Promise<string | null> {
+    const result = await this.db
+      .prepare('SELECT user_id FROM configs WHERE id = ?')
+      .bind(id)
+      .first<{ user_id: string | null }>();
+
+    return result?.user_id || null;
+  }
+
+  /**
+   * Check if a user owns a config
+   */
+  async isOwner(id: string, userId: string): Promise<boolean> {
+    const ownerId = await this.getOwnerId(id);
+    // Allow if no owner (legacy data) or if user is the owner
+    return ownerId === null || ownerId === userId;
   }
 
   async findById(id: string): Promise<Config | null> {

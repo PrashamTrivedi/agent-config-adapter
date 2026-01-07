@@ -6,9 +6,11 @@ import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provide
 import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
 import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
-import { lockdownMiddleware } from '../middleware/lockdown';
+import { requireOwnership, getIdFromParams } from '../middleware/ownership';
+import { requireAuth } from '../auth/session-middleware';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
+import '../auth/types';
 
 type Bindings = {
   DB: D1Database;
@@ -70,12 +72,12 @@ configsRouter.get('/', async (c) => {
   }
 
   // Return full HTML page for initial page load
-  return c.html(configListView(configs, { type, format, search }));
+  return c.html(configListView(configs, { type, format, search }, c));
 });
 
 // Route for creating new config (form) - MUST be before /:id route
 configsRouter.get('/new', async (c) => {
-  return c.html(configCreateView());
+  return c.html(configCreateView(c));
 });
 
 // Route for editing config (form) - MUST be before /:id route
@@ -93,7 +95,7 @@ configsRouter.get('/:id/edit', async (c) => {
     return c.redirect(`/skills/${id}/edit`);
   }
 
-  return c.html(configEditView(config));
+  return c.html(configEditView(config, c));
 });
 
 // Get single config
@@ -124,7 +126,7 @@ configsRouter.get('/:id', async (c) => {
     return c.json({ config });
   }
 
-  return c.html(configDetailView(config));
+  return c.html(configDetailView(config, c));
 });
 
 // Get config in specific format
@@ -171,8 +173,9 @@ configsRouter.get('/:id/format/:format', async (c) => {
   }
 });
 
-// Create new config
-configsRouter.post('/', lockdownMiddleware, async (c) => {
+// Create new config (requires authentication)
+configsRouter.post('/', requireAuth, async (c) => {
+  const userId = c.get('userId');
   let body: CreateConfigInput;
 
   // Handle both JSON and form data
@@ -190,6 +193,9 @@ configsRouter.post('/', lockdownMiddleware, async (c) => {
     };
   }
 
+  // Attach user_id to the input
+  body.user_id = userId || undefined;
+
   const service = new ConfigService(c.env);
 
   try {
@@ -200,8 +206,8 @@ configsRouter.post('/', lockdownMiddleware, async (c) => {
   }
 });
 
-// Update config
-configsRouter.put('/:id', lockdownMiddleware, async (c) => {
+// Update config (requires authentication and ownership)
+configsRouter.put('/:id', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
   let body;
 
@@ -236,8 +242,8 @@ configsRouter.put('/:id', lockdownMiddleware, async (c) => {
   return c.redirect(`/configs/${id}`);
 });
 
-// Manual cache invalidation
-configsRouter.post('/:id/invalidate', lockdownMiddleware, async (c) => {
+// Manual cache invalidation (requires authentication and ownership)
+configsRouter.post('/:id/invalidate', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
   const service = new ConfigService(c.env);
   await service.invalidateCache(id);
@@ -251,8 +257,8 @@ configsRouter.post('/:id/invalidate', lockdownMiddleware, async (c) => {
   return c.html('<p style="color: #4caf50; font-size: 0.875em;">✓ Cache invalidated successfully. Conversions will be re-processed.</p>');
 });
 
-// Refresh analysis for slash commands
-configsRouter.post('/:id/refresh-analysis', lockdownMiddleware, async (c) => {
+// Refresh analysis for slash commands (requires authentication and ownership)
+configsRouter.post('/:id/refresh-analysis', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
 
   // Initialize analyzer with ProviderFactory
@@ -329,8 +335,8 @@ configsRouter.post('/:id/refresh-analysis', lockdownMiddleware, async (c) => {
   }
 });
 
-// Delete config
-configsRouter.delete('/:id', lockdownMiddleware, async (c) => {
+// Delete config (requires authentication and ownership)
+configsRouter.delete('/:id', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
 
   const service = new ConfigService(c.env);

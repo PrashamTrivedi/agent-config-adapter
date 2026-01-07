@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
-import { lockdownMiddleware } from '../middleware/lockdown';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
 
@@ -30,12 +29,12 @@ skillsRouter.get('/', async (c) => {
     return c.json({ skills });
   }
 
-  return c.html(skillsListView(skills));
+  return c.html(skillsListView(skills, c));
 });
 
 // Create new skill form (UI)
 skillsRouter.get('/new', async (c) => {
-  return c.html(skillCreateView());
+  return c.html(skillCreateView(c));
 });
 
 // Edit skill form (UI)
@@ -48,7 +47,7 @@ skillsRouter.get('/:id/edit', async (c) => {
     return c.json({ error: 'Skill not found' }, 404);
   }
 
-  return c.html(skillEditView(skill));
+  return c.html(skillEditView(skill, c));
 });
 
 // Get skill with all files
@@ -74,11 +73,11 @@ skillsRouter.get('/:id', async (c) => {
     return c.json({ skill });
   }
 
-  return c.html(skillDetailView(skill));
+  return c.html(skillDetailView(skill, c));
 });
 
 // Create new skill (JSON or form)
-skillsRouter.post('/', lockdownMiddleware, async (c) => {
+skillsRouter.post('/', async (c) => {
   let body: CreateConfigInput;
 
   const contentType = c.req.header('Content-Type') || '';
@@ -105,7 +104,7 @@ skillsRouter.post('/', lockdownMiddleware, async (c) => {
 });
 
 // Upload skill from ZIP (coming soon)
-skillsRouter.post('/upload-zip', lockdownMiddleware, async (c) => {
+skillsRouter.post('/upload-zip', async (c) => {
   const contentType = c.req.header('Content-Type') || '';
 
   if (!contentType.includes('multipart/form-data')) {
@@ -141,7 +140,7 @@ skillsRouter.post('/upload-zip', lockdownMiddleware, async (c) => {
 });
 
 // Update skill
-skillsRouter.put('/:id', lockdownMiddleware, async (c) => {
+skillsRouter.put('/:id', async (c) => {
   const id = c.req.param('id');
   let body: UpdateConfigInput;
 
@@ -172,7 +171,7 @@ skillsRouter.put('/:id', lockdownMiddleware, async (c) => {
 });
 
 // Delete skill
-skillsRouter.delete('/:id', lockdownMiddleware, async (c) => {
+skillsRouter.delete('/:id', async (c) => {
   const id = c.req.param('id');
   const service = new SkillsService(c.env);
 
@@ -201,7 +200,7 @@ skillsRouter.get('/:id/files', async (c) => {
 });
 
 // Upload companion file(s) (coming soon)
-skillsRouter.post('/:id/files', lockdownMiddleware, async (c) => {
+skillsRouter.post('/:id/files', async (c) => {
   const id = c.req.param('id');
   const contentType = c.req.header('Content-Type') || '';
 
@@ -296,7 +295,7 @@ skillsRouter.get('/:id/files/:fileId', async (c) => {
 });
 
 // Delete companion file
-skillsRouter.delete('/:id/files/:fileId', lockdownMiddleware, async (c) => {
+skillsRouter.delete('/:id/files/:fileId', async (c) => {
   const id = c.req.param('id');
   const fileId = c.req.param('fileId');
   const service = new SkillsService(c.env);

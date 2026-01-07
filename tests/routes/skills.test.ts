@@ -229,7 +229,7 @@ describe('Skills Routes', () => {
   });
 
   describe('POST /', () => {
-    it('should return 403 due to lockdown (JSON)', async () => {
+    it('should create skill with JSON', async () => {
       const req = new Request('http://localhost/', {
         method: 'POST',
         headers: {
@@ -245,12 +245,12 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(201);
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.skill).toBeDefined();
     });
 
-    it('should return 403 due to lockdown (form data)', async () => {
+    it('should create skill with form data', async () => {
       const formData = new FormData();
       formData.append('name', 'Test Skill');
       formData.append('type', 'skill');
@@ -266,12 +266,12 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(201);
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.skill).toBeDefined();
     });
 
-    it('should return 403 even with invalid skill data', async () => {
+    it('should return 400 for invalid skill data', async () => {
       const req = new Request('http://localhost/', {
         method: 'POST',
         headers: {
@@ -280,22 +280,22 @@ describe('Skills Routes', () => {
         },
         body: JSON.stringify({
           name: 'Test',
-          type: 'slash_command', // Invalid type
+          type: 'slash_command', // Invalid type for skills endpoint
           original_format: 'claude_code',
           content: 'content',
         }),
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(400);
     });
   });
 
   describe('POST /upload-zip', () => {
-    it('should return 403 due to lockdown', async () => {
-      // Create a minimal ZIP file with SKILL.md
+    it('should return 400 for invalid ZIP', async () => {
+      // Create a minimal invalid ZIP file
       const zipContent = new Uint8Array([
-        0x50, 0x4b, 0x03, 0x04, // ZIP header
+        0x50, 0x4b, 0x03, 0x04, // ZIP header but incomplete
       ]);
 
       const formData = new FormData();
@@ -312,12 +312,10 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
-      const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(res.status).toBe(400);
     });
 
-    it('should return 403 due to lockdown (wrong content type)', async () => {
+    it('should return 400 for wrong content type', async () => {
       const req = new Request('http://localhost/upload-zip', {
         method: 'POST',
         headers: {
@@ -328,10 +326,10 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(400);
     });
 
-    it('should return 403 due to lockdown (missing file)', async () => {
+    it('should return 400 for missing file', async () => {
       const formData = new FormData();
       formData.append('name', 'Test Skill');
 
@@ -344,12 +342,29 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(400);
     });
   });
 
   describe('PUT /:id', () => {
-    it('should return 403 due to lockdown (JSON)', async () => {
+    it('should update skill with JSON', async () => {
+      const mockSkill = {
+        id: 'skill-1',
+        name: 'Updated Skill',
+        type: 'skill',
+        original_format: 'claude_code',
+        content: '# Updated',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(mockSkill),
+          run: vi.fn().mockResolvedValue({ success: true }),
+        }),
+      });
+
       const req = new Request('http://localhost/skill-1', {
         method: 'PUT',
         headers: {
@@ -363,12 +378,29 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.skill).toBeDefined();
     });
 
-    it('should return 403 due to lockdown (form data)', async () => {
+    it('should update skill with form data', async () => {
+      const mockSkill = {
+        id: 'skill-1',
+        name: 'Updated Skill',
+        type: 'skill',
+        original_format: 'claude_code',
+        content: '# Updated',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(mockSkill),
+          run: vi.fn().mockResolvedValue({ success: true }),
+        }),
+      });
+
       const formData = new FormData();
       formData.append('name', 'Updated Skill');
       formData.append('content', '# Updated');
@@ -382,12 +414,19 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.skill).toBeDefined();
     });
 
-    it('should return 403 due to lockdown (non-existent skill)', async () => {
+    it('should return 404 for non-existent skill', async () => {
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(null),
+          run: vi.fn().mockResolvedValue({ success: true }),
+        }),
+      });
+
       const req = new Request('http://localhost/nonexistent', {
         method: 'PUT',
         headers: {
@@ -398,12 +437,55 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
   describe('DELETE /:id', () => {
-    it('should return 403 due to lockdown', async () => {
+    it('should delete skill', async () => {
+      const mockSkill = {
+        id: 'skill-1',
+        name: 'Test Skill',
+        type: 'skill',
+        original_format: 'claude_code',
+        content: '# Test',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      mockDb.prepare = vi.fn((query: string) => {
+        // findBySkillId - get files to delete from R2
+        if (query.includes('SELECT * FROM skill_files WHERE skill_id')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              all: vi.fn().mockResolvedValue({ results: [] }),
+            }),
+          };
+        }
+        // configRepo.delete - check if exists first, then delete
+        if (query.includes('SELECT * FROM configs WHERE id')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(mockSkill),
+            }),
+          };
+        }
+        if (query.includes('DELETE FROM configs')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
+            }),
+          };
+        }
+        return {
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+            all: vi.fn().mockResolvedValue({ results: [] }),
+            run: vi.fn().mockResolvedValue({ success: true }),
+          }),
+        };
+      });
+
       const req = new Request('http://localhost/skill-1', {
         method: 'DELETE',
         headers: {
@@ -412,13 +494,37 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
 
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.success).toBe(true);
     });
 
-    it('should return 403 due to lockdown (non-existent skill)', async () => {
+    it('should return 404 for non-existent skill', async () => {
+      mockDb.prepare = vi.fn((query: string) => {
+        if (query.includes('SELECT * FROM skill_files WHERE skill_id')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              all: vi.fn().mockResolvedValue({ results: [] }),
+            }),
+          };
+        }
+        if (query.includes('DELETE FROM configs')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 0 } }),
+            }),
+          };
+        }
+        return {
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+            all: vi.fn().mockResolvedValue({ results: [] }),
+            run: vi.fn().mockResolvedValue({ success: true }),
+          }),
+        };
+      });
+
       const req = new Request('http://localhost/nonexistent', {
         method: 'DELETE',
         headers: {
@@ -427,7 +533,7 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -463,7 +569,69 @@ describe('Skills Routes', () => {
   });
 
   describe('POST /:id/files', () => {
-    it('should return 403 due to lockdown', async () => {
+    it('should upload companion file', async () => {
+      // Mock skill exists
+      const mockSkill = {
+        id: 'skill-1',
+        name: 'Test Skill',
+        type: 'skill',
+        original_format: 'claude_code',
+        content: '# Test',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      // Mock file record creation
+      const mockFileRecord = {
+        id: 'new-file-1',
+        skill_id: 'skill-1',
+        file_path: 'FORMS.md',
+        r2_key: 'skills/skill-1/files/FORMS.md',
+        file_size: 12,
+        mime_type: 'text/markdown',
+        created_at: '2024-01-01',
+      };
+
+      mockDb.prepare = vi.fn((query: string) => {
+        if (query.includes('SELECT * FROM configs')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(mockSkill),
+            }),
+          };
+        }
+        if (query.includes('SELECT * FROM skill_files WHERE skill_id = ? AND file_path = ?')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(null), // No duplicate
+            }),
+          };
+        }
+        if (query.includes('INSERT INTO skill_files')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              run: vi.fn().mockResolvedValue({ success: true }),
+            }),
+          };
+        }
+        if (query.includes('SELECT * FROM skill_files WHERE id = ?')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(mockFileRecord),
+            }),
+          };
+        }
+        return {
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+            all: vi.fn().mockResolvedValue({ results: [] }),
+            run: vi.fn().mockResolvedValue({ success: true }),
+          }),
+        };
+      });
+
+      mockR2.put = vi.fn().mockResolvedValue(undefined);
+
       const fileContent = new Blob(['# Test Form'], { type: 'text/markdown' });
       const formData = new FormData();
       formData.append('file_path', 'FORMS.md');
@@ -478,12 +646,12 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(201);
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.files).toBeDefined();
     });
 
-    it('should return 403 due to lockdown (wrong content type)', async () => {
+    it('should return 400 for wrong content type', async () => {
       const req = new Request('http://localhost/skill-1/files', {
         method: 'POST',
         headers: {
@@ -494,10 +662,10 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(400);
     });
 
-    it('should return 403 due to lockdown (no files)', async () => {
+    it('should return 400 for no files', async () => {
       const formData = new FormData();
 
       const req = new Request('http://localhost/skill-1/files', {
@@ -509,10 +677,18 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(400);
     });
 
-    it('should return 403 due to lockdown (skill not found)', async () => {
+    it('should return 404 for skill not found', async () => {
+      // Mock skill not found
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(null),
+          all: vi.fn().mockResolvedValue({ results: [] }),
+        }),
+      });
+
       const fileContent = new Blob(['# Test'], { type: 'text/markdown' });
       const formData = new FormData();
       formData.append('file_path', 'test.md');
@@ -527,10 +703,56 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
-    it('should return 403 due to lockdown (duplicate file)', async () => {
+    it('should return 409 for duplicate file', async () => {
+      // Mock skill exists
+      const mockSkill = {
+        id: 'skill-1',
+        name: 'Test Skill',
+        type: 'skill',
+        original_format: 'claude_code',
+        content: '# Test',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      // Mock existing file
+      const existingFile = {
+        id: 'file-1',
+        skill_id: 'skill-1',
+        file_path: 'FORMS.md',
+        r2_key: 'skills/skill-1/files/FORMS.md',
+        file_size: 100,
+        mime_type: 'text/markdown',
+        created_at: '2024-01-01',
+      };
+
+      mockDb.prepare = vi.fn((query: string) => {
+        if (query.includes('SELECT * FROM configs')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(mockSkill),
+            }),
+          };
+        }
+        if (query.includes('SELECT * FROM skill_files WHERE skill_id = ? AND file_path = ?')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(existingFile),
+            }),
+          };
+        }
+        return {
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+            all: vi.fn().mockResolvedValue({ results: [] }),
+            run: vi.fn().mockResolvedValue({ success: true }),
+          }),
+        };
+      });
+
       const fileContent = new Blob(['# Test'], { type: 'text/markdown' });
       const formData = new FormData();
       formData.append('file_path', 'FORMS.md');
@@ -545,7 +767,7 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(409);
     });
   });
 
@@ -598,7 +820,45 @@ describe('Skills Routes', () => {
   });
 
   describe('DELETE /:id/files/:fileId', () => {
-    it('should return 403 due to lockdown', async () => {
+    it('should delete companion file', async () => {
+      // Mock file exists
+      const mockFile = {
+        id: 'file-1',
+        skill_id: 'skill-1',
+        file_path: 'FORMS.md',
+        r2_key: 'skills/skill-1/files/FORMS.md',
+        file_size: 100,
+        mime_type: 'text/markdown',
+        created_at: '2024-01-01',
+      };
+
+      mockDb.prepare = vi.fn((query: string) => {
+        // findById - get file to check existence
+        if (query.includes('SELECT * FROM skill_files WHERE id')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(mockFile),
+            }),
+          };
+        }
+        // delete from skill_files
+        if (query.includes('DELETE FROM skill_files')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
+            }),
+          };
+        }
+        return {
+          bind: vi.fn().mockReturnValue({
+            first: vi.fn().mockResolvedValue(null),
+            run: vi.fn().mockResolvedValue({ success: true }),
+          }),
+        };
+      });
+
+      mockR2.delete = vi.fn().mockResolvedValue(undefined);
+
       const req = new Request('http://localhost/skill-1/files/file-1', {
         method: 'DELETE',
         headers: {
@@ -607,13 +867,19 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
 
       const data = await res.json();
-      expect(data.coming_soon).toBe(true);
+      expect(data.success).toBe(true);
     });
 
-    it('should return 403 due to lockdown (file not found)', async () => {
+    it('should return 404 for file not found', async () => {
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(null),
+        }),
+      });
+
       const req = new Request('http://localhost/skill-1/files/nonexistent', {
         method: 'DELETE',
         headers: {
@@ -622,7 +888,7 @@ describe('Skills Routes', () => {
       });
 
       const res = await app.request(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
   });
 

@@ -7,7 +7,6 @@ import {
   extensionCreateView,
   extensionEditView,
 } from '../views/extensions';
-import { lockdownMiddleware } from '../middleware/lockdown';
 
 type Bindings = {
   DB: D1Database;
@@ -42,7 +41,7 @@ extensionsRouter.get('/new', async (c) => {
   if (search) filters.searchName = search;
 
   const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-  const view = extensionCreateView(availableConfigs, { type, format, search });
+  const view = extensionCreateView(availableConfigs, { type, format, search }, c);
   return c.html(view);
 });
 
@@ -74,7 +73,7 @@ extensionsRouter.get('/:id/edit', async (c) => {
   if (search) filters.searchName = search;
 
   const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-  const view = extensionEditView(extension, availableConfigs, { type, format, search });
+  const view = extensionEditView(extension, availableConfigs, { type, format, search }, c);
   return c.html(view);
 });
 
@@ -90,7 +89,7 @@ extensionsRouter.get('/', async (c) => {
 
   // For HTML views, get extensions with configs
   const extensions = await service.listExtensionsWithConfigs();
-  const view = extensionListView(extensions);
+  const view = extensionListView(extensions, c);
   return c.html(view);
 });
 
@@ -109,7 +108,7 @@ extensionsRouter.get('/:id', async (c) => {
     return c.json({ extension });
   }
 
-  const view = extensionDetailView(extension);
+  const view = extensionDetailView(extension, c);
   return c.html(view);
 });
 
@@ -158,7 +157,7 @@ extensionsRouter.get('/:id/manifest/:format', async (c) => {
 });
 
 // Create new extension
-extensionsRouter.post('/', lockdownMiddleware, async (c) => {
+extensionsRouter.post('/', async (c) => {
   let body: CreateExtensionInput;
 
   // Handle both JSON and form data
@@ -199,7 +198,7 @@ extensionsRouter.post('/', lockdownMiddleware, async (c) => {
 });
 
 // Update extension
-extensionsRouter.put('/:id', lockdownMiddleware, async (c) => {
+extensionsRouter.put('/:id', async (c) => {
   const id = c.req.param('id');
   let body: UpdateExtensionInput;
 
@@ -230,7 +229,7 @@ extensionsRouter.put('/:id', lockdownMiddleware, async (c) => {
 });
 
 // Delete extension
-extensionsRouter.delete('/:id', lockdownMiddleware, async (c) => {
+extensionsRouter.delete('/:id', async (c) => {
   const id = c.req.param('id');
 
   const service = new ExtensionService(c.env);
@@ -244,7 +243,7 @@ extensionsRouter.delete('/:id', lockdownMiddleware, async (c) => {
   const accept = c.req.header('Accept') || '';
   if (accept.includes('text/html')) {
     const allExtensions = await service.listExtensionsWithConfigs();
-    const view = extensionListView(allExtensions);
+    const view = extensionListView(allExtensions, c);
     return c.html(view);
   }
 
@@ -265,7 +264,7 @@ extensionsRouter.get('/:id/configs', async (c) => {
 });
 
 // Add single config to extension
-extensionsRouter.post('/:id/configs/:configId', lockdownMiddleware, async (c) => {
+extensionsRouter.post('/:id/configs/:configId', async (c) => {
   const id = c.req.param('id');
   const configId = c.req.param('configId');
 
@@ -280,7 +279,7 @@ extensionsRouter.post('/:id/configs/:configId', lockdownMiddleware, async (c) =>
 });
 
 // Add multiple configs to extension (batch operation)
-extensionsRouter.post('/:id/configs', lockdownMiddleware, async (c) => {
+extensionsRouter.post('/:id/configs', async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json<{ config_ids: string[] }>();
 
@@ -299,7 +298,7 @@ extensionsRouter.post('/:id/configs', lockdownMiddleware, async (c) => {
 });
 
 // Remove config from extension
-extensionsRouter.delete('/:id/configs/:configId', lockdownMiddleware, async (c) => {
+extensionsRouter.delete('/:id/configs/:configId', async (c) => {
   const id = c.req.param('id');
   const configId = c.req.param('configId');
 
@@ -317,7 +316,7 @@ extensionsRouter.delete('/:id/configs/:configId', lockdownMiddleware, async (c) 
 });
 
 // Invalidate extension cache
-extensionsRouter.post('/:id/invalidate', lockdownMiddleware, async (c) => {
+extensionsRouter.post('/:id/invalidate', async (c) => {
   const id = c.req.param('id');
   const service = new ExtensionService(c.env);
 
