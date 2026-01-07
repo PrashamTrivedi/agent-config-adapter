@@ -7,7 +7,8 @@ import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { subscriptionsRouter } from './routes/subscriptions';
-import { authRouter, authUIRouter } from './routes/auth';
+import { authUIRouter } from './routes/auth';
+import { createAuth } from './auth/better-auth';
 import { profileRouter } from './routes/profile';
 import onboardingRoutes from './routes/onboarding';
 import { layout } from './views/layout';
@@ -251,8 +252,17 @@ app.get('/', async (c) => {
 // Mount onboarding routes
 app.route('/', onboardingRoutes);
 
-// Mount auth routes
-app.route('/api/auth', authRouter);
+// Mount Better Auth API routes
+// Using wildcard route to catch all /api/auth/* paths
+app.all('/api/auth/*', async (c) => {
+  console.log('Better Auth handler called:', c.req.method, c.req.url);
+  const auth = createAuth(c.env);
+  const response = await auth.handler(c.req.raw);
+  console.log('Better Auth response:', response.status);
+  return response;
+});
+
+// Mount auth UI routes
 app.route('/auth', authUIRouter);
 
 // Mount profile routes (handles /profile/* and /api/profile/*)

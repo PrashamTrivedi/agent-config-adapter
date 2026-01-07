@@ -24,9 +24,25 @@ export const authRouter = new Hono<{ Bindings: Bindings }>();
  * Better Auth handler - handles all /api/auth/* routes
  * This includes OAuth callbacks, session management, etc.
  */
-authRouter.on(['GET', 'POST'], '/*', async (c) => {
-  const auth = createAuth(c.env);
-  return auth.handler(c.req.raw);
+authRouter.all('/*', async (c) => {
+  try {
+    const auth = createAuth(c.env);
+
+    // Create a new Request with the base URL that matches Better Auth's baseURL config
+    // This ensures Better Auth can properly route the request
+    const url = new URL(c.req.url);
+    const authRequest = new Request(url, c.req.raw);
+
+    console.log('Better Auth handler - URL:', url.toString());
+
+    const response = await auth.handler(authRequest);
+    console.log('Better Auth response:', response.status);
+
+    return response;
+  } catch (error) {
+    console.error('Better Auth handler error:', error);
+    return c.json({ error: 'Authentication error' }, 500);
+  }
 });
 
 /**
@@ -74,12 +90,14 @@ authUIRouter.get('/login', async (c) => {
         }
 
         <!-- GitHub OAuth Button -->
-        <a href="/api/auth/sign-in/social?provider=github&callbackURL=${encodeURIComponent(returnUrl)}"
-           class="btn ripple"
-           style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px; font-size: 1em; margin-bottom: 16px; background: #24292e;">
+        <button
+          onclick="signInWithGitHub('${returnUrl}')"
+          type="button"
+          class="btn ripple"
+          style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px; font-size: 1em; margin-bottom: 16px; background: #24292e;">
           ${icons.github('icon')}
           <span>Continue with GitHub</span>
-        </a>
+        </button>
 
         <div style="display: flex; align-items: center; gap: 16px; margin: 24px 0;">
           <div style="flex: 1; height: 1px; background: var(--border-dim);"></div>
@@ -141,6 +159,29 @@ authUIRouter.get('/login', async (c) => {
     <script>
       let otpSent = false;
       const returnUrl = '${returnUrl}';
+
+      async function signInWithGitHub(callbackURL) {
+        try {
+          const response = await fetch('/api/auth/sign-in/social', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: 'github', callbackURL }),
+            credentials: 'include'
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.url) {
+            // Redirect to GitHub OAuth page
+            window.location.href = data.url;
+          } else {
+            alert('Failed to initiate GitHub sign-in. Please try again.');
+          }
+        } catch (error) {
+          console.error('GitHub sign-in error:', error);
+          alert('An error occurred. Please try again.');
+        }
+      }
 
       async function sendOTP(event) {
         event.preventDefault();
