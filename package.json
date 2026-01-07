@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "@google/genai": "^1.29.0",
-    "@modelcontextprotocol/sdk": "^1.20.0",
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "better-auth": "^1.4.10",
     "fetch-to-node": "^2.1.0",
     "fflate": "^0.8.2",
