@@ -333,6 +333,75 @@ export async function handleTokenExchange(c: Context): Promise<Response> {
 }
 
 /**
+ * Token Exchange - Convert web session to MCP tokens
+ * POST /mcp/oauth/exchange
+ *
+ * This endpoint allows authenticated web users to obtain MCP tokens
+ * without going through the full OAuth PKCE flow. The web session
+ * (via Better Auth cookie) is exchanged for MCP access + refresh tokens.
+ *
+ * Tokens are tied to the user's identity.
+ * Each call issues fresh tokens (access + refresh).
+ *
+ * Requires: Valid session cookie (from Better Auth)
+ * Returns: { access_token, refresh_token, expires_in }
+ */
+export async function handleSessionTokenExchange(c: Context): Promise<Response> {
+  const user = c.get('user');
+  const kvStore = c.env.OAUTH_TOKENS as KVNamespace;
+  const jwtSecret = c.env.JWT_SECRET || c.env.BETTER_AUTH_SECRET;
+
+  if (!jwtSecret) {
+    return c.json<TokenErrorResponse>(
+      { error: 'server_error', error_description: 'JWT secret not configured' },
+      500
+    );
+  }
+
+  if (!user) {
+    return c.json<TokenErrorResponse>(
+      {
+        error: 'invalid_grant',
+        error_description: 'Valid session required. Please log in first.',
+      },
+      401
+    );
+  }
+
+  // Generate MCP access token from session (1 day lifetime)
+  const accessToken = await signAccessToken(
+    {
+      sub: user.id,
+      scope: 'read write',
+      client_id: 'web_session_exchange',
+      jti: generateRandomString(16),
+    },
+    jwtSecret,
+    3600 * 24 // 1 day
+  );
+
+  // Generate refresh token (30 days, matching extended MCP access)
+  const refreshToken = generateRandomString(64);
+  await kvStore.put(
+    `refresh_token:${refreshToken}`,
+    JSON.stringify({
+      userId: user.id,
+      scope: 'read write',
+      clientId: 'web_session_exchange',
+    }),
+    { expirationTtl: 60 * 60 * 24 * 30 } // 30 days
+  );
+
+  return c.json<TokenResponse>({
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: 86400, // 1 day in seconds
+    refresh_token: refreshToken,
+    scope: 'read write',
+  });
+}
+
+/**
  * Handle dynamic client registration (RFC 7591)
  * POST /mcp/oauth/register
  */

@@ -7,6 +7,7 @@ export interface OAuthMetadata {
   issuer: string;
   authorization_endpoint: string;
   token_endpoint: string;
+  token_exchange_endpoint?: string; // Custom endpoint for web session to MCP token exchange
   registration_endpoint?: string;
   scopes_supported: string[];
   response_types_supported: string[];
@@ -25,6 +26,7 @@ export function getOAuthMetadata(baseUrl: string): OAuthMetadata {
     issuer: baseUrl,
     authorization_endpoint: `${baseUrl}/mcp/oauth/authorize`,
     token_endpoint: `${baseUrl}/mcp/oauth/token`,
+    token_exchange_endpoint: `${baseUrl}/mcp/oauth/exchange`, // Web session to MCP token exchange
     registration_endpoint: `${baseUrl}/mcp/oauth/register`,
     scopes_supported: [
       'read', // Read configs
@@ -47,8 +49,10 @@ export interface MCPServerMetadata {
   name: string;
   version: string;
   description: string;
+  authentication: 'required' | 'optional';
   oauth_metadata_url: string;
   mcp_endpoint: string;
+  token_exchange_endpoint: string;
   capabilities: string[];
 }
 
@@ -60,8 +64,10 @@ export function getMCPServerMetadata(baseUrl: string): MCPServerMetadata {
     name: 'Agent Config Adapter',
     version: '1.0.0',
     description: 'Universal configuration adapter for AI coding agents',
+    authentication: 'required',
     oauth_metadata_url: `${baseUrl}/.well-known/oauth-authorization-server`,
-    mcp_endpoint: `${baseUrl}/mcp/oauth`,
+    mcp_endpoint: `${baseUrl}/mcp`,
+    token_exchange_endpoint: `${baseUrl}/mcp/oauth/exchange`,
     capabilities: ['configs', 'skills', 'extensions', 'marketplaces'],
   };
 }

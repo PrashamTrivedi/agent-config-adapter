@@ -10,6 +10,7 @@ import {
   handleAuthorizePost,
   handleTokenExchange,
   handleClientRegistration,
+  handleSessionTokenExchange,
 } from './handlers';
 import { mcpOAuthMiddleware, requireMCPAuth } from './middleware';
 import { handleMCPStreamable } from '../transport';
@@ -62,6 +63,16 @@ mcpOAuthRouter.post('/authorize', handleAuthorizePost);
  * POST /mcp/oauth/token
  */
 mcpOAuthRouter.post('/token', handleTokenExchange);
+
+/**
+ * Token Exchange - Web session to MCP tokens
+ * POST /mcp/oauth/exchange
+ *
+ * Allows authenticated web users to obtain MCP tokens directly
+ * without going through the full OAuth PKCE flow.
+ * Requires active web session (cookie auth via Better Auth).
+ */
+mcpOAuthRouter.post('/exchange', handleSessionTokenExchange);
 
 /**
  * Dynamic client registration (RFC 7591)

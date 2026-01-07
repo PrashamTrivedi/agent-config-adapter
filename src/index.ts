@@ -16,7 +16,7 @@ import { icons } from './views/icons';
 import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
-import { mcpOAuthRouter, getOAuthMetadata } from './mcp/oauth';
+import { mcpOAuthRouter, getOAuthMetadata, mcpOAuthMiddleware } from './mcp/oauth';
 import type { AnalyticsEngineDataset } from './domain/types';
 import { AnalyticsService } from './services/analytics-service';
 import { utmPersistenceMiddleware } from './middleware/utm-persistence';
@@ -315,15 +315,35 @@ app.route('/mcp/oauth', mcpOAuthRouter);
 
 // MCP Server endpoints
 
-// MCP server (full access for authenticated users, read-only for anonymous)
-app.post('/mcp', async (c) => {
-  // Check if user is authenticated via session
-  const userId = c.get('userId');
+// MCP server - OAuth required for all access
+// Supports both session-based auth (cookie) and Bearer token auth
+app.post('/mcp', mcpOAuthMiddleware, async (c) => {
+  // Check for authentication from either:
+  // 1. Session middleware (web session cookie)
+  // 2. MCP OAuth middleware (Bearer token)
+  const sessionUserId = c.get('userId');
 
-  // Authenticated users get full access, anonymous users get read-only
-  const accessLevel = userId ? 'full' : 'readonly';
-  const server = createMCPServer(c.env, accessLevel);
+  if (!sessionUserId) {
+    // No authentication - return 401 with RFC 6750 WWW-Authenticate header
+    const baseUrl = new URL(c.req.url).origin;
+    return c.json(
+      {
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32001,
+          message: 'Authentication required. Use OAuth to connect.',
+        },
+      },
+      401,
+      {
+        'WWW-Authenticate': `Bearer realm="${baseUrl}/mcp", authorization_uri="${baseUrl}/mcp/oauth/authorize", token_uri="${baseUrl}/mcp/oauth/token", resource="${baseUrl}/mcp"`,
+      }
+    );
+  }
 
+  // Authenticated users get full access
+  const server = createMCPServer(c.env, 'full');
   return handleMCPStreamable(c.req.raw, server);
 });
 
@@ -356,21 +376,23 @@ app.post('/mcp/admin', async (c) => {
 });
 
 // MCP Server info endpoint
-// Shows dynamic capabilities based on authentication status
+// OAuth is required for all MCP access
 // Admin endpoint (/mcp/admin) is SECRET and undocumented
 app.get('/mcp/info', (c) => {
   const accept = c.req.header('Accept') || '';
   const userId = c.get('userId');
   const isAuthenticated = !!userId;
+  const baseUrl = c.req.url.replace('/mcp/info', '');
 
-  // Dynamic capabilities based on authentication
-  const mcpInfo = isAuthenticated ? {
+  // MCP info - OAuth is always required
+  const mcpInfo = {
     name: 'agent-config-adapter',
     version: '1.0.0',
     description: 'Universal configuration adapter for AI coding agents',
     transport: 'streamable-http',
     endpoint: '/mcp',
-    access: 'Authenticated - Full Access',
+    authentication: 'required',
+    access: isAuthenticated ? 'Authenticated - Full Access' : 'Authentication Required',
     capabilities: {
       tools: [
         'get_config - Get a single configuration by ID',
@@ -391,55 +413,39 @@ app.get('/mcp/info', (c) => {
         'sync_config_versions - Sync configurations across formats'
       ]
     },
+    oauth: {
+      authorization_endpoint: `${baseUrl}/mcp/oauth/authorize`,
+      token_endpoint: `${baseUrl}/mcp/oauth/token`,
+      token_exchange_endpoint: `${baseUrl}/mcp/oauth/exchange`,
+      registration_endpoint: `${baseUrl}/mcp/oauth/register`,
+      scopes_supported: ['read', 'write'],
+      grant_types_supported: ['authorization_code', 'refresh_token'],
+      code_challenge_methods_supported: ['S256', 'plain'],
+    },
     usage: {
-      connection: 'POST requests to /mcp endpoint with session cookie',
-      authentication: 'Automatic via browser session (OAuth)',
+      connection: 'POST requests to /mcp endpoint with Bearer token',
+      authentication: 'OAuth 2.0 with PKCE or token exchange from web session',
+      token_lifetime: {
+        access_token: '1 day',
+        refresh_token: '30 days',
+      },
       example_client_config: {
         mcpServers: {
           'agent-config-adapter': {
             type: 'http',
-            url: `${c.req.url.replace('/mcp/info', '')}/mcp`
+            url: `${baseUrl}/mcp`,
+            headers: {
+              Authorization: 'Bearer YOUR_ACCESS_TOKEN'
+            }
           }
         }
       }
     },
     documentation: {
-      access_level: 'Full access (authenticated user)',
+      access_level: 'Full access requires authentication',
+      how_to_authenticate: 'Log in at /auth/login, then get tokens at /profile or use /mcp/oauth/exchange',
       resources_behavior: 'Resources provide context data for AI agents',
       tools_behavior: 'All CRUD operations available for authenticated users'
-    }
-  } : {
-    name: 'agent-config-adapter',
-    version: '1.0.0',
-    description: 'Universal configuration adapter for AI coding agents',
-    transport: 'streamable-http',
-    endpoint: '/mcp',
-    access: 'Public read-only',
-    capabilities: {
-      tools: [
-        'get_config - Get a single configuration by ID'
-      ],
-      resources: [
-        'config://list - List all configurations from database'
-      ],
-      prompts: []
-    },
-    usage: {
-      connection: 'POST requests to /mcp endpoint (no authentication required)',
-      authentication: 'None (read-only access)',
-      example_client_config: {
-        mcpServers: {
-          'agent-config-adapter': {
-            type: 'http',
-            url: `${c.req.url.replace('/mcp/info', '')}/mcp`
-          }
-        }
-      }
-    },
-    documentation: {
-      access_level: 'Public read-only access (no write operations)',
-      resources_behavior: 'Resources provide context data for AI agents',
-      tools_behavior: 'Only read operations are available. Sign in for full access.'
     }
   };
 
@@ -464,27 +470,27 @@ app.get('/mcp/info', (c) => {
         </div>
       </div>
 
-      <!-- Access Level -->
+      <!-- Authentication Status -->
       ${isAuthenticated ? `
         <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-left: 4px solid #34d399;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="font-size: 2em;">🔓</div>
             <div>
-              <h3 style="margin: 0 0 4px 0; color: white;">Full Access Enabled</h3>
+              <h3 style="margin: 0 0 4px 0; color: white;">Authenticated</h3>
               <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">
-                You're authenticated! All CRUD operations available via MCP.
+                You're logged in. Go to <a href="/profile" style="color: white; text-decoration: underline;">your profile</a> to generate MCP tokens.
               </p>
             </div>
           </div>
         </div>
       ` : `
-        <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-left: 4px solid #fbbf24;">
+        <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-left: 4px solid #f87171;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 2em;">🔒</div>
+            <div style="font-size: 2em;">🔐</div>
             <div>
-              <h3 style="margin: 0 0 4px 0; color: white;">Read-Only Access</h3>
+              <h3 style="margin: 0 0 4px 0; color: white;">Authentication Required</h3>
               <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">
-                <a href="/auth/login" style="color: white; text-decoration: underline;">Sign in</a> to unlock full CRUD operations via MCP.
+                MCP access requires authentication. <a href="/auth/login" style="color: white; text-decoration: underline;">Sign in</a> to get your access tokens.
               </p>
             </div>
           </div>
@@ -520,10 +526,10 @@ app.get('/mcp/info', (c) => {
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
           ${icons.wrench('icon')}
-          <span>Tools ${isAuthenticated ? '(Full CRUD Access)' : '(Read-Only)'}</span>
+          <span>Tools (Full CRUD Access with Auth)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
-          ${mcpInfo.capabilities.tools.map(tool => `
+          ${mcpInfo.capabilities.tools.map((tool: string) => `
             <div class="card" style="background: var(--bg-tertiary); padding: 12px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent-primary);">
               ${tool}
             </div>
@@ -538,7 +544,7 @@ app.get('/mcp/info', (c) => {
           <span>Resources (Context Data)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
-          ${mcpInfo.capabilities.resources.map(res => `
+          ${mcpInfo.capabilities.resources.map((res: string) => `
             <div class="card" style="background: var(--bg-tertiary); padding: 12px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent-primary);">
               ${res}
             </div>
@@ -554,7 +560,7 @@ app.get('/mcp/info', (c) => {
           <span>Prompts (Workflow Automation)</span>
         </h3>
         <div style="display: grid; gap: 8px;">
-          ${mcpInfo.capabilities.prompts.map(prompt => `
+          ${mcpInfo.capabilities.prompts.map((prompt: string) => `
             <div class="card" style="background: var(--bg-tertiary); padding: 12px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent-primary);">
               ${prompt}
             </div>
@@ -568,13 +574,16 @@ app.get('/mcp/info', (c) => {
           ${icons.link('icon')} Client Connection
         </h3>
         <p style="margin-bottom: 12px; color: var(--text-secondary);">
-          Add this to your MCP client configuration:
+          Add this to your MCP client configuration (requires access token):
         </p>
         <pre style="background: var(--bg-primary); padding: 16px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border-color); position: relative;"><code>{
   "mcpServers": {
     "agent-config-adapter": {
       "type": "http",
-      "url": "${c.req.url.replace('/mcp/info', '')}/mcp"
+      "url": "${baseUrl}/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
     }
   }
 }</code></pre>
@@ -585,12 +594,21 @@ app.get('/mcp/info', (c) => {
   "mcpServers": {
     "agent-config-adapter": {
       "type": "http",
-      "url": "${c.req.url.replace('/mcp/info', '')}/mcp"
+      "url": "${baseUrl}/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
     }
   }
 }`}\`, this)">
           ${icons.clipboard('icon')} Copy Configuration
         </button>
+        <p style="margin-top: 16px; font-size: 0.9em; color: var(--text-secondary);">
+          ${isAuthenticated
+            ? `<a href="/profile" class="btn btn-secondary" style="font-size: 0.85em; padding: 8px 12px;">Get your access token from Profile →</a>`
+            : `<a href="/auth/login" style="color: var(--accent-primary);">Sign in</a> to get your access token.`
+          }
+        </p>
       </div>
 
       <!-- Important Notes -->
@@ -599,6 +617,15 @@ app.get('/mcp/info', (c) => {
           ${icons.info('icon')} Important Notes
         </h3>
         <div style="display: grid; gap: 12px;">
+          <div style="display: flex; gap: 12px; align-items: start;">
+            <div style="margin-top: 2px; color: #ef4444;">${icons.key('icon-lg')}</div>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Authentication Required</div>
+              <div style="font-size: 0.9em; color: var(--text-secondary);">
+                All MCP requests require a valid Bearer token. Get tokens from your <a href="/profile" style="color: var(--accent-primary);">Profile</a> page.
+              </div>
+            </div>
+          </div>
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="margin-top: 2px; color: var(--accent-primary);">${icons.book('icon-lg')}</div>
             <div>
@@ -620,10 +647,7 @@ app.get('/mcp/info', (c) => {
           <div style="display: flex; gap: 12px; align-items: start;">
             <div style="margin-top: 2px; color: var(--accent-primary);">${icons.zap('icon-lg')}</div>
             <div>
-              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                Prompts
-                <span style="display: inline-block; padding: 2px 8px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Coming Soon</span>
-              </div>
+              <div style="font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">Prompts</div>
               <div style="font-size: 0.9em; color: var(--text-secondary);">
                 Guided workflows for complex multi-step operations
               </div>

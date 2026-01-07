@@ -114,26 +114,62 @@ profileRouter.get('/', async (c) => {
         }
       </div>
 
+      <!-- MCP Access Section -->
+      <div class="card" style="margin-top: 32px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border: 1px solid rgba(99, 102, 241, 0.3);">
+        <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; color: var(--accent-primary);">
+          ${icons.link('icon')} MCP Access
+        </h3>
+        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+          Connect Claude Desktop or other MCP clients to your account. You have two options:
+        </p>
+
+        <!-- Option 1: Generate Token -->
+        <div class="card" style="background: var(--bg-primary); margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+            ${icons.zap('icon')} Quick: Generate Access Token
+          </h4>
+          <p style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 12px;">
+            Generate an access token directly from your web session. Token expires in 24 hours with a 30-day refresh token.
+          </p>
+          <button type="button" class="btn ripple" onclick="generateMCPTokens()">
+            ${icons.key('icon')} Generate MCP Tokens
+          </button>
+        </div>
+
+        <!-- Option 2: Use API Key -->
+        <div class="card" style="background: var(--bg-primary);">
+          <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+            ${icons.key('icon')} Persistent: Use API Key
+          </h4>
+          <p style="color: var(--text-secondary); font-size: 0.9em;">
+            Create an API key above for longer-term access. API keys don't expire by default.
+          </p>
+        </div>
+      </div>
+
       <!-- MCP Configuration Help -->
-      <div class="card" style="margin-top: 32px; background: var(--bg-tertiary);">
+      <div class="card" style="margin-top: 24px; background: var(--bg-tertiary);">
         <h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-          ${icons.info('icon')} Using API Keys with MCP Clients
+          ${icons.info('icon')} MCP Client Configuration
         </h4>
         <p style="color: var(--text-secondary); margin-bottom: 12px;">
-          Add your API key to your MCP client configuration:
+          Add this to your MCP client configuration (replace YOUR_TOKEN with your access token or API key):
         </p>
         <pre style="background: var(--pre-bg); padding: 12px; border-radius: 6px; overflow-x: auto;">
 {
   "mcpServers": {
     "agent-config-adapter": {
       "type": "http",
-      "url": "https://agent-config-adapter.workers.dev/mcp/oauth",
+      "url": "${new URL(c.req.url).origin}/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_API_KEY"
+        "Authorization": "Bearer YOUR_TOKEN"
       }
     }
   }
 }</pre>
+        <button type="button" class="btn btn-secondary ripple copy-btn" style="margin-top: 12px;" onclick="copyMCPConfig(this)">
+          ${icons.clipboard('icon')} Copy Configuration
+        </button>
       </div>
 
       <!-- Account Actions -->
@@ -200,6 +236,56 @@ profileRouter.get('/', async (c) => {
             </div>
           </div>
           <button type="button" class="btn" style="width: 100%;" onclick="closeKeyCreatedModal()">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MCP Token Modal -->
+    <div id="mcp-token-modal" class="modal-overlay" style="display: none;">
+      <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: var(--accent-primary);">${icons.key('icon')} MCP Access Tokens</h3>
+          <button class="btn btn-secondary" onclick="closeMCPTokenModal()" style="padding: 4px 10px; margin: 0;">×</button>
+        </div>
+        <div class="modal-body">
+          <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <p style="margin: 0; font-weight: 600; color: var(--text-primary);">
+              ⚠️ Save these tokens - they won't be shown again!
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label><span id="mcp-token-expiry">Expires in 24 hours</span></label>
+            <label for="mcp-access-token">Access Token</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="mcp-access-token" readonly style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 0.8em; background: var(--pre-bg);">
+              <button type="button" class="btn btn-secondary copy-btn" onclick="copyAccessToken(this)">
+                ${icons.clipboard('icon')} Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="mcp-refresh-token">Refresh Token (expires in 30 days)</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="mcp-refresh-token" readonly style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 0.8em; background: var(--pre-bg);">
+              <button type="button" class="btn btn-secondary copy-btn" onclick="copyRefreshToken(this)">
+                ${icons.clipboard('icon')} Copy
+              </button>
+            </div>
+            <span class="help-text">Use this to get a new access token when the current one expires.</span>
+          </div>
+
+          <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: var(--text-primary);">To refresh your access token:</p>
+            <pre style="background: var(--pre-bg); padding: 8px; border-radius: 4px; font-size: 0.8em; overflow-x: auto; margin: 0;">POST /mcp/oauth/token
+{
+  "grant_type": "refresh_token",
+  "refresh_token": "YOUR_REFRESH_TOKEN"
+}</pre>
+          </div>
+
+          <button type="button" class="btn" style="width: 100%;" onclick="closeMCPTokenModal()">Done</button>
         </div>
       </div>
     </div>
@@ -320,6 +406,84 @@ profileRouter.get('/', async (c) => {
         } else {
           window.showToast('Failed to delete key', 'error');
         }
+      }
+
+      async function generateMCPTokens() {
+        try {
+          const response = await fetch('/mcp/oauth/exchange', {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.access_token) {
+            // Show token modal
+            showMCPTokenModal(data);
+          } else {
+            window.showToast(data.error_description || 'Failed to generate tokens', 'error');
+          }
+        } catch (error) {
+          window.showToast('Failed to generate tokens', 'error');
+        }
+      }
+
+      function showMCPTokenModal(tokenData) {
+        const modal = document.getElementById('mcp-token-modal');
+        document.getElementById('mcp-access-token').value = tokenData.access_token;
+        document.getElementById('mcp-refresh-token').value = tokenData.refresh_token;
+        document.getElementById('mcp-token-expiry').textContent = 'Expires in ' + Math.round(tokenData.expires_in / 3600) + ' hour(s)';
+        modal.style.display = 'flex';
+      }
+
+      function closeMCPTokenModal() {
+        document.getElementById('mcp-token-modal').style.display = 'none';
+      }
+
+      function copyAccessToken(button) {
+        const token = document.getElementById('mcp-access-token').value;
+        navigator.clipboard.writeText(token).then(() => {
+          button.innerHTML = '${icons.check('icon')} Copied!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.innerHTML = '${icons.clipboard('icon')} Copy';
+            button.classList.remove('copied');
+          }, 2000);
+        });
+      }
+
+      function copyRefreshToken(button) {
+        const token = document.getElementById('mcp-refresh-token').value;
+        navigator.clipboard.writeText(token).then(() => {
+          button.innerHTML = '${icons.check('icon')} Copied!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.innerHTML = '${icons.clipboard('icon')} Copy';
+            button.classList.remove('copied');
+          }, 2000);
+        });
+      }
+
+      function copyMCPConfig(button) {
+        const config = JSON.stringify({
+          mcpServers: {
+            'agent-config-adapter': {
+              type: 'http',
+              url: window.location.origin + '/mcp',
+              headers: {
+                Authorization: 'Bearer YOUR_TOKEN'
+              }
+            }
+          }
+        }, null, 2);
+        navigator.clipboard.writeText(config).then(() => {
+          button.innerHTML = '${icons.check('icon')} Copied!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.innerHTML = '${icons.clipboard('icon')} Copy Configuration';
+            button.classList.remove('copied');
+          }, 2000);
+        });
       }
     </script>
   `;
