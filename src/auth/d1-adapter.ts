@@ -3,6 +3,8 @@
  * Implements the adapter interface required by Better Auth for Cloudflare D1
  */
 
+import { createAdapterFactory } from 'better-auth/adapters';
+
 // Define our own types to avoid import issues with better-auth
 interface WhereClause {
   field: string;
@@ -11,6 +13,20 @@ interface WhereClause {
 }
 
 type WhereCondition = WhereClause[];
+
+/**
+ * Normalize a single value for D1 binding
+ * Converts Date objects to timestamps, booleans to integers
+ */
+function normalizeValue(value: unknown): unknown {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+  if (typeof value === 'boolean') {
+    return value ? 1 : 0;
+  }
+  return value;
+}
 
 function buildWhereClause(where: WhereCondition): { sql: string; values: unknown[] } {
   const conditions: string[] = [];
@@ -23,33 +39,33 @@ function buildWhereClause(where: WhereCondition): { sql: string; values: unknown
     switch (operator) {
       case 'eq':
         conditions.push(`${columnName} = ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
         break;
       case 'ne':
         conditions.push(`${columnName} != ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
         break;
       case 'gt':
         conditions.push(`${columnName} > ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
         break;
       case 'gte':
         conditions.push(`${columnName} >= ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
         break;
       case 'lt':
         conditions.push(`${columnName} < ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
         break;
       case 'lte':
         conditions.push(`${columnName} <= ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
         break;
       case 'in':
         if (Array.isArray(value) && value.length > 0) {
           const placeholders = value.map(() => '?').join(', ');
           conditions.push(`${columnName} IN (${placeholders})`);
-          values.push(...value);
+          values.push(...value.map(normalizeValue));
         }
         break;
       case 'contains':
@@ -66,7 +82,7 @@ function buildWhereClause(where: WhereCondition): { sql: string; values: unknown
         break;
       default:
         conditions.push(`${columnName} = ?`);
-        values.push(value);
+        values.push(normalizeValue(value));
     }
   }
 
@@ -120,8 +136,15 @@ function prepareData(data: Record<string, unknown>): Record<string, unknown> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function d1Adapter(db: D1Database): any {
-  const adapter = {
-    id: 'd1',
+  if (!db) {
+    throw new Error('D1 Database instance is required for d1Adapter');
+  }
+
+  const createCustomAdapter = (database: D1Database) => (options: any) => {
+    const { getFieldName, getModelName } = options;
+
+    return {
+      id: 'd1',
 
     async create<T extends Record<string, unknown>>({
       model,
@@ -130,22 +153,27 @@ export function d1Adapter(db: D1Database): any {
       model: string;
       data: Record<string, unknown>;
     }): Promise<T> {
-      const prepared = prepareData(data);
-      const columns = Object.keys(prepared);
-      const placeholders = columns.map(() => '?').join(', ');
-      const values = Object.values(prepared);
+      try {
+        const prepared = prepareData(data);
+        const columns = Object.keys(prepared);
+        const placeholders = columns.map(() => '?').join(', ');
+        const values = Object.values(prepared);
 
-      const sql = `INSERT INTO "${model}" (${columns.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})`;
+        const sql = `INSERT INTO "${model}" (${columns.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})`;
 
-      await db.prepare(sql).bind(...values).run();
+        await database.prepare(sql).bind(...values).run();
 
-      // Return the created record
-      const result = await db
-        .prepare(`SELECT * FROM "${model}" WHERE "id" = ?`)
-        .bind(data.id)
-        .first<T>();
+        // Return the created record
+        const result = await database
+          .prepare(`SELECT * FROM "${model}" WHERE "id" = ?`)
+          .bind(data.id)
+          .first<T>();
 
-      return transformRow(result) as T;
+        return transformRow(result) as T;
+      } catch (error) {
+        console.error(`D1 Adapter create error for model ${model}:`, error);
+        throw error;
+      }
     },
 
     async findOne<T extends Record<string, unknown>>({
@@ -162,7 +190,7 @@ export function d1Adapter(db: D1Database): any {
 
       const sql = `SELECT ${columns} FROM "${model}"${whereClause.sql} LIMIT 1`;
 
-      const result = await db.prepare(sql).bind(...whereClause.values).first<T>();
+      const result = await database.prepare(sql).bind(...whereClause.values).first<T>();
 
       return transformRow(result);
     },
@@ -204,7 +232,7 @@ export function d1Adapter(db: D1Database): any {
         values.push(offset);
       }
 
-      const results = await db.prepare(sql).bind(...values).all<T>();
+      const results = await database.prepare(sql).bind(...values).all<T>();
 
       return (results.results || []).map((row) => transformRow(row) as T);
     },
@@ -228,7 +256,7 @@ export function d1Adapter(db: D1Database): any {
 
       const sql = `UPDATE "${model}" SET ${setClause}${whereClause.sql}`;
 
-      await db.prepare(sql).bind(...setValues, ...whereClause.values).run();
+      await database.prepare(sql).bind(...setValues, ...whereClause.values).run();
 
       // Return the updated record
       return this.findOne<T>({ model, where });
@@ -253,7 +281,7 @@ export function d1Adapter(db: D1Database): any {
 
       const sql = `UPDATE "${model}" SET ${setClause}${whereClause.sql}`;
 
-      const result = await db.prepare(sql).bind(...setValues, ...whereClause.values).run();
+      const result = await database.prepare(sql).bind(...setValues, ...whereClause.values).run();
 
       return result.meta?.changes || 0;
     },
@@ -269,7 +297,7 @@ export function d1Adapter(db: D1Database): any {
 
       const sql = `DELETE FROM "${model}"${whereClause.sql}`;
 
-      await db.prepare(sql).bind(...whereClause.values).run();
+      await database.prepare(sql).bind(...whereClause.values).run();
     },
 
     async deleteMany({
@@ -283,7 +311,7 @@ export function d1Adapter(db: D1Database): any {
 
       const sql = `DELETE FROM "${model}"${whereClause.sql}`;
 
-      const result = await db.prepare(sql).bind(...whereClause.values).run();
+      const result = await database.prepare(sql).bind(...whereClause.values).run();
 
       return result.meta?.changes || 0;
     },
@@ -305,11 +333,27 @@ export function d1Adapter(db: D1Database): any {
         values.push(...whereClause.values);
       }
 
-      const result = await db.prepare(sql).bind(...values).first<{ count: number }>();
+      const result = await database.prepare(sql).bind(...values).first<{ count: number }>();
 
       return result?.count || 0;
     },
+    };
   };
 
-  return adapter;
+  // Create adapter with required config structure
+  const adapterOptions = {
+    config: {
+      adapterId: 'd1',
+      adapterName: 'Cloudflare D1 Adapter',
+      usePlural: false,
+      debugLogs: false,
+      supportsBooleans: false, // D1 stores booleans as integers (0/1)
+      supportsUUIDs: false,
+      supportsArrays: false,
+      transaction: false, // D1 doesn't support transactions yet
+    },
+    adapter: createCustomAdapter(db),
+  };
+
+  return createAdapterFactory(adapterOptions);
 }
