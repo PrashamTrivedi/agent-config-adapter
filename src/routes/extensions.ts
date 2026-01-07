@@ -41,7 +41,7 @@ extensionsRouter.get('/new', async (c) => {
   if (search) filters.searchName = search;
 
   const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-  const view = extensionCreateView(availableConfigs, { type, format, search });
+  const view = extensionCreateView(availableConfigs, { type, format, search }, c);
   return c.html(view);
 });
 
@@ -73,7 +73,7 @@ extensionsRouter.get('/:id/edit', async (c) => {
   if (search) filters.searchName = search;
 
   const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-  const view = extensionEditView(extension, availableConfigs, { type, format, search });
+  const view = extensionEditView(extension, availableConfigs, { type, format, search }, c);
   return c.html(view);
 });
 
@@ -89,7 +89,7 @@ extensionsRouter.get('/', async (c) => {
 
   // For HTML views, get extensions with configs
   const extensions = await service.listExtensionsWithConfigs();
-  const view = extensionListView(extensions);
+  const view = extensionListView(extensions, c);
   return c.html(view);
 });
 
@@ -108,7 +108,7 @@ extensionsRouter.get('/:id', async (c) => {
     return c.json({ extension });
   }
 
-  const view = extensionDetailView(extension);
+  const view = extensionDetailView(extension, c);
   return c.html(view);
 });
 
@@ -243,7 +243,7 @@ extensionsRouter.delete('/:id', async (c) => {
   const accept = c.req.header('Accept') || '';
   if (accept.includes('text/html')) {
     const allExtensions = await service.listExtensionsWithConfigs();
-    const view = extensionListView(allExtensions);
+    const view = extensionListView(allExtensions, c);
     return c.html(view);
   }
 

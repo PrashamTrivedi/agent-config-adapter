@@ -16,7 +16,7 @@ function escapeHtml(text: string): string {
 /**
  * Skills List View
  */
-export function skillsListView(skills: Config[]): string {
+export function skillsListView(skills: Config[], c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -110,13 +110,13 @@ export function skillsListView(skills: Config[]): string {
     </div>
   `;
 
-  return layout('Skills', content);
+  return layout('Skills', content, c);
 }
 
 /**
  * Skill Detail View
  */
-export function skillDetailView(skill: SkillWithFiles): string {
+export function skillDetailView(skill: SkillWithFiles, c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
@@ -265,13 +265,13 @@ export function skillDetailView(skill: SkillWithFiles): string {
     </div>
   `;
 
-  return layout(`Skill: ${skill.name}`, content);
+  return layout(`Skill: ${skill.name}`, content, c);
 }
 
 /**
  * Create Skill Form
  */
-export function skillCreateView(): string {
+export function skillCreateView(c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -381,13 +381,13 @@ export function skillCreateView(): string {
     </div>
   `;
 
-  return layout('Create Skill', content);
+  return layout('Create Skill', content, c);
 }
 
 /**
  * Edit Skill Form (with multi-file editor)
  */
-export function skillEditView(skill: SkillWithFiles): string {
+export function skillEditView(skill: SkillWithFiles, c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -527,5 +527,5 @@ export function skillEditView(skill: SkillWithFiles): string {
     </div>
   `;
 
-  return layout(`Edit Skill: ${skill.name}`, content);
+  return layout(`Edit Skill: ${skill.name}`, content, c);
 }

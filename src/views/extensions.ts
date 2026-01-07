@@ -2,7 +2,7 @@ import { ExtensionWithConfigs, Config } from '../domain/types';
 import { layout } from './layout';
 import { icons } from './icons';
 
-export function extensionListView(extensions: ExtensionWithConfigs[]): string {
+export function extensionListView(extensions: ExtensionWithConfigs[], c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -64,10 +64,10 @@ export function extensionListView(extensions: ExtensionWithConfigs[]): string {
       `}
     </div>
   `;
-  return layout('Extensions', content);
+  return layout('Extensions', content, c);
 }
 
-export function extensionDetailView(extension: ExtensionWithConfigs): string {
+export function extensionDetailView(extension: ExtensionWithConfigs, c?: any): string {
   const content = `
     <h2>${escapeHtml(extension.name)}</h2>
     <div style="margin-bottom: 20px;">
@@ -247,12 +247,13 @@ export function extensionDetailView(extension: ExtensionWithConfigs): string {
       }
     </script>
   `;
-  return layout(extension.name, content);
+  return layout(extension.name, content, c);
 }
 
 export function extensionCreateView(
   availableConfigs: Config[],
-  currentFilters?: { type?: string; format?: string; search?: string }
+  currentFilters?: { type?: string; format?: string; search?: string },
+  c?: any
 ): string {
   const activeFilters = currentFilters || {};
   const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
@@ -437,13 +438,14 @@ export function extensionCreateView(
       });
     </script>
   `;
-  return layout('Create Extension', content);
+  return layout('Create Extension', content, c);
 }
 
 export function extensionEditView(
   extension: ExtensionWithConfigs,
   availableConfigs: Config[],
-  currentFilters?: { type?: string; format?: string; search?: string }
+  currentFilters?: { type?: string; format?: string; search?: string },
+  c?: any
 ): string {
   const selectedConfigIds = new Set(extension.configs.map(c => c.id));
   const activeFilters = currentFilters || {};
@@ -635,7 +637,7 @@ export function extensionEditView(
       });
     </script>
   `;
-  return layout('Edit Extension', content);
+  return layout('Edit Extension', content, c);
 }
 
 function escapeHtml(text: string): string {

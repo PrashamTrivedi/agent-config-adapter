@@ -27,7 +27,7 @@ export const marketplacesRouter = new Hono<{ Bindings: Bindings }>();
 marketplacesRouter.get('/new', async (c) => {
   const extensionService = new ExtensionService(c.env);
   const availableExtensions = await extensionService.listExtensionsWithConfigs();
-  const view = marketplaceCreateView(availableExtensions);
+  const view = marketplaceCreateView(availableExtensions, c);
   return c.html(view);
 });
 
@@ -43,7 +43,7 @@ marketplacesRouter.get('/:id/edit', async (c) => {
   }
 
   const availableExtensions = await extensionService.listExtensionsWithConfigs();
-  const view = marketplaceEditView(marketplace, availableExtensions);
+  const view = marketplaceEditView(marketplace, availableExtensions, c);
   return c.html(view);
 });
 
@@ -63,7 +63,7 @@ marketplacesRouter.get('/', async (c) => {
 
   // For HTML views, get marketplaces with extensions
   const marketplaces = await service.listMarketplacesWithExtensions();
-  const view = marketplaceListView(marketplaces);
+  const view = marketplaceListView(marketplaces, c);
   return c.html(view);
 });
 
@@ -90,7 +90,7 @@ marketplacesRouter.get('/:id', async (c) => {
   const url = new URL(c.req.url);
   const origin = `${url.protocol}//${url.host}`;
 
-  const view = marketplaceDetailView(marketplace, origin);
+  const view = marketplaceDetailView(marketplace, origin, c);
   return c.html(view);
 });
 
@@ -223,7 +223,7 @@ marketplacesRouter.delete('/:id', async (c) => {
   const accept = c.req.header('Accept') || '';
   if (accept.includes('text/html')) {
     const allMarketplaces = await service.listMarketplacesWithExtensions();
-    const view = marketplaceListView(allMarketplaces);
+    const view = marketplaceListView(allMarketplaces, c);
     return c.html(view);
   }
 

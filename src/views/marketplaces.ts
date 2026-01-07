@@ -2,7 +2,7 @@ import { MarketplaceWithExtensions, ExtensionWithConfigs } from '../domain/types
 import { layout } from './layout';
 import { icons } from './icons';
 
-export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): string {
+export function marketplaceListView(marketplaces: MarketplaceWithExtensions[], c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -65,10 +65,10 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[]): 
       `}
     </div>
   `;
-  return layout('Marketplaces', content);
+  return layout('Marketplaces', content, c);
 }
 
-export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, origin?: string): string {
+export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, origin?: string, c?: any): string {
   const totalConfigs = marketplace.extensions.reduce((sum, ext) => sum + ext.configs.length, 0);
   const baseUrl = origin || '';
 
@@ -296,10 +296,10 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
       }
     </script>
   `;
-  return layout(marketplace.name, content);
+  return layout(marketplace.name, content, c);
 }
 
-export function marketplaceCreateView(availableExtensions: ExtensionWithConfigs[]): string {
+export function marketplaceCreateView(availableExtensions: ExtensionWithConfigs[], c?: any): string {
   const content = `
     <h2>Create Marketplace</h2>
     <form hx-post="/api/marketplaces" hx-target="body" hx-swap="outerHTML">
@@ -383,10 +383,10 @@ export function marketplaceCreateView(availableExtensions: ExtensionWithConfigs[
       });
     </script>
   `;
-  return layout('Create Marketplace', content);
+  return layout('Create Marketplace', content, c);
 }
 
-export function marketplaceEditView(marketplace: MarketplaceWithExtensions, availableExtensions: ExtensionWithConfigs[]): string {
+export function marketplaceEditView(marketplace: MarketplaceWithExtensions, availableExtensions: ExtensionWithConfigs[], c?: any): string {
   const selectedExtensionIds = new Set(marketplace.extensions.map(e => e.id));
 
   const content = `
@@ -504,7 +504,7 @@ export function marketplaceEditView(marketplace: MarketplaceWithExtensions, avai
       });
     </script>
   `;
-  return layout('Edit Marketplace', content);
+  return layout('Edit Marketplace', content, c);
 }
 
 function escapeHtml(text: string): string {

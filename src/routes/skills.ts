@@ -29,12 +29,12 @@ skillsRouter.get('/', async (c) => {
     return c.json({ skills });
   }
 
-  return c.html(skillsListView(skills));
+  return c.html(skillsListView(skills, c));
 });
 
 // Create new skill form (UI)
 skillsRouter.get('/new', async (c) => {
-  return c.html(skillCreateView());
+  return c.html(skillCreateView(c));
 });
 
 // Edit skill form (UI)
@@ -47,7 +47,7 @@ skillsRouter.get('/:id/edit', async (c) => {
     return c.json({ error: 'Skill not found' }, 404);
   }
 
-  return c.html(skillEditView(skill));
+  return c.html(skillEditView(skill, c));
 });
 
 // Get skill with all files
@@ -73,7 +73,7 @@ skillsRouter.get('/:id', async (c) => {
     return c.json({ skill });
   }
 
-  return c.html(skillDetailView(skill));
+  return c.html(skillDetailView(skill, c));
 });
 
 // Create new skill (JSON or form)
