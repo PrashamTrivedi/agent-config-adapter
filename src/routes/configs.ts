@@ -6,7 +6,6 @@ import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provide
 import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
 import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
-import { lockdownMiddleware } from '../middleware/lockdown';
 import { requireOwnership, getIdFromParams } from '../middleware/ownership';
 import { requireAuth } from '../auth/session-middleware';
 import { AnalyticsService } from '../services/analytics-service';
@@ -175,7 +174,7 @@ configsRouter.get('/:id/format/:format', async (c) => {
 });
 
 // Create new config (requires authentication)
-configsRouter.post('/', requireAuth, lockdownMiddleware, async (c) => {
+configsRouter.post('/', requireAuth, async (c) => {
   const userId = c.get('userId');
   let body: CreateConfigInput;
 
@@ -208,7 +207,7 @@ configsRouter.post('/', requireAuth, lockdownMiddleware, async (c) => {
 });
 
 // Update config (requires authentication and ownership)
-configsRouter.put('/:id', requireAuth, requireOwnership('config', getIdFromParams), lockdownMiddleware, async (c) => {
+configsRouter.put('/:id', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
   let body;
 
@@ -244,7 +243,7 @@ configsRouter.put('/:id', requireAuth, requireOwnership('config', getIdFromParam
 });
 
 // Manual cache invalidation (requires authentication and ownership)
-configsRouter.post('/:id/invalidate', requireAuth, requireOwnership('config', getIdFromParams), lockdownMiddleware, async (c) => {
+configsRouter.post('/:id/invalidate', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
   const service = new ConfigService(c.env);
   await service.invalidateCache(id);
@@ -259,7 +258,7 @@ configsRouter.post('/:id/invalidate', requireAuth, requireOwnership('config', ge
 });
 
 // Refresh analysis for slash commands (requires authentication and ownership)
-configsRouter.post('/:id/refresh-analysis', requireAuth, requireOwnership('config', getIdFromParams), lockdownMiddleware, async (c) => {
+configsRouter.post('/:id/refresh-analysis', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
 
   // Initialize analyzer with ProviderFactory
@@ -337,7 +336,7 @@ configsRouter.post('/:id/refresh-analysis', requireAuth, requireOwnership('confi
 });
 
 // Delete config (requires authentication and ownership)
-configsRouter.delete('/:id', requireAuth, requireOwnership('config', getIdFromParams), lockdownMiddleware, async (c) => {
+configsRouter.delete('/:id', requireAuth, requireOwnership('config', getIdFromParams), async (c) => {
   const id = c.req.param('id');
 
   const service = new ConfigService(c.env);
