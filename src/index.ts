@@ -315,9 +315,15 @@ app.route('/mcp/oauth', mcpOAuthRouter);
 
 // MCP Server endpoints
 
-// Public MCP server (read-only access, NO authentication required)
+// MCP server (full access for authenticated users, read-only for anonymous)
 app.post('/mcp', async (c) => {
-  const server = createMCPServer(c.env, 'readonly');
+  // Check if user is authenticated via session
+  const userId = c.get('userId');
+
+  // Authenticated users get full access, anonymous users get read-only
+  const accessLevel = userId ? 'full' : 'readonly';
+  const server = createMCPServer(c.env, accessLevel);
+
   return handleMCPStreamable(c.req.raw, server);
 });
 
@@ -350,12 +356,59 @@ app.post('/mcp/admin', async (c) => {
 });
 
 // MCP Server info endpoint
-// NOTE: This endpoint ONLY documents the public read-only endpoint
+// Shows dynamic capabilities based on authentication status
 // Admin endpoint (/mcp/admin) is SECRET and undocumented
 app.get('/mcp/info', (c) => {
   const accept = c.req.header('Accept') || '';
+  const userId = c.get('userId');
+  const isAuthenticated = !!userId;
 
-  const mcpInfo = {
+  // Dynamic capabilities based on authentication
+  const mcpInfo = isAuthenticated ? {
+    name: 'agent-config-adapter',
+    version: '1.0.0',
+    description: 'Universal configuration adapter for AI coding agents',
+    transport: 'streamable-http',
+    endpoint: '/mcp',
+    access: 'Authenticated - Full Access',
+    capabilities: {
+      tools: [
+        'get_config - Get a single configuration by ID',
+        'create_config - Create a new configuration',
+        'update_config - Update an existing configuration',
+        'delete_config - Delete a configuration',
+        'convert_config - Convert configuration between formats',
+        'invalidate_cache - Invalidate cached conversions'
+      ],
+      resources: [
+        'config://list - List all configurations from database',
+        'config://{id} - Get a specific configuration',
+        'config://{id}/cached/{format} - Get cached conversion'
+      ],
+      prompts: [
+        'migrate_config_format - Migrate configurations between formats',
+        'batch_convert - Batch convert multiple configurations',
+        'sync_config_versions - Sync configurations across formats'
+      ]
+    },
+    usage: {
+      connection: 'POST requests to /mcp endpoint with session cookie',
+      authentication: 'Automatic via browser session (OAuth)',
+      example_client_config: {
+        mcpServers: {
+          'agent-config-adapter': {
+            type: 'http',
+            url: `${c.req.url.replace('/mcp/info', '')}/mcp`
+          }
+        }
+      }
+    },
+    documentation: {
+      access_level: 'Full access (authenticated user)',
+      resources_behavior: 'Resources provide context data for AI agents',
+      tools_behavior: 'All CRUD operations available for authenticated users'
+    }
+  } : {
     name: 'agent-config-adapter',
     version: '1.0.0',
     description: 'Universal configuration adapter for AI coding agents',
@@ -373,6 +426,7 @@ app.get('/mcp/info', (c) => {
     },
     usage: {
       connection: 'POST requests to /mcp endpoint (no authentication required)',
+      authentication: 'None (read-only access)',
       example_client_config: {
         mcpServers: {
           'agent-config-adapter': {
@@ -385,7 +439,7 @@ app.get('/mcp/info', (c) => {
     documentation: {
       access_level: 'Public read-only access (no write operations)',
       resources_behavior: 'Resources provide context data for AI agents',
-      tools_behavior: 'Only read operations are available on public endpoint'
+      tools_behavior: 'Only read operations are available. Sign in for full access.'
     }
   };
 
@@ -410,6 +464,33 @@ app.get('/mcp/info', (c) => {
         </div>
       </div>
 
+      <!-- Access Level -->
+      ${isAuthenticated ? `
+        <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-left: 4px solid #34d399;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 2em;">🔓</div>
+            <div>
+              <h3 style="margin: 0 0 4px 0; color: white;">Full Access Enabled</h3>
+              <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">
+                You're authenticated! All CRUD operations available via MCP.
+              </p>
+            </div>
+          </div>
+        </div>
+      ` : `
+        <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-left: 4px solid #fbbf24;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 2em;">🔒</div>
+            <div>
+              <h3 style="margin: 0 0 4px 0; color: white;">Read-Only Access</h3>
+              <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">
+                <a href="/auth/login" style="color: white; text-decoration: underline;">Sign in</a> to unlock full CRUD operations via MCP.
+              </p>
+            </div>
+          </div>
+        </div>
+      `}
+
       <!-- Server Details -->
       <div class="card slide-up" style="margin-bottom: 24px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white;">
         <h3 style="margin: 0 0 16px 0; color: white; display: flex; align-items: center; gap: 8px;">
@@ -429,8 +510,8 @@ app.get('/mcp/info', (c) => {
             <div style="font-weight: 600;">${mcpInfo.transport}</div>
           </div>
           <div>
-            <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Endpoint</div>
-            <div style="font-family: 'Courier New', monospace; font-weight: 600;">${mcpInfo.endpoint}</div>
+            <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 4px;">Access Level</div>
+            <div style="font-weight: 600;">${mcpInfo.access}</div>
           </div>
         </div>
       </div>
@@ -439,7 +520,7 @@ app.get('/mcp/info', (c) => {
       <div class="card slide-up" style="margin-bottom: 24px;">
         <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
           ${icons.wrench('icon')}
-          <span>Tools (Read-Only Operations)</span>
+          <span>Tools ${isAuthenticated ? '(Full CRUD Access)' : '(Read-Only)'}</span>
         </h3>
         <div style="display: grid; gap: 8px;">
           ${mcpInfo.capabilities.tools.map(tool => `
@@ -553,7 +634,7 @@ app.get('/mcp/info', (c) => {
     </div>
   `;
 
-  return c.html(layout('MCP Server Info', content));
+  return c.html(layout('MCP Server Info', content, c));
 });
 
 export default app;
