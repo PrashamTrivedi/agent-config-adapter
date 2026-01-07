@@ -72,12 +72,12 @@ configsRouter.get('/', async (c) => {
   }
 
   // Return full HTML page for initial page load
-  return c.html(configListView(configs, { type, format, search }));
+  return c.html(configListView(configs, { type, format, search }, c));
 });
 
 // Route for creating new config (form) - MUST be before /:id route
 configsRouter.get('/new', async (c) => {
-  return c.html(configCreateView());
+  return c.html(configCreateView(c));
 });
 
 // Route for editing config (form) - MUST be before /:id route
@@ -95,7 +95,7 @@ configsRouter.get('/:id/edit', async (c) => {
     return c.redirect(`/skills/${id}/edit`);
   }
 
-  return c.html(configEditView(config));
+  return c.html(configEditView(config, c));
 });
 
 // Get single config
@@ -126,7 +126,7 @@ configsRouter.get('/:id', async (c) => {
     return c.json({ config });
   }
 
-  return c.html(configDetailView(config));
+  return c.html(configDetailView(config, c));
 });
 
 // Get config in specific format

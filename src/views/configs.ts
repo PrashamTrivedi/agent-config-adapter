@@ -47,7 +47,8 @@ export function configListContainerPartial(
 
 export function configListView(
   configs: Config[],
-  currentFilters?: { type?: string; format?: string; search?: string }
+  currentFilters?: { type?: string; format?: string; search?: string },
+  c?: any
 ): string {
   const activeFilters = currentFilters || {};
   const hasActiveFilters = !!(activeFilters.type || activeFilters.format || activeFilters.search);
@@ -166,10 +167,10 @@ export function configListView(
       });
     </script>
   `;
-  return layout('Configurations', content);
+  return layout('Configurations', content, c);
 }
 
-export function configDetailView(config: Config): string {
+export function configDetailView(config: Config, c?: any): string {
   const isSlashCommand = config.type === 'slash_command';
 
   const content = `
@@ -368,10 +369,10 @@ export function configDetailView(config: Config): string {
       });
     </script>
   `;
-  return layout(config.name, content);
+  return layout(config.name, content, c);
 }
 
-export function configCreateView(): string {
+export function configCreateView(c?: any): string {
   const content = `
     <div class="fade-in">
       <h2 style="display: flex; align-items: center; gap: 12px;">
@@ -462,10 +463,10 @@ export function configCreateView(): string {
       });
     </script>
   `;
-  return layout('Add Config', content);
+  return layout('Add Config', content, c);
 }
 
-export function configEditView(config: Config): string {
+export function configEditView(config: Config, c?: any): string {
   const content = `
     <div class="fade-in">
       <h2 style="display: flex; align-items: center; gap: 12px;">
@@ -532,7 +533,7 @@ export function configEditView(config: Config): string {
       });
     </script>
   `;
-  return layout('Edit Config', content);
+  return layout('Edit Config', content, c);
 }
 
 function escapeHtml(text: string): string {
