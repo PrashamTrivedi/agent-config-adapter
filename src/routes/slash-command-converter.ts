@@ -68,7 +68,7 @@ slashCommandConverterRouter.get('/convert', async (c) => {
     return c.html(slashCommandConverterDropdownPartial(configs, search));
   }
 
-  return c.html(slashCommandConverterView(configs, search));
+  return c.html(slashCommandConverterView(configs, search, c));
 });
 
 // GET /slash-commands/converter-form
