@@ -93,7 +93,7 @@ describe('SkillsService', () => {
       ];
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -375,7 +375,7 @@ describe('SkillsService', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -447,7 +447,7 @@ describe('SkillsService', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -492,7 +492,7 @@ describe('SkillsService', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -541,7 +541,7 @@ describe('SkillsService', () => {
 
       let fileCounter = 0;
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),

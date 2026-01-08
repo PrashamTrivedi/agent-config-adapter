@@ -50,7 +50,12 @@ export class ExtensionRepository {
 
   async findById(id: string): Promise<Extension | null> {
     const result = await this.db
-      .prepare('SELECT * FROM extensions WHERE id = ?')
+      .prepare(`
+        SELECT e.*, u.name AS owner_name
+        FROM extensions e
+        LEFT JOIN "user" u ON e.user_id = u.id
+        WHERE e.id = ?
+      `)
       .bind(id)
       .first<Extension>();
 
@@ -71,7 +76,12 @@ export class ExtensionRepository {
 
   async findAll(): Promise<Extension[]> {
     const result = await this.db
-      .prepare('SELECT * FROM extensions ORDER BY created_at DESC')
+      .prepare(`
+        SELECT e.*, u.name AS owner_name
+        FROM extensions e
+        LEFT JOIN "user" u ON e.user_id = u.id
+        ORDER BY e.created_at DESC
+      `)
       .all<Extension>();
 
     return result.results || [];
@@ -134,8 +144,10 @@ export class ExtensionRepository {
   async getExtensionConfigs(extensionId: string): Promise<Config[]> {
     const result = await this.db
       .prepare(
-        `SELECT c.* FROM configs c
+        `SELECT c.*, u.name AS owner_name
+         FROM configs c
          INNER JOIN extension_configs ec ON c.id = ec.config_id
+         LEFT JOIN "user" u ON c.user_id = u.id
          WHERE ec.extension_id = ?
          ORDER BY ec.sort_order ASC, c.created_at DESC`
       )

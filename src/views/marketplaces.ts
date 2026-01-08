@@ -57,6 +57,11 @@ export function marketplaceListView(marketplaces: MarketplaceWithExtensions[], c
                 <div style="color: var(--text-secondary); font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
                   ${icons.user('icon')}
                   <span>${escapeHtml(market.owner_name)}</span>
+                  ${market.linked_user_name
+                    ? `<span class="badge" style="margin-left: 4px; background: var(--bg-tertiary);">Linked</span>`
+                    : market.user_id
+                      ? `<span class="badge" style="margin-left: 4px; background: var(--status-error-bg); color: var(--status-error);">Owner unavailable</span>`
+                      : ''}
                 </div>
               </div>
             </div>
@@ -117,6 +122,11 @@ export function marketplaceDetailView(marketplace: MarketplaceWithExtensions, or
             </h4>
             <div style="color: var(--text-primary);">
               ${escapeHtml(marketplace.owner_name)}
+              ${marketplace.linked_user_name
+                ? `<span class="badge" style="margin-left: 8px; background: var(--bg-tertiary);">Linked: ${escapeHtml(marketplace.linked_user_name)}</span>`
+                : marketplace.user_id
+                  ? `<span class="badge" style="margin-left: 8px; background: var(--status-error-bg); color: var(--status-error);">Owner unavailable</span>`
+                  : ''}
               ${marketplace.owner_email ? `<br><span style="color: var(--text-secondary); font-size: 0.9em;">${escapeHtml(marketplace.owner_email)}</span>` : ''}
             </div>
           </div>

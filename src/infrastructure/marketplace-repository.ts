@@ -59,7 +59,12 @@ export class MarketplaceRepository {
 
   async findById(id: string): Promise<Marketplace | null> {
     const result = await this.db
-      .prepare('SELECT * FROM marketplaces WHERE id = ?')
+      .prepare(`
+        SELECT m.*, u.name AS linked_user_name
+        FROM marketplaces m
+        LEFT JOIN "user" u ON m.user_id = u.id
+        WHERE m.id = ?
+      `)
       .bind(id)
       .first<Marketplace>();
 
@@ -88,7 +93,12 @@ export class MarketplaceRepository {
 
   async findAll(): Promise<Marketplace[]> {
     const result = await this.db
-      .prepare('SELECT * FROM marketplaces ORDER BY created_at DESC')
+      .prepare(`
+        SELECT m.*, u.name AS linked_user_name
+        FROM marketplaces m
+        LEFT JOIN "user" u ON m.user_id = u.id
+        ORDER BY m.created_at DESC
+      `)
       .all<Marketplace>();
 
     return result.results || [];

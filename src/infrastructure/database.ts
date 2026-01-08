@@ -96,7 +96,12 @@ export class ConfigRepository {
 
   async findById(id: string): Promise<Config | null> {
     const result = await this.db
-      .prepare('SELECT * FROM configs WHERE id = ?')
+      .prepare(`
+        SELECT c.*, u.name AS owner_name
+        FROM configs c
+        LEFT JOIN "user" u ON c.user_id = u.id
+        WHERE c.id = ?
+      `)
       .bind(id)
       .first<Config>();
 
@@ -109,9 +114,14 @@ export class ConfigRepository {
     searchName?: string;
   }): Promise<Config[]> {
     if (!filters || (!filters.type && !filters.originalFormat && !filters.searchName)) {
-      // No filters, return all configs
+      // No filters, return all configs with owner name
       const result = await this.db
-        .prepare('SELECT * FROM configs ORDER BY created_at DESC')
+        .prepare(`
+          SELECT c.*, u.name AS owner_name
+          FROM configs c
+          LEFT JOIN "user" u ON c.user_id = u.id
+          ORDER BY c.created_at DESC
+        `)
         .all<Config>();
       return result.results || [];
     }
@@ -121,22 +131,28 @@ export class ConfigRepository {
     const values: any[] = [];
 
     if (filters.type) {
-      conditions.push('type = ?');
+      conditions.push('c.type = ?');
       values.push(filters.type);
     }
 
     if (filters.originalFormat) {
-      conditions.push('original_format = ?');
+      conditions.push('c.original_format = ?');
       values.push(filters.originalFormat);
     }
 
     if (filters.searchName) {
-      conditions.push('name LIKE ?');
+      conditions.push('c.name LIKE ?');
       values.push(`%${filters.searchName.trim()}%`);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    const query = `SELECT * FROM configs ${whereClause} ORDER BY created_at DESC`;
+    const query = `
+      SELECT c.*, u.name AS owner_name
+      FROM configs c
+      LEFT JOIN "user" u ON c.user_id = u.id
+      ${whereClause}
+      ORDER BY c.created_at DESC
+    `;
 
     const result = await this.db
       .prepare(query)

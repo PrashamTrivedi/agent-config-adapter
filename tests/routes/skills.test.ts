@@ -103,7 +103,7 @@ describe('Skills Routes', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -151,7 +151,7 @@ describe('Skills Routes', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -204,7 +204,7 @@ describe('Skills Routes', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -462,18 +462,19 @@ describe('Skills Routes', () => {
             }),
           };
         }
-        // configRepo.delete - check if exists first, then delete
-        if (query.includes('SELECT * FROM configs WHERE id')) {
-          return {
-            bind: vi.fn().mockReturnValue({
-              first: vi.fn().mockResolvedValue(mockSkill),
-            }),
-          };
-        }
+        // DELETE FROM configs - must be checked before SELECT FROM configs
         if (query.includes('DELETE FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
+            }),
+          };
+        }
+        // configRepo.findById - SELECT with LEFT JOIN
+        if (query.includes('FROM configs') && query.includes('SELECT')) {
+          return {
+            bind: vi.fn().mockReturnValue({
+              first: vi.fn().mockResolvedValue(mockSkill),
             }),
           };
         }
@@ -593,7 +594,7 @@ describe('Skills Routes', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -730,7 +731,7 @@ describe('Skills Routes', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
@@ -905,7 +906,7 @@ describe('Skills Routes', () => {
       };
 
       mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('SELECT * FROM configs')) {
+        if (query.includes('FROM configs')) {
           return {
             bind: vi.fn().mockReturnValue({
               first: vi.fn().mockResolvedValue(mockSkill),
