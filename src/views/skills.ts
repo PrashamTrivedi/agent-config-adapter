@@ -68,6 +68,15 @@ export function skillsListView(skills: Config[], c?: any): string {
               </div>
 
               <div style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 16px;">
+                ${skill.owner_name
+                  ? `<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                      ${icons.user('icon')} ${escapeHtml(skill.owner_name)}
+                    </div>`
+                  : skill.user_id
+                    ? `<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: var(--status-error);">
+                        ${icons.user('icon')} Owner unavailable
+                      </div>`
+                    : ''}
                 <div style="margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                   ${icons.calendar('icon')} Created ${new Date(skill.created_at).toLocaleDateString()}
                 </div>
@@ -244,6 +253,21 @@ export function skillDetailView(skill: SkillWithFiles, c?: any): string {
       <!-- Metadata Footer -->
       <div style="padding: 20px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border-color);">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 0.9em;">
+          ${skill.owner_name ? `
+            <div>
+              <div style="color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                ${icons.user('icon')} Owner
+              </div>
+              <div style="color: var(--text-primary);">${escapeHtml(skill.owner_name)}</div>
+            </div>
+          ` : skill.user_id ? `
+            <div>
+              <div style="color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                ${icons.user('icon')} Owner
+              </div>
+              <div style="color: var(--status-error);">Owner unavailable</div>
+            </div>
+          ` : ''}
           <div>
             <div style="color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
               ${icons.calendar('icon')} Created

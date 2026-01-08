@@ -54,7 +54,10 @@ describe('ConfigRepository', () => {
       await repo.findById('test-id');
 
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        'SELECT * FROM configs WHERE id = ?'
+        expect.stringContaining('FROM configs c')
+      );
+      expect(mockDb.prepare).toHaveBeenCalledWith(
+        expect.stringContaining('LEFT JOIN "user" u ON c.user_id = u.id')
       );
     });
 
@@ -95,7 +98,10 @@ describe('ConfigRepository', () => {
       const configs = await repo.findAll();
       expect(configs).toEqual(mockConfigs);
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        'SELECT * FROM configs ORDER BY created_at DESC'
+        expect.stringContaining('FROM configs c')
+      );
+      expect(mockDb.prepare).toHaveBeenCalledWith(
+        expect.stringContaining('LEFT JOIN "user" u ON c.user_id = u.id')
       );
     });
 
@@ -111,7 +117,7 @@ describe('ConfigRepository', () => {
       await repo.findAll({ type: 'slash_command' });
 
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE type = ?')
+        expect.stringContaining('WHERE c.type = ?')
       );
     });
 
@@ -127,7 +133,7 @@ describe('ConfigRepository', () => {
       await repo.findAll({ originalFormat: 'claude_code' });
 
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE original_format = ?')
+        expect.stringContaining('WHERE c.original_format = ?')
       );
     });
 
@@ -141,7 +147,7 @@ describe('ConfigRepository', () => {
       await repo.findAll({ searchName: 'test' });
 
       expect(mockDb.prepare).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE name LIKE ?')
+        expect.stringContaining('WHERE c.name LIKE ?')
       );
     });
 

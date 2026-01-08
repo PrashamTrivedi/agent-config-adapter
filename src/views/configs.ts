@@ -25,6 +25,11 @@ export function configListContainerPartial(
                 ${c.type.replace('_', ' ')}
               </span>
               <span class="badge">${c.original_format}</span>
+              ${c.owner_name
+                ? `<span class="badge" style="background: var(--bg-tertiary);">by ${escapeHtml(c.owner_name)}</span>`
+                : c.user_id
+                  ? `<span class="badge" style="background: var(--status-error-bg); color: var(--status-error);">Owner unavailable</span>`
+                  : ''}
             </div>
             <div style="font-size: 0.875em; margin-top: 8px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
               <span>Created: ${new Date(c.created_at).toLocaleDateString()}</span>
@@ -183,6 +188,15 @@ export function configDetailView(config: Config, c?: any): string {
         </span>
         <span class="badge">${config.original_format}</span>
       </div>
+      ${config.owner_name ? `
+        <div style="margin-bottom: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+          ${icons.user('icon')} Created by ${escapeHtml(config.owner_name)}
+        </div>
+      ` : config.user_id ? `
+        <div style="margin-bottom: 12px; color: var(--status-error); display: flex; align-items: center; gap: 6px;">
+          ${icons.user('icon')} Owner unavailable
+        </div>
+      ` : ''}
     </div>
 
     <!-- Copy Prompt Section - Primary Action -->

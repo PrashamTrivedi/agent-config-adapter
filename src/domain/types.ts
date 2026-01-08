@@ -12,6 +12,7 @@ export interface Config {
   created_at: string;
   updated_at: string;
   user_id?: string | null; // Owner of this config (null for legacy/public)
+  owner_name?: string | null; // Owner's name from user table JOIN
   // Slash command metadata (for conversion)
   has_arguments?: boolean;
   argument_hint?: string | null;
@@ -147,6 +148,8 @@ export interface Extension {
   icon_url: string | null;
   created_at: string;
   updated_at: string;
+  user_id?: string | null; // Owner of this extension (null for legacy/public)
+  owner_name?: string | null; // Owner's name from user table JOIN
 }
 
 export interface ExtensionWithConfigs extends Extension {
@@ -182,6 +185,8 @@ export interface Marketplace {
   repository: string | null;
   created_at: string;
   updated_at: string;
+  user_id?: string | null; // Linked account (null for legacy/public)
+  linked_user_name?: string | null; // Linked user's name from user table JOIN (distinct from manual owner_name)
 }
 
 export interface MarketplaceWithExtensions extends Marketplace {

@@ -53,11 +53,15 @@ export function extensionListView(extensions: ExtensionWithConfigs[], c?: any): 
                 </p>
               ` : ''}
 
-              ${ext.author ? `
-                <div style="font-size: 0.8em; color: var(--text-secondary); padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;">
-                  ${icons.user('icon')} ${escapeHtml(ext.author)}
-                </div>
-              ` : ''}
+              ${ext.owner_name
+                ? `<div style="font-size: 0.8em; color: var(--text-secondary); padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;">
+                    ${icons.user('icon')} ${escapeHtml(ext.owner_name)}
+                  </div>`
+                : ext.user_id
+                  ? `<div style="font-size: 0.8em; color: var(--status-error); padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;">
+                      ${icons.user('icon')} Owner unavailable
+                    </div>`
+                  : ''}
             </div>
           `).join('')}
         </div>
@@ -74,6 +78,16 @@ export function extensionDetailView(extension: ExtensionWithConfigs, c?: any): s
       <span class="badge">v${escapeHtml(extension.version)}</span>
       <span class="badge">${extension.configs.length} config${extension.configs.length !== 1 ? 's' : ''}</span>
     </div>
+
+    ${extension.owner_name ? `
+      <div style="margin-bottom: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+        ${icons.user('icon')} Owner: ${escapeHtml(extension.owner_name)}
+      </div>
+    ` : extension.user_id ? `
+      <div style="margin-bottom: 12px; color: var(--status-error); display: flex; align-items: center; gap: 6px;">
+        ${icons.user('icon')} Owner unavailable
+      </div>
+    ` : ''}
 
     ${extension.description ? `
       <h3>Description</h3>
