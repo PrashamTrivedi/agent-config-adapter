@@ -28,7 +28,7 @@ export const subscriptionsRouter = new Hono<{ Bindings: Bindings }>();
  */
 subscriptionsRouter.get('/form', async (c) => {
   const returnUrl = c.req.query('return');
-  return c.html(subscriptionFormView(returnUrl));
+  return c.html(subscriptionFormView(returnUrl, c));
 });
 
 /**

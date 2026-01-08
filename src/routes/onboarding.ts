@@ -20,7 +20,7 @@ app.get('/onboarding/no-code-builders', async (c) => {
 		onboardingICP: 'no-code-builders',
 	});
 
-	return c.html(layout('No-Code/Low-Code Builders', noCodeBuildersPage()));
+	return c.html(layout('No-Code/Low-Code Builders', noCodeBuildersPage(), c));
 });
 
 app.get('/onboarding/multi-tool-orgs', async (c) => {
@@ -29,7 +29,7 @@ app.get('/onboarding/multi-tool-orgs', async (c) => {
 		onboardingICP: 'multi-tool-orgs',
 	});
 
-	return c.html(layout('Multi-Tool Organizations', multiToolOrgsPage()));
+	return c.html(layout('Multi-Tool Organizations', multiToolOrgsPage(), c));
 });
 
 app.get('/onboarding/ai-pilot-teams', async (c) => {
@@ -38,7 +38,7 @@ app.get('/onboarding/ai-pilot-teams', async (c) => {
 		onboardingICP: 'ai-pilot-teams',
 	});
 
-	return c.html(layout('AI Pilot Teams', aiPilotTeamsPage()));
+	return c.html(layout('AI Pilot Teams', aiPilotTeamsPage(), c));
 });
 
 export default app;

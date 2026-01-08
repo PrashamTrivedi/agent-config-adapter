@@ -18,7 +18,7 @@ function escapeHtml(text: string): string {
 /**
  * Subscription form view with marketing copy
  */
-export function subscriptionFormView(returnUrl?: string): string {
+export function subscriptionFormView(returnUrl?: string, c?: any): string {
   return layout(
     'Subscribe for Upload Access',
     `
@@ -181,6 +181,7 @@ export function subscriptionFormView(returnUrl?: string): string {
         }
       })
     </script>
-  `
+  `,
+    c
   );
 }

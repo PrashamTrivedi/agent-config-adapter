@@ -464,7 +464,7 @@ pluginsRouter.get('/:extensionId/:format', async (c) => {
 
     // Return HTML file browser view
     const baseUrl = new URL(c.req.url).origin;
-    const view = pluginBrowserView(extension, format, files, baseUrl);
+    const view = pluginBrowserView(extension, format, files, baseUrl, c);
     return c.html(view);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);

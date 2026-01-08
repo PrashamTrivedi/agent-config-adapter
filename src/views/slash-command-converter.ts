@@ -17,7 +17,7 @@ function escapeHtml(text: string): string {
 }
 
 // Main converter page - shows command selection with search
-export function slashCommandConverterView(commands: Config[], searchQuery?: string): string {
+export function slashCommandConverterView(commands: Config[], searchQuery?: string, c?: any): string {
   const content = `
     <div class="fade-in">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -63,7 +63,7 @@ export function slashCommandConverterView(commands: Config[], searchQuery?: stri
     </div>
   `;
 
-  return layout('Slash Command Converter', content);
+  return layout('Slash Command Converter', content, c);
 }
 
 // Partial for dropdown options (for HTMX updates)

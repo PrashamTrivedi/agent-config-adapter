@@ -16,7 +16,8 @@ export function pluginBrowserView(
   extension: ExtensionWithConfigs,
   format: 'claude_code' | 'gemini',
   files: FileInfo[],
-  baseUrl: string
+  baseUrl: string,
+  c?: any
 ): string {
   const formatDisplay = format === 'claude_code' ? 'Claude Code' : 'Gemini CLI';
   const pluginUrl = `${baseUrl}/plugins/${extension.id}/${format}`;
@@ -221,7 +222,7 @@ export function pluginBrowserView(
     </script>
   `;
 
-  return layout('Plugin Browser', content);
+  return layout('Plugin Browser', content, c);
 }
 
 interface FileTreeNode {
