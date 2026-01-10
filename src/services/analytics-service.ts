@@ -200,4 +200,77 @@ export class AnalyticsService {
       configName: name,
     });
   }
+
+  /**
+   * Track login page view
+   */
+  async trackLoginPageView(
+    request: Request,
+    metadata: {
+      referrer?: string;
+      returnUrl?: string;
+    }
+  ): Promise<void> {
+    await this.trackEvent(request, 'login_page_view', {
+      loginReferrer: metadata.referrer || request.headers.get('referer') || 'direct',
+      returnUrl: metadata.returnUrl,
+    });
+  }
+
+  /**
+   * Track login attempt (user initiated auth)
+   */
+  async trackLoginAttempt(
+    request: Request,
+    method: 'github' | 'email_otp'
+  ): Promise<void> {
+    await this.trackEvent(request, 'login_attempt', {
+      loginMethod: method,
+      loginReferrer: request.headers.get('referer') || 'direct',
+    });
+  }
+
+  /**
+   * Track login success
+   */
+  async trackLoginSuccess(
+    request: Request,
+    method: 'github' | 'email_otp',
+    userId: string
+  ): Promise<void> {
+    await this.trackEvent(request, 'login_success', {
+      loginMethod: method,
+      loginOutcome: 'success',
+      userId,
+    });
+  }
+
+  /**
+   * Track login failure
+   */
+  async trackLoginFail(
+    request: Request,
+    method: 'github' | 'email_otp',
+    errorType: string
+  ): Promise<void> {
+    await this.trackEvent(request, 'login_fail', {
+      loginMethod: method,
+      loginOutcome: 'fail',
+      errorType,
+    });
+  }
+
+  /**
+   * Track login abandoned (called client-side via /api/analytics/track)
+   */
+  async trackLoginAbandoned(
+    request: Request,
+    metadata?: { loginMethod?: 'github' | 'email_otp'; timeSpent?: number }
+  ): Promise<void> {
+    await this.trackEvent(request, 'login_abandoned', {
+      loginOutcome: 'abandoned',
+      loginMethod: metadata?.loginMethod,
+      timeSpent: metadata?.timeSpent,
+    });
+  }
 }

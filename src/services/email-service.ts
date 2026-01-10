@@ -144,4 +144,52 @@ export class EmailService {
       `,
     })
   }
+
+  /**
+   * Send admin notification about user login
+   */
+  async sendLoginNotification(
+    userEmail: string,
+    userName: string | null,
+    loginMethod: 'github' | 'email_otp',
+    loginAt: string
+  ): Promise<void> {
+    const methodLabel = loginMethod === 'github' ? 'GitHub OAuth' : 'Email OTP'
+    const displayName = userName || 'Unknown User'
+
+    await this.sendEmail({
+      from: `Agent Config Adapter <${this.senderEmail}>`,
+      to: [this.adminEmail],
+      subject: 'User Login - Agent Config Adapter',
+      htmlBody: `
+        <html>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0;">
+              <h2 style="margin: 0; font-size: 24px;">User Login</h2>
+            </div>
+            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 12px 0; font-weight: 600; color: #374151; width: 140px;">User:</td>
+                  <td style="padding: 12px 0; color: #6b7280;">${displayName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; font-weight: 600; color: #374151;">Email:</td>
+                  <td style="padding: 12px 0; color: #6b7280;">${userEmail}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; font-weight: 600; color: #374151;">Login Method:</td>
+                  <td style="padding: 12px 0; color: #6b7280;">${methodLabel}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; font-weight: 600; color: #374151;">Login Time:</td>
+                  <td style="padding: 12px 0; color: #6b7280;">${loginAt}</td>
+                </tr>
+              </table>
+            </div>
+          </body>
+        </html>
+      `,
+    })
+  }
 }

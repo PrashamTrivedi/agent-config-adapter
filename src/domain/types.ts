@@ -345,7 +345,13 @@ export type AnalyticsEventType =
   | 'plugin_browse'
   | 'marketplace_browse'
   | 'extension_download'
-  | 'skill_download';
+  | 'skill_download'
+  // Login tracking events
+  | 'login_page_view'
+  | 'login_attempt'
+  | 'login_success'
+  | 'login_fail'
+  | 'login_abandoned';
 
 export interface UTMParams {
   source?: string;
@@ -363,6 +369,13 @@ export interface AnalyticsMetadata {
   configName?: string;
   onboardingICP?: 'no-code-builders' | 'multi-tool-orgs' | 'ai-pilot-teams';
   conversionTarget?: string;
+  conversionValue?: number;
   timeSpent?: number;
+  // Login tracking fields
+  loginMethod?: 'github' | 'email_otp';
+  loginReferrer?: string;
+  loginOutcome?: 'success' | 'fail' | 'abandoned';
+  errorType?: string;
+  returnUrl?: string;
   [key: string]: string | number | undefined;
 }

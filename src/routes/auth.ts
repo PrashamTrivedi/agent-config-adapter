@@ -7,6 +7,9 @@ import { Hono } from 'hono';
 import { createAuth } from '../auth/better-auth';
 import { layout } from '../views/layout';
 import { icons } from '../views/icons';
+import { AnalyticsService } from '../services/analytics-service';
+import { EmailService } from '../services/email-service';
+import type { AnalyticsEngineDataset } from '../domain/types';
 
 type Bindings = {
   DB: D1Database;
@@ -16,6 +19,8 @@ type Bindings = {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   WEB_ANALYTICS_TOKEN?: string;
+  ANALYTICS?: AnalyticsEngineDataset;
+  ADMIN_EMAIL: string;
 };
 
 export const authRouter = new Hono<{ Bindings: Bindings }>();
@@ -23,20 +28,94 @@ export const authRouter = new Hono<{ Bindings: Bindings }>();
 /**
  * Better Auth handler - handles all /api/auth/* routes
  * This includes OAuth callbacks, session management, etc.
+ * Includes analytics tracking for login attempts and outcomes.
  */
 authRouter.all('/*', async (c) => {
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  const url = new URL(c.req.url);
+  const pathname = url.pathname.replace('/api/auth', '');
+
   try {
     const auth = createAuth(c.env);
 
-    // Create a new Request with the base URL that matches Better Auth's baseURL config
-    // This ensures Better Auth can properly route the request
-    const url = new URL(c.req.url);
-    const authRequest = new Request(url, c.req.raw);
+    // Track login attempts before processing
+    if (pathname === '/sign-in/social' && c.req.method === 'POST') {
+      try {
+        const clonedReq = c.req.raw.clone();
+        const body = await clonedReq.json() as { provider?: string };
+        if (body.provider === 'github') {
+          await analytics.trackLoginAttempt(c.req.raw, 'github');
+        }
+      } catch {
+        // Ignore body parse errors
+      }
+    }
 
+    if (pathname === '/email-otp/send-verification-otp' && c.req.method === 'POST') {
+      await analytics.trackLoginAttempt(c.req.raw, 'email_otp');
+    }
+
+    // Create a new Request with the base URL that matches Better Auth's baseURL config
+    const authRequest = new Request(url, c.req.raw);
     console.log('Better Auth handler - URL:', url.toString());
 
     const response = await auth.handler(authRequest);
     console.log('Better Auth response:', response.status);
+
+    // Track outcomes after processing - GitHub OAuth callback
+    if (pathname.startsWith('/callback/github')) {
+      if (response.status === 302) {
+        const location = response.headers.get('location');
+        if (location && !location.includes('error')) {
+          // Successful OAuth - try to get session to track user
+          try {
+            const session = await auth.api.getSession({ headers: c.req.raw.headers });
+            if (session?.user) {
+              await analytics.trackLoginSuccess(c.req.raw, 'github', session.user.id);
+
+              // Send admin notification (non-blocking)
+              const emailService = new EmailService(c.env.EMAIL_API_KEY, c.env.ADMIN_EMAIL);
+              emailService.sendLoginNotification(
+                session.user.email,
+                session.user.name,
+                'github',
+                new Date().toISOString()
+              ).catch(err => console.error('Failed to send login notification:', err));
+            }
+          } catch {
+            // Session not available yet in callback, tracking will happen on next request
+          }
+        } else {
+          await analytics.trackLoginFail(c.req.raw, 'github', 'oauth_callback_error');
+        }
+      }
+    }
+
+    // Track Email OTP verification outcome
+    if (pathname === '/sign-in/email-otp' && c.req.method === 'POST') {
+      if (response.status === 200) {
+        try {
+          const clonedResponse = response.clone();
+          const responseData = await clonedResponse.json() as { user?: { id: string; email: string; name: string | null } };
+          if (responseData.user) {
+            await analytics.trackLoginSuccess(c.req.raw, 'email_otp', responseData.user.id);
+
+            // Send admin notification (non-blocking)
+            const emailService = new EmailService(c.env.EMAIL_API_KEY, c.env.ADMIN_EMAIL);
+            emailService.sendLoginNotification(
+              responseData.user.email,
+              responseData.user.name,
+              'email_otp',
+              new Date().toISOString()
+            ).catch(err => console.error('Failed to send login notification:', err));
+          }
+        } catch {
+          // Ignore response parse errors
+        }
+      } else {
+        await analytics.trackLoginFail(c.req.raw, 'email_otp', 'invalid_otp');
+      }
+    }
 
     return response;
   } catch (error) {
@@ -53,6 +132,14 @@ export const authUIRouter = new Hono<{ Bindings: Bindings }>();
 authUIRouter.get('/login', async (c) => {
   const returnUrl = c.req.query('return') || '/';
   const error = c.req.query('error');
+  const referrer = c.req.header('Referer') || 'direct';
+
+  // Track login page view
+  const analytics = new AnalyticsService(c.env.ANALYTICS);
+  await analytics.trackLoginPageView(c.req.raw, {
+    referrer,
+    returnUrl,
+  });
 
   const errorMessages: Record<string, string> = {
     ownership: 'You do not have permission to modify this resource.',
@@ -160,7 +247,28 @@ authUIRouter.get('/login', async (c) => {
       let otpSent = false;
       const returnUrl = '${returnUrl}';
 
+      // Abandoned login tracking
+      const loginEntryTime = Date.now();
+      let loginCompleted = false;
+
+      // Best-effort abandoned tracking via sendBeacon
+      window.addEventListener('beforeunload', () => {
+        if (!loginCompleted) {
+          const timeSpent = Math.floor((Date.now() - loginEntryTime) / 1000);
+          navigator.sendBeacon('/api/analytics/track', JSON.stringify({
+            event: 'login_abandoned',
+            metadata: { timeSpent }
+          }));
+        }
+      });
+
+      // Mark login as started when auth flow begins
+      function markLoginStarted() {
+        loginCompleted = true;
+      }
+
       async function signInWithGitHub(callbackURL) {
+        markLoginStarted();
         try {
           const response = await fetch('/api/auth/sign-in/social', {
             method: 'POST',
@@ -175,9 +283,11 @@ authUIRouter.get('/login', async (c) => {
             // Redirect to GitHub OAuth page
             window.location.href = data.url;
           } else {
+            loginCompleted = false; // Allow abandoned tracking if failed
             alert('Failed to initiate GitHub sign-in. Please try again.');
           }
         } catch (error) {
+          loginCompleted = false; // Allow abandoned tracking if failed
           console.error('GitHub sign-in error:', error);
           alert('An error occurred. Please try again.');
         }
@@ -197,7 +307,8 @@ authUIRouter.get('/login', async (c) => {
         }
 
         if (otpSent && otpInput.value.length === 6) {
-          // Verify OTP
+          // Verify OTP - mark as started
+          markLoginStarted();
           submitBtn.disabled = true;
           submitBtn.innerHTML = '<span class="spinner"></span> Verifying...';
           resultDiv.innerHTML = '';
@@ -216,11 +327,13 @@ authUIRouter.get('/login', async (c) => {
               resultDiv.innerHTML = '<div class="status-indicator status-success" style="padding: 10px;">Success! Redirecting...</div>';
               window.location.href = returnUrl;
             } else {
+              loginCompleted = false; // Allow abandoned tracking if failed
               resultDiv.innerHTML = '<div class="status-indicator status-error" style="padding: 10px;">' + (data.error || 'Invalid code. Please try again.') + '</div>';
               submitBtn.disabled = false;
               submitBtn.innerHTML = 'Verify Code';
             }
           } catch (error) {
+            loginCompleted = false; // Allow abandoned tracking if failed
             resultDiv.innerHTML = '<div class="status-indicator status-error" style="padding: 10px;">Verification failed. Please try again.</div>';
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'Verify Code';
@@ -228,7 +341,8 @@ authUIRouter.get('/login', async (c) => {
           return;
         }
 
-        // Send OTP
+        // Send OTP - mark as started
+        markLoginStarted();
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner"></span> Sending code...';
         resultDiv.innerHTML = '';
@@ -251,11 +365,13 @@ authUIRouter.get('/login', async (c) => {
             submitBtn.disabled = false;
             resultDiv.innerHTML = '<div class="status-indicator status-success" style="padding: 10px;">Code sent! Check your email.</div>';
           } else {
+            loginCompleted = false; // Allow abandoned tracking if failed
             resultDiv.innerHTML = '<div class="status-indicator status-error" style="padding: 10px;">' + (data.error || 'Failed to send code. Please try again.') + '</div>';
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'Send Code';
           }
         } catch (error) {
+          loginCompleted = false; // Allow abandoned tracking if failed
           resultDiv.innerHTML = '<div class="status-indicator status-error" style="padding: 10px;">Failed to send code. Please try again.</div>';
           submitBtn.disabled = false;
           submitBtn.innerHTML = 'Send Code';
