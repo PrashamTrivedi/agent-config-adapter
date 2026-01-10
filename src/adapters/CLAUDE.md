@@ -98,6 +98,7 @@ KEY = "value"
 - **httpUrl vs url**: Gemini uses httpUrl, Claude/Codex use url
 - **startup_timeout_ms**: Codex only (default 20000)
 - **Server types**: stdio (command/args) or HTTP/SSE (url/httpUrl)
+- Uses `smol-toml` library (Cloudflare Workers compatible)
 
 ## Adding New Formats
 

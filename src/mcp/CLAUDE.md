@@ -2,35 +2,40 @@
 
 AI agent integration via MCP protocol. Shares business logic with REST API via services layer.
 
-## Capabilities
+## Endpoints
 
-### 6 Tools (Write Operations)
-- `create_config`: Create new config
-- `update_config`: Update existing config
-- `delete_config`: Delete config
-- `get_config`: Retrieve single config
-- `convert_config`: Format conversion
-- `invalidate_cache`: Clear cached conversions
+```
+POST   /mcp           Public (read-only, no auth)
+POST   /mcp/admin     Admin (full access, token required)
+GET    /mcp/info      Server info (shows public only)
+```
 
-### 3 Resources (Pure Read Operations)
-- `config://list`: List all configs
-- `config://{configId}`: Get single config
-- `config://{configId}/cached/{format}`: Get cached conversion (no processing)
+## Public Endpoint (`/mcp`)
 
-### 3 Prompts (Workflow Automations)
-- `migrate_config_format`: Migration workflow
-- `batch_convert`: Bulk conversion workflow
-- `sync_config_versions`: Cache sync workflow
+Read-only, no authentication:
+- **Tool**: `get_config`
+- **Resources**: `config://list`
+- **Prompts**: None
 
-## Transport
+## Admin Endpoint (`/mcp/admin`)
 
-**Streamable HTTP**: Cloudflare Workers compatible
-- Endpoint: `POST /mcp`
-- JSON-RPC protocol over HTTP
-- Info endpoint: `GET /mcp/info`
+Full access, Bearer token required:
+- **6 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache
+- **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
+- **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+- **Auth**: `Authorization: Bearer <token>` header
+- **Validation**: SHA-256 hash comparison against `MCP_ADMIN_TOKEN_HASH` secret
+
+## Security
+
+Admin endpoint is **UNDOCUMENTED publicly**:
+- NOT shown on `/mcp/info`
+- NOT in README
+- Only documented here for team use
 
 ## Client Configuration
 
+Public:
 ```json
 {
   "mcpServers": {
@@ -42,15 +47,34 @@ AI agent integration via MCP protocol. Shares business logic with REST API via s
 }
 ```
 
+Admin:
+```json
+{
+  "mcpServers": {
+    "agent-config-adapter-admin": {
+      "type": "http",
+      "url": "http://localhost:8787/mcp/admin",
+      "headers": {
+        "Authorization": "Bearer YOUR_ADMIN_TOKEN"
+      }
+    }
+  }
+}
+```
+
+## Token Setup
+
+```bash
+# Local dev
+tsx scripts/hash-token.ts "test-admin-token-123"
+# Add hash to .dev.vars: MCP_ADMIN_TOKEN_HASH=...
+
+# Production
+tsx scripts/hash-token.ts "$(openssl rand -hex 32)"
+npx wrangler secret put MCP_ADMIN_TOKEN_HASH
+```
+
 ## MVP Limitations
 
-- Extension and marketplace features not yet exposed via MCP
-- Skills features not yet exposed via MCP
-- Focus on core config operations first
-
-## Implementation Notes
-
-- Uses ConfigService and ConversionService
-- Same business logic as REST API
-- Returns standardized MCP responses
-- Error handling via MCP error codes
+- Extensions/marketplaces not in MCP tools yet
+- Skills not in MCP tools yet

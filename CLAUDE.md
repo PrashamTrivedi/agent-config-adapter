@@ -1,417 +1,80 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-Agent Config Adapter - Universal configuration adapter for AI coding agents. Stores configurations (slash commands, agent definitions, MCP configs) and converts between Claude Code, Codex, and Gemini formats.
+Agent Config Adapter - Universal configuration adapter for AI coding agents. Stores configurations (slash commands, agent definitions, MCP configs, skills) and converts between Claude Code, Codex, and Gemini formats.
 
-**Tech Stack**: Cloudflare Workers, Hono, D1 (SQLite), KV cache, R2, AI Gateway (Multi-Provider: OpenAI GPT-5-Mini, Google Gemini 2.5 Flash)
+**Tech Stack**: Cloudflare Workers, Hono, D1, KV, R2, AI Gateway (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
 
 ## Development Commands
 
-### Setup
 ```bash
 npm install
+npm run dev        # http://localhost:8787
+npm test           # Run all tests
+npm run lint
 
-# Initialize local D1 database
+# Database setup
 npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0001_create_configs_table.sql
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0002_add_updated_at.sql
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0003_replace_jules_with_gemini.sql
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0004_add_extensions_and_marketplaces.sql
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0005_add_skill_config_type.sql
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0006_add_skill_files.sql
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/0007_add_slash_command_metadata.sql
-
-# Load sample data
+# ... apply all migrations in order (0001-0007)
 npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-configs.sql
 
-# Setup environment variables for local development
-cp .dev.vars.example .dev.vars
-# LOCAL DEVELOPMENT (Recommended):
-# 1. Get API keys from OpenAI and/or Google
-# 2. Edit .dev.vars: Set OPENAI_API_KEY and/or GEMINI_API_KEY
-# 3. Keys route through AI Gateway for logging, analytics, caching
-# 4. Get Email Service API key
-# 5. Edit .dev.vars: Set EMAIL_API_KEY
-# 6. Optional: Set AI_PROVIDER, OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
-#
-# PRODUCTION BYOK (Bring Your Own Key):
-# 1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
-# 2. Create gateway token in Cloudflare Dashboard → AI Gateway → Settings
-# 3. Set AI_GATEWAY_TOKEN as Worker secret (see Deployment section below)
-# 4. Set EMAIL_API_KEY as Worker secret: npx wrangler secret put EMAIL_API_KEY
-# Provider keys NEVER stored in Worker code or .dev.vars!
-```
-
-### Development
-```bash
-npm run dev        # Start dev server (http://localhost:8787)
-npm test           # Run all tests
-npm test -- --run --coverage  # Run tests with coverage
-npm run test:watch # Watch mode
-npm run lint       # Lint code
-```
-
-**CI/CD**: GitHub Actions workflow runs tests with coverage on all pushes and PRs. Coverage reports posted as PR comments, artifacts uploaded for 30 days, README badge auto-updated on main.
-
-### Database
-```bash
-# Apply migration to local
-npx wrangler d1 execute agent-config-adapter --local --file=./migrations/[file].sql
-
-# Apply migrations to production
-npx wrangler d1 migrations apply agent-config-adapter --remote
-```
-
-### Deployment
-```bash
-npm run deploy
-
-# First-time setup
-npx wrangler d1 create agent-config-adapter
-npx wrangler kv:namespace create CONFIG_CACHE
-npx wrangler kv:namespace create EMAIL_SUBSCRIPTIONS
-npx wrangler r2 bucket create agent-config-extension-files
-# Update IDs in wrangler.jsonc
-# Configure Email Routing in Cloudflare Dashboard
-# Update send_email binding and ADMIN_EMAIL in wrangler.jsonc
-
-# PRODUCTION BYOK Setup:
-# 1. Store provider API keys in Cloudflare Dashboard → AI Gateway → Provider Keys
-#    (NOT as Worker secrets - keys stored in AI Gateway only)
-# 2. Create gateway token and store as Worker secret:
-npx wrangler secret put AI_GATEWAY_TOKEN
-# 3. Update wrangler.jsonc vars: ACCOUNT_ID, GATEWAY_ID, AI_PROVIDER
-# 4. Optional vars: OPENAI_REASONING_MODE, GEMINI_THINKING_BUDGET
+# Environment: cp .dev.vars.example .dev.vars
+# Set OPENAI_API_KEY and/or GEMINI_API_KEY for local dev
 ```
 
 ## Architecture
 
-**Layer Structure**:
-- `src/domain/` - Core types and business entities (no infrastructure dependencies)
-- `src/infrastructure/` - D1, KV, R2, Email Routing, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
-- `src/services/` - Business logic (shared between REST API and MCP server, includes SubscriptionService, EmailService, AnalyticsService)
-- `src/middleware/` - Request middleware (email gating for all CUD operations)
-- `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers (includes subscriptions, auth routes)
-- `src/mcp/` - MCP server (6 tools, 3 resources, 3 prompts)
-- `src/views/` - HTMX server-rendered templates (Neural Lab design, includes subscription form)
+```
+src/domain/        Core types (no dependencies)
+src/infrastructure/  D1, KV, R2, AI services
+src/services/      Business logic (shared by REST + MCP)
+src/middleware/    Request middleware (email gating)
+src/adapters/      Format converters
+src/routes/        Hono REST handlers
+src/mcp/           MCP server
+src/views/         HTMX templates
+```
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion.
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EMAIL_SUBSCRIPTIONS` (KV), `EXTENSION_FILES` (R2), `EMAIL` (send_email), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`, `ADMIN_EMAIL`, `ANALYTICS` (Analytics Engine), `WEB_ANALYTICS_TOKEN`
+**Bindings**: `DB` (D1), `CONFIG_CACHE` (KV), `EMAIL_SUBSCRIPTIONS` (KV), `EXTENSION_FILES` (R2), `EMAIL`, `ANALYTICS`
 
-## API Endpoints
+## Config Types
 
-### REST API - Configs
-```
-GET    /api/configs                    List all configs
-GET    /api/configs/:id                Get specific config (redirects to /skills/:id if skill type)
-GET    /api/configs/:id/format/:format Convert to format (claude_code|codex|gemini)
-POST   /api/configs                    Create config
-PUT    /api/configs/:id                Update config
-DELETE /api/configs/:id                Delete config
-POST   /api/configs/:id/invalidate     Invalidate cached conversions
-
-GET    /configs/:id/edit               Edit config form (redirects to /skills/:id/edit if skill type)
-```
-
-### REST API - Slash Command Converter
-```
-GET    /api/slash-commands                 List all slash commands with metadata
-GET    /api/slash-commands/:id             Get specific slash command with metadata
-POST   /api/slash-commands/:id/convert     Convert slash command (body: { "userArguments": "optional" })
-```
-
-**Slash Command Converter Features:**
-- Pre-computed metadata for fast lookups
-- Reference inlining (agents/skills)
-- Smart matching with fallback
-- Frontend UI with search and refresh
-
-### REST API - Skills
-```
-GET    /api/skills                     List all skills
-GET    /api/skills/:id                 Get skill with companion files
-POST   /api/skills                     Create skill (JSON or form-data)
-POST   /api/skills/upload-zip          Create skill from ZIP upload (email gated)
-PUT    /api/skills/:id                 Update skill metadata/content
-DELETE /api/skills/:id                 Delete skill and all companion files
-
-GET    /api/skills/:id/files           List all companion files
-POST   /api/skills/:id/files           Upload companion file(s) (email gated)
-GET    /api/skills/:id/files/:fileId   Download companion file
-DELETE /api/skills/:id/files/:fileId   Delete companion file
-
-GET    /api/skills/:id/download        Download skill as ZIP with all files
-```
-
-**Email Gating**: Upload endpoints require `X-Subscriber-Email` header with subscribed email.
-
-### REST API - Extensions
-```
-GET    /api/extensions                           List all extensions
-GET    /api/extensions/:id                       Get specific extension with configs
-GET    /api/extensions/:id/manifest/:format      Get extension manifest (gemini|claude_code)
-POST   /api/extensions                           Create new extension
-PUT    /api/extensions/:id                       Update extension
-DELETE /api/extensions/:id                       Delete extension
-GET    /api/extensions/:id/configs               Get configs for extension
-POST   /api/extensions/:id/configs               Add configs to extension (batch)
-POST   /api/extensions/:id/configs/:configId     Add single config to extension
-DELETE /api/extensions/:id/configs/:configId     Remove config from extension
-POST   /api/extensions/:id/invalidate            Invalidate extension cache
-```
-
-### REST API - Marketplaces
-```
-GET    /api/marketplaces                                List all marketplaces
-GET    /api/marketplaces/:id                            Get specific marketplace with extensions
-GET    /api/marketplaces/:id/manifest                   Get marketplace manifest (Claude Code format)
-POST   /api/marketplaces                                Create new marketplace
-PUT    /api/marketplaces/:id                            Update marketplace
-DELETE /api/marketplaces/:id                            Delete marketplace
-POST   /api/marketplaces/:id/extensions                 Add extensions to marketplace (batch)
-POST   /api/marketplaces/:id/extensions/:extensionId    Add single extension to marketplace
-DELETE /api/marketplaces/:id/extensions/:extensionId    Remove extension from marketplace
-POST   /api/marketplaces/:id/invalidate                 Invalidate marketplace cache
-```
-
-### Plugin Downloads
-```
-GET    /plugins/:extensionId/:format                    Browse plugin files (claude_code|gemini)
-GET    /plugins/:extensionId/:format/download           Download complete plugin as ZIP
-GET    /plugins/:extensionId/gemini/definition          Download Gemini JSON definition (recommended)
-GET    /plugins/:extensionId/:format/*                  Serve individual plugin file
-POST   /plugins/:extensionId/:format/invalidate         Invalidate/regenerate plugin files
-GET    /plugins/marketplaces/:marketplaceId/gemini/definition  Download marketplace Gemini JSON collection
-GET    /plugins/marketplaces/:marketplaceId/download?format=   Download all marketplace plugins as ZIP
-```
-
-### REST API - Subscriptions
-```
-GET    /subscriptions/form                 Show subscription form (HTML) with optional return URL
-POST   /api/subscriptions/subscribe        Subscribe email (stores in KV, sends admin notification)
-GET    /api/subscriptions/verify/:email    Check if email is subscribed
-GET    /api/subscriptions/verify?email=    Alternative verification endpoint
-```
-
-### REST API - Analytics
-```
-POST   /api/analytics/track                Track analytics event (client-side beacon)
-```
-
-**Analytics Event Types:**
-- `landing`, `page_view`, `onboarding_view` - Page views
-- `configs_browse`, `config_view`, `config_conversion` - Config interactions
-- `slash_command_convert` - Slash command conversion
-- `email_gate_view`, `email_submit` - Email subscription funnel
-- `plugin_browse`, `marketplace_browse`, `extension_download`, `skill_download` - Downloads
-- `login_page_view`, `login_attempt`, `login_success`, `login_fail`, `login_abandoned` - Login tracking
-
-### REST API - Authentication
-```
-GET    /auth/login                         Login page UI (GitHub OAuth, Email OTP)
-GET    /auth/logout                        Logout confirmation page
-POST   /auth/logout                        Execute logout
-POST   /api/auth/*                         Better Auth endpoints (OAuth callbacks, sessions)
-```
-
-**Login Methods:**
-- GitHub OAuth (social sign-in)
-- Email OTP (magic code verification)
-
-**Login Analytics Tracking:**
-- `login_page_view`: Tracked when login page is viewed (includes referrer, return URL)
-- `login_attempt`: Tracked when user initiates auth (GitHub or Email OTP)
-- `login_success`: Tracked on successful authentication (includes user ID)
-- `login_fail`: Tracked on failed authentication (includes error type)
-- `login_abandoned`: Tracked client-side via sendBeacon when user leaves without completing
-
-**Admin Notifications:**
-- Login success triggers admin email notification with user details
-- Sent non-blocking via EmailService.sendLoginNotification()
-
-**Email Subscription Flow**:
-1. User submits email via `/subscriptions/form` or API
-2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace (with 30-day expiration in localStorage)
-3. Admin notification sent via Cloudflare Email Routing
-4. User can access all CUD (Create, Update, Delete) endpoints with `X-Subscriber-Email` header
-
-**UI Email Gating**:
-- All CUD buttons/links in the UI are gated with `requireEmail()` JavaScript function
-- Email gate modal appears when user tries to perform CUD operation without subscription
-- Email stored in localStorage (`subscriberEmail` and `subscribedAt`) with 30-day expiration
-- HTMX automatically adds `X-Subscriber-Email` header to all POST/PUT/DELETE/PATCH requests
-- 401/403 responses automatically show email subscription prompt
-- 17 UI entry points protected: create/edit/delete buttons across configs, skills, extensions, marketplaces
-
-Same routes work for UI at `/configs`, `/skills`, `/extensions`, `/marketplaces` (returns HTML instead of JSON). PUT endpoints support both JSON and form data.
-
-### MCP Server
-```
-POST   /mcp                            Public MCP endpoint (read-only, NO auth required)
-POST   /mcp/admin                      Admin MCP endpoint (full access, token-protected)
-GET    /mcp/info                       Server info page (ONLY shows public endpoint)
-```
-
-**Access Control** (Temporary until full user auth):
-- **Public endpoint (`/mcp`)**: Read-only access, no authentication required
-  - **1 Tool**: get_config
-  - **Resources**: config://list (all resources available)
-  - **Prompts**: None (prompts describe write workflows)
-
-- **Admin endpoint (`/mcp/admin`)**: Full access, Bearer token authentication
-  - **6 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache
-  - **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
-  - **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
-  - **Auth**: Requires `Authorization: Bearer <token>` header with valid admin token
-  - **Token validation**: SHA-256 hash comparison against `MCP_ADMIN_TOKEN_HASH` secret
-
-**⚠️ IMPORTANT - Security by Obscurity**:
-- Admin endpoint (`/mcp/admin`) is **UNDOCUMENTED in public UI**
-- NOT shown on `/mcp/info` page
-- NOT mentioned in README or public documentation
-- ONLY documented here in CLAUDE.md (internal project docs)
-- Only team members with token should know about admin endpoint
-
-**MCP Client Config**:
-
-Public (read-only):
-```json
-{
-  "mcpServers": {
-    "agent-config-adapter": {
-      "type": "http",
-      "url": "http://localhost:8787/mcp"
-    }
-  }
-}
-```
-
-Admin (full access):
-```json
-{
-  "mcpServers": {
-    "agent-config-adapter-admin": {
-      "type": "http",
-      "url": "http://localhost:8787/mcp/admin",
-      "headers": {
-        "Authorization": "Bearer YOUR_ADMIN_TOKEN"
-      }
-    }
-  }
-}
-```
-
-Token setup:
-```bash
-# Generate token hash for local dev
-tsx scripts/hash-token.ts "test-admin-token-123"
-
-# Add to .dev.vars
-MCP_ADMIN_TOKEN_HASH=bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721
-
-# For production - generate strong token
-tsx scripts/hash-token.ts "$(openssl rand -hex 32)"
-
-# Set as Worker secret
-npx wrangler secret put MCP_ADMIN_TOKEN_HASH
-```
-
-## Testing
-
-- Use Vitest for all tests
-- Test adapter conversion logic (critical)
-- Test D1 and KV operations
-- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService, SubscriptionService, EmailService, AnalyticsService)
-- Test routes layer (configs, skills, extensions, marketplaces, subscriptions, auth)
-- Test middleware layer (email gating)
-- Test infrastructure layer (repositories, file storage)
-- All tests must pass before committing
-
-### MCP Testing
-- Test public MCP endpoint via `/mcp` (read-only, no auth)
-- Test admin MCP endpoint via `/mcp/admin` (requires Bearer token)
-- Use `GET /mcp/info` to verify public endpoint capabilities
-- Test read operations on public endpoint (should succeed)
-- Test write operations on public endpoint (should fail - tool not found)
-- Test write operations on admin endpoint with valid token (should succeed)
-- Test admin endpoint without token (should return 401)
-- Test workflows using prompts on admin endpoint (migrate_config_format, batch_convert, sync_config_versions)
-
-### CI/CD Testing
-- GitHub Actions workflow (`.github/workflows/test-coverage.yml`) runs on all pushes and PRs
-- Automated coverage reporting with PR comments and artifacts
-- README badge automatically updated on main branch with current coverage percentage
-
-## Configuration
-
-**wrangler.jsonc**: Uses JSONC format (comments allowed)
-- Update production database and KV IDs after creating resources (DB, CONFIG_CACHE, EMAIL_SUBSCRIPTIONS)
-- Configure `send_email` binding with admin email address
-- Set `ADMIN_EMAIL` in vars section
-- `nodejs_compat` flag required for nanoid, OpenAI SDK, Gemini SDK, mimetext, and other Node.js modules
-- Set `ACCOUNT_ID` and `GATEWAY_ID` in vars section
-- For production BYOK: Set `AI_GATEWAY_TOKEN` as a secret using wrangler CLI
-- For local dev: Set `OPENAI_API_KEY` and/or `GEMINI_API_KEY` in .dev.vars (not as secrets)
+- `slash_command`: AI-enhanced conversion
+- `agent_definition`: Passthrough only (MVP)
+- `mcp_config`: Rule-based conversion (no AI)
+- `skill`: Multi-file with SKILL.md + companions
 
 ## Business Rules
 
-- Agent definitions are NOT available in Codex and Claude Code formats
 - Default input format is Claude Code
-- All conversions maintain semantic meaning
-- Config types:
-  - `slash_command` (fully implemented with AI-enhanced conversion)
-  - `agent_definition` (passthrough only - MVP)
-  - `mcp_config` (fully implemented with rule-based conversion, no AI)
-  - `skill` (fully implemented with multi-file support, passthrough conversion)
-- Skills management:
-  - Required SKILL.md file plus optional companion files
-  - ZIP upload/download with structure preservation
-  - Gist-like editing interface with tab-based file management
-  - Automatic redirect from config interface to skills interface
-  - Companion files stored in R2 bucket
-- Extensions bundle multiple configs into distributable packages
-- Marketplaces group multiple extensions for discovery
-- Plugin downloads:
-  - Claude Code: Full ZIP with manifest, commands, agents, MCP configs, skills (primary)
-    - Extension ZIPs: Include plugin manifest and all config files
-    - Marketplace ZIPs: Include marketplace.json at root with all plugin directories
-  - Gemini: JSON definition file (recommended primary), ZIP available (advanced)
-- Plugin files are lazily generated and stored in R2
-- File generation is cached until invalidated
-- Email gating for all CUD operations:
-  - All Create, Update, Delete endpoints require email subscription verification
-  - Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace
-  - Admin notifications sent via Cloudflare Email Routing
-  - Prevents abuse while building user community
-  - Protected endpoints (26 total):
-    - Configs: POST /, PUT /:id, DELETE /:id, POST /:id/invalidate, POST /:id/refresh-analysis
-    - Skills: POST /, PUT /:id, DELETE /:id, POST /upload-zip, POST /:id/files, DELETE /:id/files/:fileId
-    - Extensions: POST /, PUT /:id, DELETE /:id, POST /:id/configs, POST /:id/configs/:configId, DELETE /:id/configs/:configId, POST /:id/invalidate
-    - Marketplaces: POST /, PUT /:id, DELETE /:id, POST /:id/extensions, POST /:id/extensions/:extensionId, DELETE /:id/extensions/:extensionId, POST /:id/invalidate
-    - Files/Plugins: POST /files/extensions/:extensionId, DELETE /files/:fileId, POST /plugins/:extensionId/:format/invalidate
+- All conversions preserve semantic meaning
+- Agent definitions NOT available in Codex/Claude Code formats
+- Skills require SKILL.md, companions stored in R2
+- Extensions bundle configs, Marketplaces group extensions
+- Email gating protects all CUD operations (26 endpoints)
+
+## Testing
+
+- Vitest for all tests
+- Test adapters, services, routes, middleware, infrastructure
+- All tests must pass before committing
+- CI/CD: GitHub Actions with coverage reports
+
+## Deployment
+
+```bash
+npm run deploy
+
+# First-time: create D1, KV namespaces, R2 bucket
+# Update IDs in wrangler.jsonc
+# Set secrets: AI_GATEWAY_TOKEN, MCP_ADMIN_TOKEN_HASH, EMAIL_API_KEY
+```
 
 ## MVP Limitations
 
-- Agent definitions use passthrough (no conversion yet)
-- Skills use passthrough (no conversion yet)
-- Email gating for all CUD operations (subscription-based with UI modal, no full authentication)
-  - Backend: Middleware checks X-Subscriber-Email header (26 endpoints)
-  - Frontend: JavaScript modal gates all CUD buttons/links (17 entry points)
-  - localStorage-based email storage with 30-day expiration
-- No user accounts or per-user config management
-- Extension and marketplace features not yet integrated with MCP tools
-- Skills features not yet integrated with MCP tools
-
-## MCP Config Adapter
-
-MCP configs are fully implemented with rule-based conversion:
-- Supports stdio and HTTP/SSE server types
-- Converts between Claude Code JSON (with type field), Gemini JSON (uses httpUrl), and Codex TOML (uses startup_timeout_ms)
-- Handles field mapping: type field (Claude only), httpUrl vs url, startup_timeout_ms (Codex only)
-- Uses smol-toml library (Cloudflare Workers compatible)
-- Skips AI conversion to ensure accurate structured data transformation
-- 24 passing tests covering all format combinations and edge cases
+- Agent definitions and skills use passthrough (no conversion)
+- Email gating instead of full authentication
+- Extensions/marketplaces/skills not in MCP tools yet

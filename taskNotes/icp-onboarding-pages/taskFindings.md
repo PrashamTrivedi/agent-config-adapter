@@ -1,1 +1,0 @@
-/root/Code/agent-config-adapter/taskNotes/icp-onboarding-pages/v2/taskFindings.md

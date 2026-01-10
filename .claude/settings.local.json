@@ -54,7 +54,8 @@
       "mcp__memory-server__add_tags",
       "Bash(paste:*)",
       "Bash(openssl rand:*)",
-      "mcp__browser__browser_click"
+      "mcp__browser__browser_click",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
