@@ -33,3 +33,23 @@ Core types and business rules.
 - `ipAddress`: Optional client IP (from CF-Connecting-IP header)
 
 Stored in EMAIL_SUBSCRIPTIONS KV namespace for fast verification.
+
+### Analytics Types
+
+`AnalyticsEventType` - Tracked event types:
+- Page views: `landing`, `page_view`, `onboarding_view`
+- Config interactions: `configs_browse`, `config_view`, `config_conversion`
+- Conversions: `slash_command_convert`
+- Email funnel: `email_gate_view`, `email_submit`
+- Downloads: `plugin_browse`, `marketplace_browse`, `extension_download`, `skill_download`
+- Login tracking: `login_page_view`, `login_attempt`, `login_success`, `login_fail`, `login_abandoned`
+
+`AnalyticsMetadata` - Event metadata fields:
+- Standard: `userId`, `sessionId`, `configFormat`, `configType`, `configName`
+- Onboarding: `onboardingICP`
+- Conversion: `conversionTarget`, `conversionValue`, `timeSpent`
+- Login: `loginMethod` (github|email_otp), `loginReferrer`, `loginOutcome`, `errorType`, `returnUrl`
+
+`UTMParams` - Marketing attribution:
+- `source`, `medium`, `campaign`, `term`, `content`
+- Persisted via 30-day first-touch cookie

@@ -31,6 +31,7 @@ return c.html(configDetailView(config))
 
 ## Route Files
 
+- **auth.ts**: Authentication routes (login/logout UI, Better Auth handler with analytics)
 - **configs.ts**: Config CRUD and conversions (redirects skills to `/skills`)
 - **skills.ts**: Multi-file skill management (upload endpoints protected by email gate middleware)
 - **extensions.ts**: Extension bundling
@@ -39,6 +40,8 @@ return c.html(configDetailView(config))
 - **plugins.ts**: Plugin file downloads and browsing
 - **files.ts**: Skill companion file operations
 - **subscriptions.ts**: Email subscription management and verification
+- **profile.ts**: User profile management
+- **onboarding.ts**: Onboarding flow pages
 
 ## Skills Auto-Redirect
 

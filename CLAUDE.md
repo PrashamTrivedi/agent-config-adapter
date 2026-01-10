@@ -91,16 +91,16 @@ npx wrangler secret put AI_GATEWAY_TOKEN
 **Layer Structure**:
 - `src/domain/` - Core types and business entities (no infrastructure dependencies)
 - `src/infrastructure/` - D1, KV, R2, Email Routing, AI services (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
-- `src/services/` - Business logic (shared between REST API and MCP server, includes SubscriptionService and EmailService)
+- `src/services/` - Business logic (shared between REST API and MCP server, includes SubscriptionService, EmailService, AnalyticsService)
 - `src/middleware/` - Request middleware (email gating for all CUD operations)
 - `src/adapters/` - Format converters (Claude Code ↔ Codex ↔ Gemini)
-- `src/routes/` - Hono REST HTTP handlers (includes subscriptions routes)
+- `src/routes/` - Hono REST HTTP handlers (includes subscriptions, auth routes)
 - `src/mcp/` - MCP server (6 tools, 3 resources, 3 prompts)
 - `src/views/` - HTMX server-rendered templates (Neural Lab design, includes subscription form)
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion.
 
-**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EMAIL_SUBSCRIPTIONS` (KV), `EXTENSION_FILES` (R2), `EMAIL` (send_email), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`, `ADMIN_EMAIL`
+**Bindings** (wrangler.jsonc): `DB` (D1), `CONFIG_CACHE` (KV), `EMAIL_SUBSCRIPTIONS` (KV), `EXTENSION_FILES` (R2), `EMAIL` (send_email), `AI_GATEWAY_TOKEN` (secret), `ACCOUNT_ID`, `GATEWAY_ID`, `AI_PROVIDER`, `OPENAI_REASONING_MODE`, `GEMINI_THINKING_BUDGET`, `ADMIN_EMAIL`, `ANALYTICS` (Analytics Engine), `WEB_ANALYTICS_TOKEN`
 
 ## API Endpoints
 
@@ -197,6 +197,42 @@ GET    /api/subscriptions/verify/:email    Check if email is subscribed
 GET    /api/subscriptions/verify?email=    Alternative verification endpoint
 ```
 
+### REST API - Analytics
+```
+POST   /api/analytics/track                Track analytics event (client-side beacon)
+```
+
+**Analytics Event Types:**
+- `landing`, `page_view`, `onboarding_view` - Page views
+- `configs_browse`, `config_view`, `config_conversion` - Config interactions
+- `slash_command_convert` - Slash command conversion
+- `email_gate_view`, `email_submit` - Email subscription funnel
+- `plugin_browse`, `marketplace_browse`, `extension_download`, `skill_download` - Downloads
+- `login_page_view`, `login_attempt`, `login_success`, `login_fail`, `login_abandoned` - Login tracking
+
+### REST API - Authentication
+```
+GET    /auth/login                         Login page UI (GitHub OAuth, Email OTP)
+GET    /auth/logout                        Logout confirmation page
+POST   /auth/logout                        Execute logout
+POST   /api/auth/*                         Better Auth endpoints (OAuth callbacks, sessions)
+```
+
+**Login Methods:**
+- GitHub OAuth (social sign-in)
+- Email OTP (magic code verification)
+
+**Login Analytics Tracking:**
+- `login_page_view`: Tracked when login page is viewed (includes referrer, return URL)
+- `login_attempt`: Tracked when user initiates auth (GitHub or Email OTP)
+- `login_success`: Tracked on successful authentication (includes user ID)
+- `login_fail`: Tracked on failed authentication (includes error type)
+- `login_abandoned`: Tracked client-side via sendBeacon when user leaves without completing
+
+**Admin Notifications:**
+- Login success triggers admin email notification with user details
+- Sent non-blocking via EmailService.sendLoginNotification()
+
 **Email Subscription Flow**:
 1. User submits email via `/subscriptions/form` or API
 2. Email stored in `EMAIL_SUBSCRIPTIONS` KV namespace (with 30-day expiration in localStorage)
@@ -289,8 +325,8 @@ npx wrangler secret put MCP_ADMIN_TOKEN_HASH
 - Use Vitest for all tests
 - Test adapter conversion logic (critical)
 - Test D1 and KV operations
-- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService, SubscriptionService, EmailService)
-- Test routes layer (configs, skills, extensions, marketplaces, subscriptions)
+- Test services layer (ConfigService, ConversionService, SkillsService, SkillZipService, SubscriptionService, EmailService, AnalyticsService)
+- Test routes layer (configs, skills, extensions, marketplaces, subscriptions, auth)
 - Test middleware layer (email gating)
 - Test infrastructure layer (repositories, file storage)
 - All tests must pass before committing

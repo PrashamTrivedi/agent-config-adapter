@@ -85,13 +85,30 @@ Business logic and service coordination. Shared by REST API and MCP server.
   - `deleteSubscription(email)`: GDPR compliance
 
 ### EmailService
-- Cloudflare Email Routing integration
-- Admin notifications via send_email binding
-- HTML email composition using mimetext
+- Custom email API integration
+- Admin notifications for subscriptions and logins
+- HTML email composition
 - Email types:
   - Subscription notifications (to admin)
   - Welcome emails (to subscriber, optional)
+  - Login notifications (to admin) - triggered on successful authentication
 - Neural Lab design-themed email templates
+
+### AnalyticsService
+- Cloudflare Workers Analytics Engine integration
+- UTM parameter extraction and persistence (first-touch attribution)
+- Session tracking via CF-Ray header
+- Event tracking methods:
+  - `trackEvent()`: Generic event tracking
+  - `trackPageView()`: Page view tracking
+  - `trackFunnelStep()`: Funnel step tracking
+  - `trackConfigInteraction()`: Config-specific events
+  - `trackLoginPageView()`: Login page views with referrer/returnUrl
+  - `trackLoginAttempt()`: Auth initiation (GitHub/Email OTP)
+  - `trackLoginSuccess()`: Successful auth with user ID
+  - `trackLoginFail()`: Failed auth with error type
+  - `trackLoginAbandoned()`: Client-side beacon for abandoned logins
+- 30-day cookie-based UTM persistence
 
 ## Service Patterns
 
