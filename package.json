@@ -35,7 +35,7 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.3",
     "workerd": "^1.20251004.0",
-    "wrangler": "^4.49.0"
+    "wrangler": "^4.59.1"
   },
   "scripts": {
     "dev": "wrangler dev --port 9090",
