@@ -1,47 +1,32 @@
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { toReqRes, toFetchResponse } from 'fetch-to-node';
+import { StreamableHTTPTransport } from '@hono/mcp';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { Context } from 'hono';
 
 /**
  * Handle MCP requests via Streamable HTTP transport
- * This is the recommended transport for serverless environments like Cloudflare Workers
- *
- * Uses fetch-to-node to bridge between Web Fetch API (Cloudflare Workers)
- * and Node.js HTTP interfaces (required by MCP SDK)
+ * Uses @hono/mcp for native Cloudflare Workers support
  *
  * Stateless mode: No session management needed, each request is independent
  *
- * @param request - Incoming Web Request
- * @param server - Pre-configured MCP server instance (with readonly or full access)
+ * @param c - Hono context (provides access to request and environment)
+ * @param server - Pre-configured MCP server instance (readonly or full access)
  */
 export async function handleMCPStreamable(
-  request: Request,
+  c: Context,
   server: McpServer
 ): Promise<Response> {
   try {
-    // Convert Web Request to Node.js-compatible req/res objects
-    const { req, res } = toReqRes(request);
-
-    // Create a new transport for each request (stateless mode)
-    // This prevents request ID collisions when different clients use same IDs
-    const transport = new StreamableHTTPServerTransport({
+    // @hono/mcp supports same options as official MCP SDK
+    const transport = new StreamableHTTPTransport({
       sessionIdGenerator: undefined, // Stateless mode
       enableJsonResponse: true
     });
 
-    // Use the provided server instance (already configured with correct access mode)
-
     // Connect server to transport
     await server.connect(transport);
 
-    // Parse request body
-    const body = await request.json();
-
-    // Handle the request using Node.js-compatible req/res
-    await transport.handleRequest(req, res, body);
-
-    // Convert Node.js response back to Web Response
-    return await toFetchResponse(res);
+    // Handle the request - returns native Web Response
+    return transport.handleRequest(c) as Promise<Response>;
   } catch (error: any) {
     console.error('MCP transport error:', error);
 

@@ -326,7 +326,7 @@ app.post('/mcp', async (c) => {
   const accessLevel = userId ? 'full' : 'readonly';
   const server = createMCPServer(c.env, accessLevel, userId || undefined);
 
-  return handleMCPStreamable(c.req.raw, server);
+  return handleMCPStreamable(c, server);
 });
 
 // Admin MCP server (full access, token-protected)
@@ -386,7 +386,7 @@ app.post('/mcp/admin', async (c) => {
   }
 
   const server = createMCPServer(c.env, 'full', userId);
-  return handleMCPStreamable(c.req.raw, server);
+  return handleMCPStreamable(c, server);
 });
 
 // MCP Server info endpoint
