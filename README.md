@@ -1,6 +1,6 @@
 # Agent Config Adapter - MVP
 
-[![Coverage](https://img.shields.io/badge/Coverage-78%25-yellow)](https://github.com/PrashamTrivedi/agent-config-adapter/actions/workflows/test-coverage.yml)
+[![Coverage](https://img.shields.io/badge/Coverage-75%25-yellow)](https://github.com/PrashamTrivedi/agent-config-adapter/actions/workflows/test-coverage.yml)
 
 Universal adapter for AI coding agent configurations. Store Claude Code commands
 and MCP configs once, deploy across Codex, Gemini, and other agents.
