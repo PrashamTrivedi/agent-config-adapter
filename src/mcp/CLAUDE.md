@@ -20,11 +20,16 @@ Read-only, no authentication:
 ## Admin Endpoint (`/mcp/admin`)
 
 Full access, Bearer token required:
-- **6 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache
+- **8 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache, sync_local_configs, delete_configs_batch
 - **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
 - **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
-- **Auth**: `Authorization: Bearer <token>` header
-- **Validation**: SHA-256 hash comparison against `MCP_ADMIN_TOKEN_HASH` secret
+- **Auth**: `Authorization: Bearer <token>` header (supports admin token, JWT, or API key)
+- **Validation**: Admin token hash, JWT verification, or API key lookup
+
+### Sync Tools
+
+- `sync_local_configs`: Push-only sync from local configs to remote. Accepts array of configs with name, type, content, and optional companionFiles. Returns created/updated/unchanged/deletionCandidates.
+- `delete_configs_batch`: Delete multiple configs by ID with explicit confirmation required.
 
 ## Security
 
@@ -77,4 +82,4 @@ npx wrangler secret put MCP_ADMIN_TOKEN_HASH
 ## MVP Limitations
 
 - Extensions/marketplaces not in MCP tools yet
-- Skills not in MCP tools yet
+- Skills sync supported via `sync_local_configs` tool (with companion files)
