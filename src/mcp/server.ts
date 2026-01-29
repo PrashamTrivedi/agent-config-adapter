@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { ConfigService, ConversionService } from '../services';
+import { ConfigService, ConversionService, SyncService } from '../services';
 import { MCPContext } from './types';
 import { AgentFormat, ConfigType } from '../domain/types';
 
@@ -11,16 +11,18 @@ import { AgentFormat, ConfigType } from '../domain/types';
  *
  * @param env - MCP context with database and service dependencies
  * @param mode - Access mode: 'readonly' (public) or 'full' (admin with token)
+ * @param userId - User ID for ownership tracking (required for full mode sync operations)
  *
  * Access modes:
  * - readonly: Only get_config tool + all resources (no prompts)
- * - full: All 6 tools + all resources + all 3 prompts
+ * - full: All 8 tools + all resources + all 3 prompts (includes sync tools)
  *
  * Note: This is a temporary security measure until full user auth is implemented
  */
 export function createMCPServer(
 	env: MCPContext,
-	mode: 'readonly' | 'full' = 'readonly'
+	mode: 'readonly' | 'full' = 'readonly',
+	userId?: string
 ): McpServer {
   const server = new McpServer(
     {
@@ -38,6 +40,7 @@ export function createMCPServer(
 
   const configService = new ConfigService(env);
   const conversionService = new ConversionService(env);
+  const syncService = new SyncService(env as MCPContext & { EXTENSION_FILES: R2Bucket });
 
   // ===== TOOLS =====
 
@@ -320,6 +323,146 @@ export function createMCPServer(
           isError: true
         };
       }
+      }
+    );
+
+    // Tool: sync_local_configs
+    server.tool(
+      'sync_local_configs',
+      'Sync local Claude Code configs to remote. Push-only: creates new, updates existing (local wins). Returns deletion candidates for user confirmation. Never auto-deletes.',
+      {
+        configs: z.array(z.object({
+          name: z.string().describe('Config name'),
+          type: z.enum(['slash_command', 'agent_definition', 'skill']).describe('Config type'),
+          content: z.string().describe('Config content (SKILL.md content for skills)'),
+          companionFiles: z.array(z.object({
+            path: z.string().describe('File path relative to skill directory'),
+            content: z.string().describe('File content (base64 encoded for binary files)'),
+            mimeType: z.string().optional().describe('MIME type of the file')
+          })).optional().describe('Companion files for skills')
+        })).describe('Array of local configs to sync'),
+        types: z.array(z.enum(['slash_command', 'agent_definition', 'skill'])).optional().describe('Filter sync to specific types'),
+        dry_run: z.boolean().optional().describe('Preview changes without applying')
+      },
+      async ({ configs, types, dry_run }) => {
+        try {
+          if (!userId) {
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: false,
+                  error: 'Authentication required for sync operations'
+                }, null, 2)
+              }],
+              isError: true
+            };
+          }
+
+          const result = await syncService.syncConfigs(
+            configs.map(c => ({
+              ...c,
+              type: c.type as ConfigType
+            })),
+            userId,
+            types as ConfigType[] | undefined,
+            dry_run ?? false
+          );
+
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                summary: {
+                  created: result.created.length,
+                  updated: result.updated.length,
+                  unchanged: result.unchanged.length,
+                  deletionCandidates: result.deletionCandidates.length
+                },
+                details: result,
+                message: dry_run
+                  ? 'Dry run complete - no changes applied'
+                  : `Sync complete: ${result.created.length} created, ${result.updated.length} updated`
+              }, null, 2)
+            }]
+          };
+        } catch (error: any) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                error: error.message
+              }, null, 2)
+            }],
+            isError: true
+          };
+        }
+      }
+    );
+
+    // Tool: delete_configs_batch
+    server.tool(
+      'delete_configs_batch',
+      'Delete multiple configs by ID. Use after reviewing deletion candidates from sync_local_configs. Requires explicit confirmation.',
+      {
+        configIds: z.array(z.string()).describe('Array of config IDs to delete'),
+        confirm: z.boolean().describe('Must be true to execute deletion')
+      },
+      async ({ configIds, confirm }) => {
+        try {
+          if (!confirm) {
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: false,
+                  error: 'Deletion cancelled - confirm must be true',
+                  message: 'Set confirm: true to proceed with deletion'
+                }, null, 2)
+              }]
+            };
+          }
+
+          if (!userId) {
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: false,
+                  error: 'Authentication required for delete operations'
+                }, null, 2)
+              }],
+              isError: true
+            };
+          }
+
+          const result = await syncService.deleteConfigs(configIds);
+
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                deleted: result.deleted,
+                failed: result.failed,
+                message: `Deleted ${result.deleted.length} configs${result.failed.length > 0 ? `, ${result.failed.length} failed` : ''}`
+              }, null, 2)
+            }]
+          };
+        } catch (error: any) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                error: error.message
+              }, null, 2)
+            }],
+            isError: true
+          };
+        }
       }
     );
   }

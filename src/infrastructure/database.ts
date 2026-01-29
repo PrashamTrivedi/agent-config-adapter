@@ -108,6 +108,32 @@ export class ConfigRepository {
     return result || null;
   }
 
+  /**
+   * Find config by name and type, optionally filtered by user
+   * Used for sync operations to match local configs with remote
+   */
+  async findByNameAndType(
+    name: string,
+    type: string,
+    userId?: string
+  ): Promise<Config | null> {
+    const query = userId
+      ? `SELECT c.*, u.name AS owner_name
+         FROM configs c
+         LEFT JOIN "user" u ON c.user_id = u.id
+         WHERE c.name = ? AND c.type = ? AND c.user_id = ?`
+      : `SELECT c.*, u.name AS owner_name
+         FROM configs c
+         LEFT JOIN "user" u ON c.user_id = u.id
+         WHERE c.name = ? AND c.type = ?`;
+
+    const result = userId
+      ? await this.db.prepare(query).bind(name, type, userId).first<Config>()
+      : await this.db.prepare(query).bind(name, type).first<Config>();
+
+    return result || null;
+  }
+
   async findAll(filters?: {
     type?: string;
     originalFormat?: string;

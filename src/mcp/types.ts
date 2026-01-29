@@ -6,6 +6,8 @@ import { AgentFormat, ConfigType } from '../domain/types';
 export interface MCPContext {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  // R2 bucket for skill companion files (used by sync_local_configs tool)
+  EXTENSION_FILES: R2Bucket;
   // OpenAI API key for AI-powered format conversion (used by convert_config tool)
   // Falls back to rule-based conversion if not provided
   // See: src/infrastructure/ai-converter.ts

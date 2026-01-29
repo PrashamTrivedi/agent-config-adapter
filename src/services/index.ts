@@ -6,5 +6,7 @@ export { ManifestService } from './manifest-service';
 export { FileStorageService } from './file-storage-service';
 export { FileGenerationService } from './file-generation-service';
 export { ZipGenerationService } from './zip-generation-service';
+export { SyncService } from './sync-service';
 export type { ConfigServiceEnv } from './config-service';
 export type { ConversionServiceEnv, ConversionResult } from './conversion-service';
+export type { SyncServiceEnv, LocalConfigInput, SyncResult } from './sync-service';

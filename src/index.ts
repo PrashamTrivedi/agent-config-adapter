@@ -17,6 +17,8 @@ import { handleMCPStreamable } from './mcp/transport';
 import { createMCPServer } from './mcp/server';
 import { validateMCPAdminToken } from './mcp/auth';
 import { mcpOAuthRouter, getOAuthMetadata } from './mcp/oauth';
+import { verifyAccessToken } from './mcp/oauth/jwt';
+import { ApiKeyService } from './services/api-key-service';
 import type { AnalyticsEngineDataset } from './domain/types';
 import { AnalyticsService } from './services/analytics-service';
 import { utmPersistenceMiddleware } from './middleware/utm-persistence';
@@ -322,36 +324,68 @@ app.post('/mcp', async (c) => {
 
   // Authenticated users get full access, anonymous users get read-only
   const accessLevel = userId ? 'full' : 'readonly';
-  const server = createMCPServer(c.env, accessLevel);
+  const server = createMCPServer(c.env, accessLevel, userId || undefined);
 
   return handleMCPStreamable(c.req.raw, server);
 });
 
 // Admin MCP server (full access, token-protected)
 // NOTE: This endpoint is UNDOCUMENTED and SECRET (not shown in /mcp/info)
-// Only for internal team use until full user auth is implemented
+// Supports multiple auth methods: admin token, JWT, or API key
 app.post('/mcp/admin', async (c) => {
-  // Validate admin token
-  const isValid = await validateMCPAdminToken(
-    c.req.raw,
-    c.env.MCP_ADMIN_TOKEN_HASH
-  );
+  let userId: string | undefined;
+  let isAuthorized = false;
 
-  if (!isValid) {
+  const authHeader = c.req.header('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
+
+  if (token) {
+    // Try admin token hash first (legacy auth)
+    const isAdminToken = await validateMCPAdminToken(c.req.raw, c.env.MCP_ADMIN_TOKEN_HASH);
+    if (isAdminToken) {
+      isAuthorized = true;
+      // Admin token doesn't have user context - use session userId if available
+      userId = c.get('userId') || undefined;
+    }
+
+    // Try JWT access token
+    if (!isAuthorized) {
+      const jwtSecret = c.env.JWT_SECRET || c.env.BETTER_AUTH_SECRET;
+      if (jwtSecret) {
+        const payload = await verifyAccessToken(token, jwtSecret);
+        if (payload) {
+          isAuthorized = true;
+          userId = payload.sub;
+        }
+      }
+    }
+
+    // Try API key
+    if (!isAuthorized && token.startsWith('aca_')) {
+      const apiKeyService = new ApiKeyService(c.env.DB);
+      const result = await apiKeyService.validate(token);
+      if (result) {
+        isAuthorized = true;
+        userId = result.userId;
+      }
+    }
+  }
+
+  if (!isAuthorized) {
     return c.json(
       {
         jsonrpc: '2.0',
         id: null,
         error: {
           code: -32001,
-          message: 'Unauthorized: Valid admin token required'
+          message: 'Unauthorized: Valid admin token, JWT, or API key required'
         }
       },
       401
     );
   }
 
-  const server = createMCPServer(c.env, 'full');
+  const server = createMCPServer(c.env, 'full', userId);
   return handleMCPStreamable(c.req.raw, server);
 });
 
