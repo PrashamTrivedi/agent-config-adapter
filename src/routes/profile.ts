@@ -265,10 +265,10 @@ profileRouter.get('/', async (c) => {
       window.copyNewKey = function(button) {
         const keyInput = document.getElementById('new-key-value');
         navigator.clipboard.writeText(keyInput.value).then(() => {
-          button.innerHTML = '${icons.check('icon')} Copied!';
+          button.textContent = '✓ Copied!';
           button.classList.add('copied');
           setTimeout(() => {
-            button.innerHTML = '${icons.clipboard('icon')} Copy';
+            button.textContent = 'Copy';
             button.classList.remove('copied');
           }, 2000);
         });
