@@ -317,6 +317,24 @@ app.route('/mcp/oauth', mcpOAuthRouter);
 
 // MCP Server endpoints
 
+// CORS preflight for MCP endpoints (required for MCP Inspector and other clients)
+// CORS headers for MCP endpoints
+const mcpCorsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version',
+  'Access-Control-Expose-Headers': 'Mcp-Session-Id',
+  'Access-Control-Max-Age': '86400',
+};
+
+app.options('/mcp', (c) => {
+  return new Response(null, { status: 204, headers: mcpCorsHeaders });
+});
+
+app.options('/mcp/admin', (c) => {
+  return new Response(null, { status: 204, headers: mcpCorsHeaders });
+});
+
 // MCP server (full access for authenticated users, read-only for anonymous)
 app.post('/mcp', async (c) => {
   // Check if user is authenticated via session
@@ -326,7 +344,7 @@ app.post('/mcp', async (c) => {
   const accessLevel = userId ? 'full' : 'readonly';
   const server = createMCPServer(c.env, accessLevel, userId || undefined);
 
-  return handleMCPStreamable(c.req.raw, server);
+  return handleMCPStreamable(c, server);
 });
 
 // Admin MCP server (full access, token-protected)
@@ -386,7 +404,7 @@ app.post('/mcp/admin', async (c) => {
   }
 
   const server = createMCPServer(c.env, 'full', userId);
-  return handleMCPStreamable(c.req.raw, server);
+  return handleMCPStreamable(c, server);
 });
 
 // MCP Server info endpoint

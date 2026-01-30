@@ -82,9 +82,9 @@ mcpOAuthRouter.post('/', mcpOAuthMiddleware, async (c) => {
   // Create MCP server with appropriate access level
   // If authenticated, user gets full access; otherwise read-only
   const mode = userId ? 'full' : 'readonly';
-  const server = createMCPServer(c.env as any, mode);
+  const server = createMCPServer(c.env as any, mode, userId || undefined);
 
-  return handleMCPStreamable(c.req.raw, server);
+  return handleMCPStreamable(c, server);
 });
 
 /**
