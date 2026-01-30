@@ -661,6 +661,215 @@ Please execute this sync workflow and provide a detailed summary.`
       };
       }
     );
+
+  // Prompt: sync_from_local
+  server.prompt(
+    'sync_from_local',
+    'Sync local Claude Code configurations to the remote server. Scans commands, agents, and skills directories.',
+    {
+      workingDirectory: z.string().optional().describe('Current working directory (defaults to pwd)')
+    },
+    async ({ workingDirectory }) => {
+      const cwd = workingDirectory || 'current directory';
+
+      return {
+        messages: [{
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `# Local Config Sync Workflow
+
+I need to sync local Claude Code configurations to the remote server.
+
+**Working Directory**: ${cwd}
+
+## Step 1: Detect Configuration Directory
+
+First, determine if we're in a valid Claude Code config context:
+
+1. Run \`pwd\` to get the current working directory
+2. Check if current directory is \`~/.claude\` (global configs)
+3. OR check if current directory contains a \`.claude\` subdirectory (project configs)
+
+If NEITHER condition is met:
+- Report: "No Claude Code configuration directory found. Expected ~/.claude or ./.claude directory."
+- Exit gracefully - do not proceed with sync.
+
+## Step 2: Identify Config Source Type
+
+Based on the directory detection:
+- **Global (~/.claude)**: These are user's personal configs
+- **Project (./.claude)**: These are project-specific configs
+  - Extract project name from the parent directory name
+  - This will be used as context when reporting
+
+## Step 3: Scan Local Configurations
+
+Scan the following directories for configs:
+
+### Slash Commands
+- Path: \`{config_dir}/commands/*.md\`
+- Type: \`slash_command\`
+- Each \`.md\` file is one command
+- File name (without .md) becomes the config name
+- Skip symlinks
+
+### Agent Definitions
+- Path: \`{config_dir}/agents/*.md\`
+- Type: \`agent_definition\`
+- Each \`.md\` file is one agent
+- File name (without .md) becomes the config name
+- Skip symlinks
+
+### Skills
+- Path: \`{config_dir}/skills/{skill-name}/SKILL.md\`
+- Type: \`skill\`
+- Directory name becomes the skill name
+- SKILL.md is the main content
+- All other files in the directory are companion files
+- Skip symlinked directories
+
+For each file found, read its content using the Read tool.
+
+## Step 4: Preview and Confirm
+
+Before syncing, show the user what was found:
+
+\`\`\`
+Found configurations to sync:
+- Slash Commands: {count} [list names]
+- Agent Definitions: {count} [list names]
+- Skills: {count} [list names with companion file counts]
+
+Source: {global or project: project-name}
+\`\`\`
+
+Use AskUserQuestion to confirm:
+- Question: "Proceed with sync?"
+- Options: "Yes, sync all" / "No, cancel"
+
+If user cancels, exit gracefully.
+
+## Step 5: Execute Sync (Dry Run First)
+
+Call the \`sync_local_configs\` tool with \`dry_run: true\` first:
+
+\`\`\`json
+{
+  "configs": [
+    {
+      "name": "config-name",
+      "type": "slash_command|agent_definition|skill",
+      "content": "file content here",
+      "companionFiles": [
+        {"path": "relative/path.md", "content": "base64 or text content"}
+      ]
+    }
+  ],
+  "dry_run": true
+}
+\`\`\`
+
+Review the dry run results which will show:
+- **Would create**: New configs not on server
+- **Would update**: Configs that differ from server (WILL BE SKIPPED)
+- **Unchanged**: Configs already in sync
+- **Deletion candidates**: Configs on server but not locally
+
+## Step 6: Handle Existing Configs (Skip, Don't Overwrite)
+
+IMPORTANT: Do NOT overwrite existing configs.
+
+From the dry run results:
+- **Would create**: These will be synced
+- **Would update**: SKIP these and log them for user
+- **Unchanged**: Already in sync, no action needed
+
+If there are configs that would be updated (skipped), inform the user:
+\`\`\`
+Skipped (already exists on server with different content):
+- {config name} ({type})
+- {config name} ({type})
+
+These configs were NOT overwritten. Update them manually if needed.
+\`\`\`
+
+## Step 7: Handle Deletion Candidates
+
+If there are remote-only configs (deletion candidates):
+
+Use AskUserQuestion:
+- Question: "Found {N} configs on server that don't exist locally. What would you like to do?"
+- Options:
+  - "Keep all on server (don't delete)"
+  - "Show me the list to review"
+
+If user chooses to review:
+- List each deletion candidate with name and type
+- Use AskUserQuestion for each: "Delete '{name}' ({type}) from server?"
+- Options: "Yes, delete" / "No, keep"
+
+NEVER auto-delete. User must explicitly confirm deletions.
+
+## Step 8: Execute Final Sync
+
+Call \`sync_local_configs\` without dry_run, but ONLY include configs that should be CREATED (not updated):
+
+Filter to only include configs from the "would create" list in dry run results.
+
+\`\`\`json
+{
+  "configs": [
+    // Only NEW configs that don't exist on server
+  ],
+  "dry_run": false
+}
+\`\`\`
+
+If there are no new configs to create, skip this step.
+
+## Step 9: Execute Deletions (if confirmed)
+
+If user confirmed any deletions in Step 7, call \`delete_configs_batch\`:
+
+\`\`\`json
+{
+  "configIds": ["id1", "id2"],
+  "confirm": true
+}
+\`\`\`
+
+## Step 10: Summary Report
+
+Provide a final summary:
+
+\`\`\`
+Sync Complete!
+
+Created: {N} configs
+  - {list created config names}
+Skipped (already exists): {N} configs
+  - {list skipped config names}
+Unchanged: {N} configs
+Deleted: {N} configs (or "None - kept all on server")
+  - {list deleted config names if any}
+
+Source: {global ~/.claude or project: project-name}
+\`\`\`
+
+## Error Handling
+
+If any operation fails:
+- Report the specific error clearly
+- Use AskUserQuestion to ask:
+  - Question: "An error occurred: {error}. How would you like to proceed?"
+  - Options: "Retry" / "Skip and continue" / "Abort sync"
+`
+          }
+        }]
+      };
+    }
+  );
   }
 
   return server;

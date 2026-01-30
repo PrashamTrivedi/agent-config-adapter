@@ -22,7 +22,7 @@ Read-only, no authentication:
 Full access, Bearer token required:
 - **8 Tools**: get_config, create_config, update_config, delete_config, convert_config, invalidate_cache, sync_local_configs, delete_configs_batch
 - **3 Resources**: config://list, config://{id}, config://{id}/cached/{format}
-- **3 Prompts**: migrate_config_format, batch_convert, sync_config_versions
+- **4 Prompts**: migrate_config_format, batch_convert, sync_config_versions, sync_from_local
 - **Auth**: `Authorization: Bearer <token>` header (supports admin token, JWT, or API key)
 - **Validation**: Admin token hash, JWT verification, or API key lookup
 
@@ -30,6 +30,10 @@ Full access, Bearer token required:
 
 - `sync_local_configs`: Push-only sync from local configs to remote. Accepts array of configs with name, type, content, and optional companionFiles. Returns created/updated/unchanged/deletionCandidates.
 - `delete_configs_batch`: Delete multiple configs by ID with explicit confirmation required.
+
+### Sync Prompts
+
+- `sync_from_local`: Workflow prompt for syncing local Claude Code configs. Detects ~/.claude or ./.claude directories, scans commands/agents/skills, and uses sync_local_configs tool. Skips existing configs (no overwrites), asks user about deletions.
 
 ## Security
 

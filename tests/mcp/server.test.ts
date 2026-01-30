@@ -208,8 +208,8 @@ describe('MCP Server', () => {
 
       it('should register all prompts in full mode', () => {
         const server = createMCPServer(context, 'full');
-        // All 3 prompts should be available in full mode:
-        // migrate_config_format, batch_convert, sync_config_versions
+        // All 4 prompts should be available in full mode:
+        // migrate_config_format, batch_convert, sync_config_versions, sync_from_local
         expect(server).toBeDefined();
       });
     });
