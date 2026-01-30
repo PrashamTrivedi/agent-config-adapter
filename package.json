@@ -9,7 +9,7 @@
     "@modelcontextprotocol/sdk": "^1.25.2",
     "better-auth": "^1.4.10",
     "fflate": "^0.8.2",
-    "hono": "^4.9.10",
+    "hono": "^4.11.7",
     "jose": "^6.1.3",
     "kysely": "^0.28.9",
     "kysely-d1": "^0.4.0",
