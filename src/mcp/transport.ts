@@ -26,7 +26,26 @@ export async function handleMCPStreamable(
     await server.connect(transport);
 
     // Handle the request - returns native Web Response
-    return transport.handleRequest(c) as Promise<Response>;
+    const response = await transport.handleRequest(c) as Response;
+
+    // Add CORS headers for MCP Inspector and other clients
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+    };
+
+    // Clone response with CORS headers
+    const newHeaders = new Headers(response.headers);
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      newHeaders.set(key, value);
+    });
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
   } catch (error: any) {
     console.error('MCP transport error:', error);
 
@@ -43,7 +62,10 @@ export async function handleMCPStreamable(
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
         }
       }
     );

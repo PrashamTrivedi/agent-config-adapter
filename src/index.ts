@@ -317,6 +317,31 @@ app.route('/mcp/oauth', mcpOAuthRouter);
 
 // MCP Server endpoints
 
+// CORS preflight for MCP endpoints (required for MCP Inspector and other clients)
+app.options('/mcp', (c) => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+});
+
+app.options('/mcp/admin', (c) => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+});
+
 // MCP server (full access for authenticated users, read-only for anonymous)
 app.post('/mcp', async (c) => {
   // Check if user is authenticated via session
