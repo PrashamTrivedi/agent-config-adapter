@@ -17,6 +17,8 @@ export async function handleMCPStreamable(
 ): Promise<Response> {
   try {
     // @hono/mcp supports same options as official MCP SDK
+    // enableJsonResponse: true = HTTP Streamable (direct JSON responses)
+    // enableJsonResponse: false = SSE streaming
     const transport = new StreamableHTTPTransport({
       sessionIdGenerator: undefined, // Stateless mode
       enableJsonResponse: true
@@ -31,8 +33,9 @@ export async function handleMCPStreamable(
     // Add CORS headers for MCP Inspector and other clients
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version',
+      'Access-Control-Expose-Headers': 'Mcp-Session-Id',
     };
 
     // Clone response with CORS headers
@@ -47,7 +50,30 @@ export async function handleMCPStreamable(
       headers: newHeaders,
     });
   } catch (error: any) {
-    console.error('MCP transport error:', error);
+    // Workaround: @hono/mcp@0.2.3 with enableJsonResponse:true throws HTTPException
+    // even on success, but the actual response is in error.res. Extract and return it.
+    if (error?.res && error.res.status >= 200 && error.res.status < 300) {
+      const response = error.res as Response;
+
+      // Add CORS headers
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version',
+        'Access-Control-Expose-Headers': 'Mcp-Session-Id',
+      };
+
+      const newHeaders = new Headers(response.headers);
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        newHeaders.set(key, value);
+      });
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+      });
+    }
 
     return new Response(
       JSON.stringify({
@@ -56,16 +82,17 @@ export async function handleMCPStreamable(
         error: {
           code: -32603,
           message: 'Internal error',
-          data: error.message
+          data: error.message || String(error)
         }
       }),
       {
-        status: 500,
+        status: error?.status || 500,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
+          'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version',
+          'Access-Control-Expose-Headers': 'Mcp-Session-Id',
         }
       }
     );

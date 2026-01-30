@@ -318,28 +318,21 @@ app.route('/mcp/oauth', mcpOAuthRouter);
 // MCP Server endpoints
 
 // CORS preflight for MCP endpoints (required for MCP Inspector and other clients)
+// CORS headers for MCP endpoints
+const mcpCorsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version',
+  'Access-Control-Expose-Headers': 'Mcp-Session-Id',
+  'Access-Control-Max-Age': '86400',
+};
+
 app.options('/mcp', (c) => {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
-      'Access-Control-Max-Age': '86400',
-    },
-  });
+  return new Response(null, { status: 204, headers: mcpCorsHeaders });
 });
 
 app.options('/mcp/admin', (c) => {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id',
-      'Access-Control-Max-Age': '86400',
-    },
-  });
+  return new Response(null, { status: 204, headers: mcpCorsHeaders });
 });
 
 // MCP server (full access for authenticated users, read-only for anonymous)
