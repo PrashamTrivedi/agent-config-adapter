@@ -205,23 +205,23 @@ profileRouter.get('/', async (c) => {
     </div>
 
     <script>
-      function showCreateKeyModal() {
+      window.showCreateKeyModal = function() {
         document.getElementById('create-key-modal').style.display = 'flex';
         document.getElementById('key-name').focus();
-      }
+      };
 
-      function closeCreateKeyModal() {
+      window.closeCreateKeyModal = function() {
         document.getElementById('create-key-modal').style.display = 'none';
         document.getElementById('create-key-form').reset();
         document.getElementById('create-key-result').innerHTML = '';
-      }
+      };
 
-      function closeKeyCreatedModal() {
+      window.closeKeyCreatedModal = function() {
         document.getElementById('key-created-modal').style.display = 'none';
         window.location.reload(); // Refresh to show new key in list
-      }
+      };
 
-      async function createKey(event) {
+      window.createKey = async function(event) {
         event.preventDefault();
         const name = document.getElementById('key-name').value.trim();
         const expiresInDays = document.getElementById('key-expiry').value;
@@ -248,7 +248,7 @@ profileRouter.get('/', async (c) => {
           const data = await response.json();
 
           if (response.ok && data.key) {
-            closeCreateKeyModal();
+            window.closeCreateKeyModal();
             document.getElementById('new-key-value').value = data.key;
             document.getElementById('key-created-modal').style.display = 'flex';
           } else {
@@ -260,9 +260,9 @@ profileRouter.get('/', async (c) => {
           submitBtn.disabled = false;
           submitBtn.innerHTML = 'Create Key';
         }
-      }
+      };
 
-      function copyNewKey(button) {
+      window.copyNewKey = function(button) {
         const keyInput = document.getElementById('new-key-value');
         navigator.clipboard.writeText(keyInput.value).then(() => {
           button.innerHTML = '${icons.check('icon')} Copied!';
@@ -272,9 +272,9 @@ profileRouter.get('/', async (c) => {
             button.classList.remove('copied');
           }, 2000);
         });
-      }
+      };
 
-      async function revokeKey(id, name) {
+      window.revokeKey = async function(id, name) {
         if (!confirm('Revoke API key "' + name + '"? This key will no longer work.')) return;
 
         const response = await fetch('/api/profile/keys/' + id + '/revoke', {
@@ -288,9 +288,9 @@ profileRouter.get('/', async (c) => {
         } else {
           window.showToast('Failed to revoke key', 'error');
         }
-      }
+      };
 
-      async function reactivateKey(id, name) {
+      window.reactivateKey = async function(id, name) {
         if (!confirm('Reactivate API key "' + name + '"?')) return;
 
         const response = await fetch('/api/profile/keys/' + id + '/reactivate', {
@@ -304,9 +304,9 @@ profileRouter.get('/', async (c) => {
         } else {
           window.showToast('Failed to reactivate key', 'error');
         }
-      }
+      };
 
-      async function deleteKey(id, name) {
+      window.deleteKey = async function(id, name) {
         if (!confirm('Permanently delete API key "' + name + '"? This cannot be undone.')) return;
 
         const response = await fetch('/api/profile/keys/' + id, {
@@ -320,7 +320,7 @@ profileRouter.get('/', async (c) => {
         } else {
           window.showToast('Failed to delete key', 'error');
         }
-      }
+      };
     </script>
   `;
 
