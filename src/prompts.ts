@@ -165,54 +165,38 @@ export function buildSlashCommandSystemPrompt(params: {
     : 'Skills: (none available)'
 
   return `
+
 # Purpose
-
+ 
 Convert Claude Code Slash Commands to Standalone Prompts
-
-## CRITICAL OUTPUT REQUIREMENTS
-- **NO PREAMBLES**: Output ONLY the converted prompt content. No introductions, explanations, or meta-commentary.
-- **PRESERVE STRUCTURE**: The output MUST mimic the exact structure and format of the original slash command.
-- **PRESERVE FORMATTING**: Maintain all markdown formatting, headings, lists, code blocks, and whitespace patterns.
-- **PRESERVE TONE**: Keep the same voice, emphasis, and instructional style as the original.
 
 ## Inputs
 - Claude Code slash command definition
 - Optional: User request with arguments
 
-## Available References
-${agentsList}
-${skillsList}
 
 ## MUST REMOVE (sandbox guarantees these)
-- ❌ "Is this a git repo?" checks — **always yes**
-- ❌ "Is working directory clean?" checks — **always yes**
-- ❌ Stash/uncommitted change handling — **never needed**
-- ❌ All \`gh\` CLI commands and GitHub API/ticket fetching — **remove entirely, sandbox has no GitHub access**
-- ❌ All "ask user to confirm/review" prompts — **remove, sandbox runs non-interactively**
-- ❌ User can not read the file directly — **needs to be pushed first**
+- ✅The REPO is Always a Git REPO
+- ✅ The working Directory is ALWAYS clean, without any stash
 - ✅ Latest contents from main branch — **always checked out**
 - ✅ In a different branch — **almost always available, and you can verify it by running proper git command**
+- ❌Never stop for User Action for git related operations
 
 
 ## Workflow
-1. Parse slash command, strip ONLY the YAML frontmatter (the --- delimited section at the top)
+1. Parse slash command, strip frontmatter
 2. Replace \`$ARGUMENTS\` with user-provided values
-3. Remove/rewrite sandbox-incompatible operations (network calls, interactive user prompts, git status checks)
-4. Output the converted content DIRECTLY — no wrapper text
+3. Remove/rewrite sandbox-incompatible operations (network calls, interactive user prompts, git status checks) and present that form to user before calling any tool.
 
 ## Conversion Rules
-- **MUST PRESERVE**: formatting, structure, tone, emphasis, workflows, procedural content, markdown elements
+- Preserve: formatting, structure, tone, emphasis, workflows, procedural content
 - Strip persona phrases ("You are...", "Act as...") from injected agent/skill content — state purpose directly
-- The converted output should look like a refined version of the original, NOT a description of it
 
-## OUTPUT FORMAT
-Output the converted prompt content directly. Do not:
-- Add "Here is the converted prompt:" or similar
-- Wrap in markdown code blocks
-- Add explanatory text before or after
-- Describe what changes were made
+## Output Format
 
-Just output the final converted prompt as if it were the original file content (minus frontmatter).
+- ✅ MUST PRESERVE STRUCTURE OF ORIGINAL SLASH COMMAND
+- ✅ MUST HAVE SKILLS AND AGENTS AT THE END OF THE COMMAND IN XML TAGS
+
 `
 }
 

@@ -184,7 +184,7 @@ export class GeminiProvider implements AIProvider {
 			})
 
 			const response = await this.client.models.generateContent({
-				model: 'gemini-3-pro-preview',
+				model: 'gemini-3-flash-preview',
 				contents: geminiMessages,
 				config: {
 					httpOptions: {

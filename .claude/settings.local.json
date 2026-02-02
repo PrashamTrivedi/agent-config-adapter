@@ -55,9 +55,23 @@
       "Bash(paste:*)",
       "Bash(openssl rand:*)",
       "mcp__browser__browser_click",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(bash scripts/query.sh:*)",
+      "WebFetch(domain:registry.npmjs.org)",
+      "WebFetch(domain:api.anthropic.com)",
+      "WebFetch(domain:statsig.anthropic.com)",
+      "WebFetch(domain:memories-api.prashamhtrivedi.app)",
+      "WebFetch(domain:mcp.posthog.com)",
+      "WebFetch(domain:docs.mcp.cloudflare.com)",
+      "WebFetch(domain:o1158394.ingest.us.sentry.io)",
+      "mcp__browser__browser_get_console_logs",
+      "WebFetch(domain:sparrow.cloudflare.com)"
     ],
     "deny": [],
     "ask": []
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
   }
 }
