@@ -6,7 +6,7 @@
   "dependencies": {
     "@google/genai": "^1.29.0",
     "@hono/mcp": "^0.2.3",
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "better-auth": "^1.4.10",
     "fflate": "^0.8.2",
     "hono": "^4.9.10",
