@@ -23,7 +23,7 @@ syncRouter.use('/*', requireApiKey);
  * POST /api/sync — Batch sync local configs to remote
  */
 syncRouter.post('/', async (c) => {
-  const userId = c.get('userId');
+  const userId = c.get('userId') as string; // guaranteed by requireApiKey middleware
 
   const body = await c.req.json<{
     configs: LocalConfigInput[];
