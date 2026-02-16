@@ -33,8 +33,8 @@ Sync Flags:
 
 Global Flags:
   --server <url> Override server URL
-  --help         Show this help
-  --version      Show version
+  --help, -h     Show this help
+  --version, -v  Show version
 `);
 }
 
