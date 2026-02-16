@@ -19,7 +19,7 @@ Usage:
   aca <command> [flags]
 
 Commands:
-  sync      Sync local configs to remote server
+  sync      Sync local configs to the remote server
   login     Authenticate with the server
   status    Show current auth and sync status
 
