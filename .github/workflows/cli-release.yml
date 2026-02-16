@@ -101,8 +101,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add cli/package.json cli/src/index.ts
-          git commit -m "🔖 chore: Bump CLI version to ${NEXT_VERSION} [skip ci]"
-          git push
+          if ! git diff --staged --quiet; then
+            git commit -m "🔖 chore: Bump CLI version to ${NEXT_VERSION} [skip ci]"
+            git push
+          else
+            echo "Version already at ${NEXT_VERSION}, skipping commit"
+          fi
 
       - name: Create tag and push
         env:
