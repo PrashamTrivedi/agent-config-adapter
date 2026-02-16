@@ -9,7 +9,7 @@ import { loginCommand } from './commands/login';
 import { statusCommand } from './commands/status';
 import type { SyncFlags, ConfigType } from './lib/types';
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 
 function printHelp(): void {
   console.log(`
