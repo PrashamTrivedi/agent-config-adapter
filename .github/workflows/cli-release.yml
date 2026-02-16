@@ -1,0 +1,125 @@
+name: CLI Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cli/**'
+
+jobs:
+  check-version:
+    # Skip if commit message contains [skip ci]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+      should_release: ${{ steps.next.outputs.should_release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: next
+        run: |
+          # Find latest cli-v* tag
+          LATEST_TAG=$(git tag -l 'cli-v*' --sort=-v:refname | head -n1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            # No existing tags — start at 1.0.0
+            NEXT_VERSION="1.0.0"
+          else
+            # Strip prefix and increment patch
+            CURRENT="${LATEST_TAG#cli-v}"
+            MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT" | cut -d. -f2)
+            PATCH=$(echo "$CURRENT" | cut -d. -f3)
+            NEXT_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=cli-v${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "Next release: cli-v${NEXT_VERSION}"
+
+  build:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: cd cli && bun install
+
+      - name: Build binaries
+        run: cd cli && bun run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-binaries
+          path: cli/dist/
+          retention-days: 5
+
+  release:
+    needs: [check-version, build]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-binaries
+          path: cli/dist/
+
+      - name: Bump version in source files
+        env:
+          NEXT_VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          sed -i "s/\"version\": \".*\"/\"version\": \"${NEXT_VERSION}\"/" cli/package.json
+          sed -i "s/const VERSION = '.*'/const VERSION = '${NEXT_VERSION}'/" cli/src/index.ts
+
+      - name: Commit version bump
+        env:
+          NEXT_VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cli/package.json cli/src/index.ts
+          git commit -m "🔖 chore: Bump CLI version to ${NEXT_VERSION} [skip ci]"
+          git push
+
+      - name: Create tag and push
+        env:
+          TAG: ${{ needs.check-version.outputs.tag }}
+        run: |
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.check-version.outputs.tag }}
+          NEXT_VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          gh release create "$TAG" \
+            cli/dist/aca-linux-x64 \
+            cli/dist/aca-darwin-arm64 \
+            cli/dist/aca-darwin-x64 \
+            --title "CLI v${NEXT_VERSION}" \
+            --generate-notes
