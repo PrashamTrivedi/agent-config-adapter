@@ -11,6 +11,7 @@ const targets = [
   { name: 'aca-linux-x64', target: 'bun-linux-x64' },
   { name: 'aca-darwin-arm64', target: 'bun-darwin-arm64' },
   { name: 'aca-darwin-x64', target: 'bun-darwin-x64' },
+  { name: 'aca-windows-x64.exe', target: 'bun-windows-x64' },
 ] as const;
 
 const distDir = './dist';

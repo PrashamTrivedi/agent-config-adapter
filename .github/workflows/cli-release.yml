@@ -125,5 +125,6 @@ jobs:
             cli/dist/aca-linux-x64 \
             cli/dist/aca-darwin-arm64 \
             cli/dist/aca-darwin-x64 \
+            cli/dist/aca-windows-x64.exe \
             --title "CLI v${NEXT_VERSION}" \
             --generate-notes
