@@ -7,6 +7,7 @@ import { filesRouter } from './routes/files';
 import { pluginsRouter } from './routes/plugins';
 import { slashCommandConverterRouter } from './routes/slash-command-converter';
 import { subscriptionsRouter } from './routes/subscriptions';
+import { syncRouter } from './routes/sync';
 import { authUIRouter } from './routes/auth';
 import { createAuth } from './auth/better-auth';
 import { profileRouter } from './routes/profile';
@@ -279,6 +280,7 @@ app.route('/api/skills', skillsRouter);
 app.route('/api/files', filesRouter);
 app.route('/api/slash-commands', slashCommandConverterRouter);
 app.route('/api/subscriptions', subscriptionsRouter);
+app.route('/api/sync', syncRouter);
 
 // Client-side analytics tracking endpoint
 app.post('/api/analytics/track', async (c) => {
