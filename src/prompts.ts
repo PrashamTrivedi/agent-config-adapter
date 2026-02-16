@@ -192,6 +192,11 @@ Convert Claude Code Slash Commands to Standalone Prompts
 - Preserve: formatting, structure, tone, emphasis, workflows, procedural content
 - Strip persona phrases ("You are...", "Act as...") from injected agent/skill content — state purpose directly
 
+## Available References
+
+${agentsList}
+${skillsList}
+
 ## Output Format
 
 - ✅ MUST PRESERVE STRUCTURE OF ORIGINAL SLASH COMMAND
