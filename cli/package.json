@@ -1,6 +1,6 @@
 {
   "name": "aca-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI sync tool for Agent Config Adapter",
   "type": "module",
   "scripts": {

@@ -10,7 +10,7 @@ import { statusCommand } from './commands/status';
 import { downloadCommand } from './commands/download';
 import type { SyncFlags, DownloadFlags, ConfigType } from './lib/types';
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 
 function printHelp(): void {
   console.log(`
