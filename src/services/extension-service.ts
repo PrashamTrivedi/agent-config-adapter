@@ -1,5 +1,6 @@
 import { ExtensionRepository } from '../infrastructure/extension-repository';
 import { CacheService } from '../infrastructure/cache';
+import { FileGenerationService } from './file-generation-service';
 import {
   Extension,
   ExtensionWithConfigs,
@@ -11,6 +12,7 @@ import {
 export interface ExtensionServiceEnv {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EXTENSION_FILES?: R2Bucket;
 }
 
 /**
@@ -21,10 +23,17 @@ export interface ExtensionServiceEnv {
 export class ExtensionService {
   private repo: ExtensionRepository;
   private cache: CacheService;
+  private fileGenService?: FileGenerationService;
 
   constructor(env: ExtensionServiceEnv) {
     this.repo = new ExtensionRepository(env.DB);
     this.cache = new CacheService(env.CONFIG_CACHE);
+    if (env.EXTENSION_FILES) {
+      this.fileGenService = new FileGenerationService({
+        DB: env.DB,
+        EXTENSION_FILES: env.EXTENSION_FILES,
+      });
+    }
   }
 
   /**
@@ -148,14 +157,23 @@ export class ExtensionService {
   }
 
   /**
-   * Invalidate all cached data for an extension
+   * Invalidate all cached data for an extension, including generated R2 files
    */
   async invalidateExtensionCache(id: string): Promise<void> {
-    // Invalidate extension cache
+    // Invalidate extension KV cache
     await this.cache.invalidate(`ext:${id}`);
 
     // Also invalidate manifest caches
     await this.cache.delete(`ext:${id}:manifest:gemini`);
     await this.cache.delete(`ext:${id}:manifest:claude_code`);
+
+    // Delete generated R2 files so they are regenerated on next download
+    if (this.fileGenService) {
+      try {
+        await this.fileGenService.deleteExtensionFiles(id);
+      } catch (error) {
+        console.error(`[ExtensionService] Failed to delete generated files for extension ${id}:`, error);
+      }
+    }
   }
 }

@@ -1,11 +1,14 @@
 import { ConfigRepository } from '../infrastructure/database';
 import { CacheService } from '../infrastructure/cache';
+import { ExtensionRepository } from '../infrastructure/extension-repository';
+import { FileGenerationService } from './file-generation-service';
 import { Config, CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { SlashCommandAnalyzerService } from './slash-command-analyzer-service';
 
 export interface ConfigServiceEnv {
   DB: D1Database;
   CONFIG_CACHE: KVNamespace;
+  EXTENSION_FILES?: R2Bucket;
 }
 
 /**
@@ -16,11 +19,20 @@ export class ConfigService {
   private repo: ConfigRepository;
   private cache: CacheService;
   private analyzer?: SlashCommandAnalyzerService;
+  private extensionRepo: ExtensionRepository;
+  private fileGenService?: FileGenerationService;
 
   constructor(env: ConfigServiceEnv, analyzer?: SlashCommandAnalyzerService) {
     this.repo = new ConfigRepository(env.DB);
     this.cache = new CacheService(env.CONFIG_CACHE);
     this.analyzer = analyzer;
+    this.extensionRepo = new ExtensionRepository(env.DB);
+    if (env.EXTENSION_FILES) {
+      this.fileGenService = new FileGenerationService({
+        DB: env.DB,
+        EXTENSION_FILES: env.EXTENSION_FILES,
+      });
+    }
   }
 
   /**
@@ -121,6 +133,8 @@ export class ConfigService {
     if (updated) {
       // Invalidate cache when config is updated
       await this.cache.invalidate(id);
+      // Invalidate generated files for any extensions containing this config
+      await this.invalidateAssociatedExtensionFiles(id);
     }
 
     return updated;
@@ -130,11 +144,16 @@ export class ConfigService {
    * Delete config
    */
   async deleteConfig(id: string): Promise<boolean> {
+    // Find associated extensions before deleting (cascade may remove junction rows)
+    const extensionIds = await this.extensionRepo.findExtensionIdsByConfigId(id);
+
     const success = await this.repo.delete(id);
 
     if (success) {
       // Invalidate cache when config is deleted
       await this.cache.invalidate(id);
+      // Invalidate generated files for any extensions that contained this config
+      await this.invalidateExtensionFilesByIds(extensionIds);
     }
 
     return success;
@@ -145,6 +164,39 @@ export class ConfigService {
    */
   async invalidateCache(id: string): Promise<void> {
     await this.cache.invalidate(id);
+  }
+
+  /**
+   * Invalidate generated R2 files for all extensions containing a given config
+   */
+  private async invalidateAssociatedExtensionFiles(configId: string): Promise<void> {
+    if (!this.fileGenService) return;
+
+    try {
+      const extensionIds = await this.extensionRepo.findExtensionIdsByConfigId(configId);
+      await this.invalidateExtensionFilesByIds(extensionIds);
+    } catch (error) {
+      console.error(`[ConfigService] Failed to invalidate extension files for config ${configId}:`, error);
+    }
+  }
+
+  /**
+   * Invalidate generated R2 files for a list of extension IDs
+   */
+  private async invalidateExtensionFilesByIds(extensionIds: string[]): Promise<void> {
+    if (!this.fileGenService || extensionIds.length === 0) return;
+
+    for (const extensionId of extensionIds) {
+      try {
+        await this.fileGenService.deleteExtensionFiles(extensionId);
+        // Also invalidate extension KV cache so fresh data is fetched
+        await this.cache.invalidate(`ext:${extensionId}`);
+        await this.cache.delete(`ext:${extensionId}:manifest:gemini`);
+        await this.cache.delete(`ext:${extensionId}:manifest:claude_code`);
+      } catch (error) {
+        console.error(`[ConfigService] Failed to invalidate files for extension ${extensionId}:`, error);
+      }
+    }
   }
 
   /**

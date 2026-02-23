@@ -269,11 +269,19 @@ describe('ConfigService', () => {
 
   describe('deleteConfig', () => {
     it('should delete config and invalidate cache', async () => {
-      mockDb.prepare = vi.fn().mockReturnValue({
-        bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
-        }),
-      });
+      mockDb.prepare = vi.fn()
+        // First: findExtensionIdsByConfigId
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            all: vi.fn().mockResolvedValue({ results: [], success: true }),
+          }),
+        })
+        // Second: repo.delete
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
+          }),
+        });
 
       const result = await service.deleteConfig('test-id');
 
@@ -282,22 +290,38 @@ describe('ConfigService', () => {
     });
 
     it('should return false when deletion fails', async () => {
-      mockDb.prepare = vi.fn().mockReturnValue({
-        bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: false }),
-        }),
-      });
+      mockDb.prepare = vi.fn()
+        // First: findExtensionIdsByConfigId
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            all: vi.fn().mockResolvedValue({ results: [], success: true }),
+          }),
+        })
+        // Second: repo.delete
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            run: vi.fn().mockResolvedValue({ success: false }),
+          }),
+        });
 
       const result = await service.deleteConfig('test-id');
       expect(result).toBe(false);
     });
 
     it('should not invalidate cache when deletion fails', async () => {
-      mockDb.prepare = vi.fn().mockReturnValue({
-        bind: vi.fn().mockReturnValue({
-          run: vi.fn().mockResolvedValue({ success: false }),
-        }),
-      });
+      mockDb.prepare = vi.fn()
+        // First: findExtensionIdsByConfigId
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            all: vi.fn().mockResolvedValue({ results: [], success: true }),
+          }),
+        })
+        // Second: repo.delete
+        .mockReturnValueOnce({
+          bind: vi.fn().mockReturnValue({
+            run: vi.fn().mockResolvedValue({ success: false }),
+          }),
+        });
 
       await service.deleteConfig('test-id');
 

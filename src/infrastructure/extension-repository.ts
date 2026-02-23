@@ -190,6 +190,18 @@ export class ExtensionRepository {
   }
 
   /**
+   * Find all extension IDs that contain a given config
+   */
+  async findExtensionIdsByConfigId(configId: string): Promise<string[]> {
+    const result = await this.db
+      .prepare('SELECT extension_id FROM extension_configs WHERE config_id = ?')
+      .bind(configId)
+      .all<{ extension_id: string }>();
+
+    return (result.results || []).map((r) => r.extension_id);
+  }
+
+  /**
    * Remove a config from an extension
    */
   async removeConfig(extensionId: string, configId: string): Promise<boolean> {
