@@ -31,6 +31,9 @@ and MCP configs once, deploy across Codex, Gemini, and other agents.
   build user community
 - 🌐 **Claude Code Web Sync**: Automatically download and sync configurations
   from a ZIP file when running in Claude Code Web
+- 🖥️ **CLI Tool (`aca`)**: Sync local configs to the server and download
+  extensions as local Claude Code configurations, with environment variable
+  authentication support
 
 ## Claude Code Web Configuration Sync
 
@@ -64,6 +67,76 @@ automatically sync configurations from a remote ZIP file on session startup.
 📖 **Full Documentation**: See
 [.claude/hooks/README.md](.claude/hooks/README.md) for detailed usage, testing,
 and troubleshooting.
+
+## CLI Tool (`aca`)
+
+The `aca` CLI syncs local Claude Code configurations to the server and downloads
+extensions as local configs. Built with Bun, distributed as standalone binaries
+(Linux x64/arm64, macOS x64/arm64, Windows x64).
+
+### Commands
+
+| Command      | Description                                          |
+| ------------ | ---------------------------------------------------- |
+| `aca sync`   | Sync local `.claude/` configs to the remote server   |
+| `aca download` | Download extensions and install as local configs   |
+| `aca login`  | Authenticate with the server                         |
+| `aca status` | Show current auth status, server URL, and value sources |
+
+### Download Command
+
+The `download` command lists extensions from the server and downloads them as
+local Claude Code configurations. It extracts the plugin ZIP and skips internal
+`.claude-plugin/` metadata.
+
+```bash
+# Interactive: lists extensions, prompts for selection
+aca download
+
+# Non-interactive: download by extension ID
+aca download --id <uuid>
+
+# Non-interactive: search by name
+aca download --name "my-extension"
+
+# Install to global config (~/.claude/)
+aca download --global
+
+# Install to project config (./.claude/, default)
+aca download --project
+
+# Install to a custom directory
+aca download --path /path/to/dir
+```
+
+### Environment Variables
+
+The CLI supports configuration through environment variables. Values are resolved
+with the following precedence (highest to lowest):
+
+| Source         | Server URL       | API Key          |
+| -------------- | ---------------- | ---------------- |
+| CLI flag       | `--server <url>` | (via `aca login`) |
+| Env var        | `ACA_SERVER_URL` | `ACA_API_KEY`    |
+| Config file    | `~/.config/aca/config.json` | `~/.config/aca/config.json` |
+| Default        | Production URL   | (none)           |
+
+The `aca status` command shows the active source for each value (flag/env/config/default).
+
+```bash
+export ACA_SERVER_URL=http://localhost:8787
+export ACA_API_KEY=your-api-key
+aca status
+```
+
+### CLI Development
+
+```bash
+cd cli
+bun install
+bun run dev -- sync --dry-run   # Run in development
+bun run build                   # Build standalone binaries
+```
 
 ## Quick Start
 
@@ -147,6 +220,9 @@ console).
   /mcp             # MCP server implementation (server, transport, types)
   /views           # HTMX templates (configs, skills, extensions, marketplaces, plugin browser, subscription form)
   index.ts         # Entry point
+/cli               # Standalone CLI tool (Bun)
+  /src/commands    # Command implementations (sync, download, login, status)
+  /src/lib         # Shared CLI libraries (config, api-client, scanner, display, types)
 /migrations        # D1 migrations
 /seeds             # Seed data
 ```
@@ -888,6 +964,8 @@ Before deploying (first time setup):
 - **TOML Parser**: smol-toml (Cloudflare Workers compatible)
 - **ZIP Generation**: fflate (Cloudflare Workers compatible)
 - **Email Formatting**: mimetext (for HTML email composition)
+- **CLI Runtime**: Bun (standalone binary builds for Linux, macOS, Windows)
+- **CLI ZIP Extraction**: fflate (for extension download decompression)
 
 ## Architecture
 

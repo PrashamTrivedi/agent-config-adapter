@@ -62,3 +62,23 @@ export interface SyncFlags {
   verbose: boolean;
   delete: boolean;
 }
+
+export interface Extension {
+  id: string;
+  name: string;
+  description: string | null;
+  author: string | null;
+  version: string;
+  icon_url?: string | null;
+  configs?: Array<{ id: string; name: string; type: ConfigType }>;
+}
+
+export interface DownloadFlags {
+  id?: string;
+  name?: string;
+  global: boolean;
+  project: boolean;
+  path?: string;
+  server?: string;
+  verbose: boolean;
+}

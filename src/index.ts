@@ -11,6 +11,7 @@ import { syncRouter } from './routes/sync';
 import { authUIRouter } from './routes/auth';
 import { createAuth } from './auth/better-auth';
 import { profileRouter } from './routes/profile';
+import { cliRouter } from './routes/cli';
 import onboardingRoutes from './routes/onboarding';
 import { layout } from './views/layout';
 import { icons } from './views/icons';
@@ -183,6 +184,23 @@ app.get('/', async (c) => {
             </p>
           </a>
 
+          <!-- CLI Sync Section -->
+          <a href="/cli" class="card" style="background: var(--bg-primary); padding: 20px; text-decoration: none; border: 1px solid var(--border-dim); transition: all 0.3s ease; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div style="padding: 10px; background: rgba(20, 184, 166, 0.15); border-radius: 10px; color: var(--success);">
+                ${icons.terminal('icon-lg')}
+              </div>
+              <div>
+                <h4 style="margin: 0; color: var(--text-primary); font-size: 1.1em;">CLI Sync</h4>
+                <span style="font-size: 0.8em; color: var(--success);">New</span>
+              </div>
+            </div>
+            <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary); line-height: 1.5;">
+              <strong>Sync your local .claude/ configs</strong> to the server with a single command.
+              Push commands, agents, and skills from your machine.
+            </p>
+          </a>
+
         </div>
       </div>
 
@@ -235,6 +253,9 @@ app.get('/', async (c) => {
           <a href="/mcp/info" class="btn ripple" style="text-align: center; padding: 16px; background: #6366f1; display: flex; align-items: center; justify-content: center; gap: 8px;">
             ${icons.link('icon')} MCP Server
           </a>
+          <a href="/cli" class="btn btn-secondary ripple" style="text-align: center; padding: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${icons.terminal('icon')} Install CLI
+          </a>
         </div>
       </div>
 
@@ -251,6 +272,9 @@ app.get('/', async (c) => {
   `;
   return c.html(layout('Home', content, c));
 });
+
+// Mount CLI route
+app.route('/cli', cliRouter);
 
 // Mount onboarding routes
 app.route('/', onboardingRoutes);

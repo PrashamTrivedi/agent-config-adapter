@@ -1,0 +1,33 @@
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY src/ src/
+COPY build.ts ./
+RUN bun run build
+
+# --- Runtime stage ---
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl tree bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install aca binary
+COPY --from=builder /app/dist/aca-linux-x64 /usr/local/bin/aca
+RUN chmod +x /usr/local/bin/aca
+
+# Set up mock project at /project
+RUN mkdir -p /project/.claude/commands \
+    && mkdir -p /project/.claude/agents \
+    && echo "# Existing project command" > /project/.claude/commands/hello.md \
+    && echo "# Existing agent" > /project/.claude/agents/helper.md
+
+# Set up home directory (for --global tests)
+RUN mkdir -p /root/.claude
+
+ENV ACA_SERVER_URL=https://agent-config.prashamhtrivedi.app
+
+WORKDIR /project
+CMD ["/bin/bash"]

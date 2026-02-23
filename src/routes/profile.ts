@@ -136,6 +136,27 @@ profileRouter.get('/', async (c) => {
 }</pre>
       </div>
 
+      <!-- CLI Setup Section -->
+      <div class="card" style="margin-top: 32px; background: var(--bg-tertiary);">
+        <h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+          ${icons.terminal('icon')} Using API Keys with the CLI
+        </h4>
+        <p style="color: var(--text-secondary); margin-bottom: 12px;">
+          Download the <code>aca</code> CLI from
+          <a href="https://github.com/PrashamTrivedi/agent-config-adapter/releases" target="_blank" rel="noopener noreferrer" style="color: var(--accent-primary);">GitHub Releases</a>,
+          then authenticate and sync:
+        </p>
+        <pre style="background: var(--pre-bg); padding: 12px; border-radius: 6px; overflow-x: auto;">
+# Authenticate
+aca login
+
+# Sync your global configs
+aca sync --global</pre>
+        <p style="color: var(--text-tertiary); font-size: 0.9em; margin-top: 12px;">
+          See the <a href="/cli" style="color: var(--accent-primary);">full CLI documentation</a> for all commands and flags.
+        </p>
+      </div>
+
       <!-- Account Actions -->
       <div class="card" style="margin-top: 32px;">
         <h4 style="margin: 0 0 12px 0;">Account Actions</h4>
