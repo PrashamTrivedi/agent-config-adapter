@@ -3,7 +3,7 @@
  * Communicates with the Agent Config Adapter server
  */
 
-import type { LocalConfigInput, ConfigType, SyncResponse, DeleteResponse } from './types';
+import type { LocalConfigInput, ConfigType, SyncResponse, DeleteResponse, Extension } from './types';
 
 export class ApiClient {
   constructor(
@@ -68,6 +68,39 @@ export class ApiClient {
     }
 
     return response.json() as Promise<DeleteResponse>;
+  }
+
+  /**
+   * List available extensions (public, no auth required)
+   */
+  async listExtensions(): Promise<Extension[]> {
+    const response = await fetch(`${this.baseUrl}/api/extensions`, {
+      headers: { 'Accept': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(response.status, 'Failed to list extensions');
+    }
+
+    const data = await response.json() as { extensions: Extension[] };
+    return data.extensions;
+  }
+
+  /**
+   * Download extension as Claude Code ZIP (public, no auth required)
+   */
+  async downloadPluginZip(extensionId: string): Promise<Uint8Array> {
+    const response = await fetch(`${this.baseUrl}/plugins/${extensionId}/claude_code/download`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new ApiError(404, 'Extension not found');
+      }
+      throw new ApiError(response.status, 'Failed to download extension');
+    }
+
+    const buffer = await response.arrayBuffer();
+    return new Uint8Array(buffer);
   }
 
   /**

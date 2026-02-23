@@ -7,7 +7,8 @@
 import { syncCommand } from './commands/sync';
 import { loginCommand } from './commands/login';
 import { statusCommand } from './commands/status';
-import type { SyncFlags, ConfigType } from './lib/types';
+import { downloadCommand } from './commands/download';
+import type { SyncFlags, DownloadFlags, ConfigType } from './lib/types';
 
 const VERSION = '1.0.0';
 
@@ -19,9 +20,10 @@ Usage:
   aca <command> [flags]
 
 Commands:
-  sync      Sync local configs to the remote server
-  login     Authenticate with the server
-  status    Show current auth and sync status
+  sync        Sync local configs to the remote server
+  download    Download extensions and install as local configs
+  login       Authenticate with the server
+  status      Show current auth and sync status
 
 Sync Flags:
   --global       Sync from ~/.claude/ (global configs)
@@ -31,10 +33,22 @@ Sync Flags:
   --delete       Allow deletion of remote configs with no local match
   --verbose      Show detailed output
 
+Download Flags:
+  --global       Install to ~/.claude/ (global)
+  --project      Install to ./.claude/ (project, default)
+  --path <dir>   Install to custom directory
+  --id <uuid>    Download specific extension by ID (non-interactive)
+  --name <str>   Search and download by name (non-interactive)
+  --verbose      Show detailed output
+
 Global Flags:
   --server <url> Override server URL
   --help, -h     Show this help
   --version, -v  Show version
+
+Environment Variables:
+  ACA_API_KEY       API key (overrides config file, overridden by login)
+  ACA_SERVER_URL    Server URL (overrides config file, overridden by --server)
 `);
 }
 
@@ -101,6 +115,21 @@ async function main(): Promise<void> {
       };
 
       await syncCommand(syncFlags);
+      break;
+    }
+
+    case 'download': {
+      const downloadFlags: DownloadFlags = {
+        id: flags.id as string | undefined,
+        name: flags.name as string | undefined,
+        global: !!flags.global,
+        project: !!flags.project || (!flags.global && !flags.path),
+        path: flags.path as string | undefined,
+        server: flags.server as string | undefined,
+        verbose: !!flags.verbose,
+      };
+
+      await downloadCommand(downloadFlags);
       break;
     }
 

@@ -3,7 +3,7 @@
  * ANSI colors and structured display helpers
  */
 
-import type { SyncResponse, SyncResultItem, ConfigType } from './types';
+import type { SyncResponse, SyncResultItem, ConfigType, Extension } from './types';
 
 // ANSI color codes
 const c = {
@@ -164,4 +164,44 @@ export async function prompt(message: string): Promise<string> {
 
     stdin.on('data', onData);
   });
+}
+
+export function displayExtensionList(extensions: Extension[]): void {
+  if (extensions.length === 0) {
+    info('No extensions available.');
+    return;
+  }
+
+  header('Available Extensions');
+  console.log('');
+
+  for (let i = 0; i < extensions.length; i++) {
+    const ext = extensions[i];
+    const num = `${c.bold}${c.cyan}${i + 1}${c.reset}`;
+    const name = `${c.bold}${ext.name}${c.reset}`;
+    const version = `${c.dim}v${ext.version}${c.reset}`;
+    const configCount = ext.configs ? `${ext.configs.length} config(s)` : '';
+
+    console.log(`  ${num}. ${name} ${version}`);
+    if (ext.description) {
+      console.log(`     ${c.gray}${ext.description}${c.reset}`);
+    }
+    if (ext.author) {
+      console.log(`     ${c.gray}by ${ext.author}${c.reset}${configCount ? ` · ${c.gray}${configCount}${c.reset}` : ''}`);
+    } else if (configCount) {
+      console.log(`     ${c.gray}${configCount}${c.reset}`);
+    }
+  }
+  console.log('');
+}
+
+export async function promptNumber(message: string, min: number, max: number): Promise<number> {
+  while (true) {
+    const input = await prompt(`${message} ${c.dim}[${min}-${max}]${c.reset}`);
+    const num = parseInt(input, 10);
+    if (!isNaN(num) && num >= min && num <= max) {
+      return num;
+    }
+    warn(`Please enter a number between ${min} and ${max}.`);
+  }
 }

@@ -23,6 +23,15 @@ npx wrangler d1 execute agent-config-adapter --local --file=./seeds/example-conf
 # Set OPENAI_API_KEY and/or GEMINI_API_KEY for local dev
 ```
 
+## CLI Tool
+
+```bash
+cd cli && bun install && bun run dev -- <command>
+# Commands: sync, download, login, status
+# Env vars: ACA_API_KEY, ACA_SERVER_URL (override config file values)
+# Precedence: --server flag > ACA_SERVER_URL env > config file > default
+```
+
 ## Architecture
 
 ```
@@ -34,6 +43,7 @@ src/adapters/      Format converters
 src/routes/        Hono REST handlers
 src/mcp/           MCP server
 src/views/         HTMX templates
+cli/               Standalone CLI tool (Bun) - sync, download, login, status
 ```
 
 **Conversion Flow**: AI-first with automatic fallback to rule-based conversion.

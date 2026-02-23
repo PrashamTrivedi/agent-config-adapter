@@ -40,13 +40,32 @@ export function saveConfig(config: CLIConfig): void {
 
 export function getServerUrl(override?: string): string {
   if (override) return override;
+  const envUrl = process.env.ACA_SERVER_URL;
+  if (envUrl) return envUrl;
   const config = loadConfig();
   return config?.server_url || DEFAULT_SERVER_URL;
 }
 
 export function getApiKey(): string | null {
+  const envKey = process.env.ACA_API_KEY;
+  if (envKey) return envKey;
   const config = loadConfig();
   return config?.api_key || null;
+}
+
+export function getApiKeySource(): 'env' | 'config' | null {
+  if (process.env.ACA_API_KEY) return 'env';
+  const config = loadConfig();
+  if (config?.api_key) return 'config';
+  return null;
+}
+
+export function getServerUrlSource(override?: string): 'flag' | 'env' | 'config' | 'default' {
+  if (override) return 'flag';
+  if (process.env.ACA_SERVER_URL) return 'env';
+  const config = loadConfig();
+  if (config?.server_url) return 'config';
+  return 'default';
 }
 
 export function updateLastSync(): void {
