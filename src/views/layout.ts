@@ -1422,6 +1422,10 @@ export function layout(title: string, content: string, c?: any): string {
                 ${icons.link('icon')}
                 <span>MCP</span>
               </a>
+              <a href="/cli" class="${title === 'CLI' ? 'active' : ''}">
+                ${icons.terminal('icon')}
+                <span>CLI</span>
+              </a>
               <!-- Auth Section -->
               ${
                 user
@@ -1467,6 +1471,7 @@ export function layout(title: string, content: string, c?: any): string {
                   <a href="/marketplaces" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Marketplaces</a>
                   <a href="/slash-commands/convert" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">Converter</a>
                   <a href="/mcp/info" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">MCP Server</a>
+                  <a href="/cli" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95em; transition: color 0.2s ease;">CLI Tool</a>
                 </div>
               </div>
 
