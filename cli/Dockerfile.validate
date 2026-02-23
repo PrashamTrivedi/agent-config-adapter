@@ -1,0 +1,25 @@
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY src/ src/
+COPY build.ts ./
+RUN bun run build
+
+# --- Runtime stage ---
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/dist/aca-linux-x64 /usr/local/bin/aca
+RUN chmod +x /usr/local/bin/aca
+
+# Copy validation script
+COPY validate.sh /usr/local/bin/validate
+RUN chmod +x /usr/local/bin/validate
+
+WORKDIR /workspace
+ENTRYPOINT ["/usr/local/bin/validate"]
