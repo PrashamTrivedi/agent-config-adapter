@@ -128,6 +128,9 @@ function getBaseAdapter(type: ConfigType): FormatAdapter {
     case 'agent_definition':
       // For MVP, we'll use a simple passthrough
       return new PassthroughAdapter();
+    case 'workflow':
+      // Workflows are Claude Code only; delivered as-is (no cross-format conversion).
+      return new PassthroughAdapter();
     case 'mcp_config':
       return new MCPConfigAdapter();
     default:
