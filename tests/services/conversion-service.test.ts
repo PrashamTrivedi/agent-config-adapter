@@ -60,6 +60,42 @@ describe('ConversionService', () => {
       ).rejects.toThrow('Skills cannot be converted');
     });
 
+    it('should throw error when converting a workflow to a non-Claude format', async () => {
+      const workflowConfig = {
+        ...createMockConfig(sampleConfigs.claudeCodeSlashCommand),
+        type: 'workflow' as const,
+        original_format: 'claude_code' as const,
+      };
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(workflowConfig),
+        }),
+      });
+
+      await expect(
+        service.convertWithMetadata('test-id', 'gemini')
+      ).rejects.toThrow('only available in Claude Code format');
+    });
+
+    it('should return workflow content as-is when target is claude_code', async () => {
+      const workflowConfig = {
+        ...createMockConfig(sampleConfigs.claudeCodeSlashCommand),
+        type: 'workflow' as const,
+        original_format: 'claude_code' as const,
+        content: 'export const meta = { name: "wf" }',
+      };
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockResolvedValue(workflowConfig),
+        }),
+      });
+
+      const result = await service.convertWithMetadata('test-id', 'claude_code');
+      expect(result.content).toBe('export const meta = { name: "wf" }');
+    });
+
     it('should return original content when source and target formats are same', async () => {
       const config = createMockConfig(sampleConfigs.claudeCodeSlashCommand);
 

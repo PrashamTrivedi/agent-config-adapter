@@ -162,6 +162,45 @@ describe('ConfigService', () => {
       expect(config.content).toBe(input.content);
     });
 
+    it('should extract and persist workflow metadata when creating a workflow', async () => {
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
+        }),
+      });
+
+      const config = await service.createConfig({
+        name: 'my-workflow',
+        type: 'workflow',
+        original_format: 'claude_code',
+        content:
+          'export const meta = { name: "my-workflow", description: "Does a thing", phases: [ { title: "Scan" } ] }\nphase("Scan")',
+      });
+
+      expect(config.type).toBe('workflow');
+      expect(config.workflow_description).toBe('Does a thing');
+      expect(config.workflow_phases).toBe(JSON.stringify([{ title: 'Scan' }]));
+      expect(config.metadata_unreadable).toBe(false);
+    });
+
+    it('should still create a workflow with unreadable metadata flagged', async () => {
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
+        }),
+      });
+
+      const config = await service.createConfig({
+        name: 'broken-workflow',
+        type: 'workflow',
+        original_format: 'claude_code',
+        content: 'no meta block here',
+      });
+
+      expect(config.type).toBe('workflow');
+      expect(config.metadata_unreadable).toBe(true);
+    });
+
     it('should throw error when required fields are missing', async () => {
       await expect(
         service.createConfig({

@@ -54,6 +54,61 @@ describe('FileGenerationService', () => {
       expect(mockR2.put).toHaveBeenCalled();
     });
 
+    it('should place workflows at workflows/<name>.js in a Claude Code bundle', async () => {
+      const extension: ExtensionWithConfigs = {
+        ...sampleExtension,
+        configs: [
+          {
+            id: 'wf-1',
+            name: 'Test Workflow',
+            type: 'workflow',
+            original_format: 'claude_code',
+            content: 'export const meta = { name: "test-workflow" }',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+        ],
+      };
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true }),
+        }),
+      });
+
+      const fileMap = await service.generateExtensionFiles(extension, 'claude_code');
+
+      expect(fileMap.has('workflows/test-workflow.js')).toBe(true);
+    });
+
+    it('should omit workflows entirely from a Gemini bundle', async () => {
+      const extension: ExtensionWithConfigs = {
+        ...sampleExtension,
+        configs: [
+          {
+            id: 'wf-1',
+            name: 'Test Workflow',
+            type: 'workflow',
+            original_format: 'claude_code',
+            content: 'export const meta = { name: "test-workflow" }',
+            created_at: '2024-01-01',
+            updated_at: '2024-01-01',
+          },
+        ],
+      };
+
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          run: vi.fn().mockResolvedValue({ success: true }),
+        }),
+      });
+
+      const fileMap = await service.generateExtensionFiles(extension, 'gemini');
+
+      const hasWorkflowFile = Array.from(fileMap.keys()).some((p) => p.startsWith('workflows/'));
+      expect(hasWorkflowFile).toBe(false);
+    });
+
     it('should generate Gemini files for extension', async () => {
       const extension: ExtensionWithConfigs = {
         ...sampleExtension,
