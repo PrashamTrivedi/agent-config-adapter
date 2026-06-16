@@ -4,7 +4,7 @@
  */
 
 // Re-export domain types used by CLI
-export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config' | 'skill';
+export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config' | 'skill' | 'workflow';
 
 export interface LocalConfigInput {
   name: string;

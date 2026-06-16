@@ -2,6 +2,45 @@ import { Config } from '../domain/types';
 import { layout } from './layout';
 import { icons } from './icons';
 
+// Parse stored workflow phases (JSON array of {title, detail}) tolerantly.
+function parseWorkflowPhases(raw?: string): Array<{ title: string; detail?: string }> {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((p) => p && typeof p.title === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+// Render workflow descriptive metadata (description, phases, when-to-use) for a
+// list card. Falls back to an "unreadable" badge when the meta block failed to parse.
+function workflowMetaSummary(c: Config): string {
+  if (c.type !== 'workflow') return '';
+
+  if (c.metadata_unreadable) {
+    return `
+      <div style="margin-top: 8px;">
+        <span class="status-indicator status-warning"><span class="status-dot"></span> Metadata unreadable</span>
+      </div>`;
+  }
+
+  const phases = parseWorkflowPhases(c.workflow_phases);
+  return `
+    ${c.workflow_description ? `
+      <div style="font-size: 0.9em; margin-top: 8px; color: var(--text-secondary);">
+        ${escapeHtml(c.workflow_description)}
+      </div>` : ''}
+    ${phases.length > 0 ? `
+      <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+        ${phases.map((p) => `<span class="badge" title="${escapeHtml(p.detail || '')}">${escapeHtml(p.title)}</span>`).join('')}
+      </div>` : ''}
+    ${c.workflow_when_to_use ? `
+      <div style="font-size: 0.85em; margin-top: 8px; color: var(--text-secondary);">
+        <strong>When to use:</strong> ${escapeHtml(c.workflow_when_to_use)}
+      </div>` : ''}`;
+}
+
 // Helper function to render just the config list container (for HTMX partial updates)
 export function configListContainerPartial(
   configs: Config[],
@@ -31,6 +70,7 @@ export function configListContainerPartial(
                   ? `<span class="badge" style="background: var(--status-error-bg); color: var(--status-error);">Owner unavailable</span>`
                   : ''}
             </div>
+            ${workflowMetaSummary(c)}
             <div style="font-size: 0.875em; margin-top: 8px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;">
               <span>Created: ${new Date(c.created_at).toLocaleDateString()}</span>
               <div class="quick-actions" style="opacity: 0; transition: opacity 0.2s;">
@@ -82,6 +122,7 @@ export function configListView(
             <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
             <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
             <option value="skill" ${activeFilters.type === 'skill' ? 'selected' : ''}>Skill</option>
+            <option value="workflow" ${activeFilters.type === 'workflow' ? 'selected' : ''}>Workflow</option>
           </select>
         </div>
 
@@ -177,6 +218,8 @@ export function configListView(
 
 export function configDetailView(config: Config, c?: any): string {
   const isSlashCommand = config.type === 'slash_command';
+  const isWorkflow = config.type === 'workflow';
+  const workflowPhases = isWorkflow ? parseWorkflowPhases(config.workflow_phases) : [];
 
   const content = `
     <div class="fade-in">
@@ -259,25 +302,55 @@ export function configDetailView(config: Config, c?: any): string {
       </details>
     ` : ''}
 
-    <h3 style="display: flex; align-items: center; gap: 10px;">
-      ${icons.refresh('icon')} Convert to Different Formats
-    </h3>
-    <div style="margin-bottom: 20px;">
-      <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/claude_code', {target:'#converted', indicator:'#convert-spinner'}))">
-        Claude Code
-      </button>
-      <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/codex', {target:'#converted', indicator:'#convert-spinner'}))">
-        Codex
-      </button>
-      <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/gemini', {target:'#converted', indicator:'#convert-spinner'}))">
-        Gemini
-      </button>
-      <span id="convert-spinner" class="htmx-indicator">
-        <span class="spinner"></span>
-      </span>
-    </div>
+    ${isWorkflow ? `
+      <!-- Workflow Metadata -->
+      <div class="card slide-up" style="margin-bottom: 20px;">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+          ${icons.barChart('icon')} Workflow Details
+        </h3>
+        ${config.metadata_unreadable ? `
+          <p><span class="status-indicator status-warning"><span class="status-dot"></span> Descriptive metadata could not be read</span></p>
+          <p style="color: var(--text-secondary);">The workflow is stored and usable, but its <code>export const meta</code> block could not be parsed.</p>
+        ` : `
+          <ul style="margin-left: 20px; line-height: 1.8;">
+            ${config.workflow_description ? `<li><strong>Description:</strong> ${escapeHtml(config.workflow_description)}</li>` : ''}
+            ${config.workflow_when_to_use ? `<li><strong>When to use:</strong> ${escapeHtml(config.workflow_when_to_use)}</li>` : ''}
+            <li><strong>Phases:</strong> ${workflowPhases.length > 0
+              ? workflowPhases.map((p) => `<span class="badge" title="${escapeHtml(p.detail || '')}">${escapeHtml(p.title)}</span>`).join(' ')
+              : '<span class="status-indicator status-info">None</span>'}</li>
+          </ul>
+        `}
+      </div>
+    ` : ''}
 
-    <div id="converted" class="fade-in"></div>
+    ${isWorkflow ? `
+      <h3 style="display: flex; align-items: center; gap: 10px;">
+        ${icons.refresh('icon')} Format Availability
+      </h3>
+      <div style="margin-bottom: 20px;">
+        <span class="status-indicator status-info"><span class="status-dot"></span> Workflows are available in Claude Code format only and are delivered as-is. They cannot be converted to Codex or Gemini.</span>
+      </div>
+    ` : `
+      <h3 style="display: flex; align-items: center; gap: 10px;">
+        ${icons.refresh('icon')} Convert to Different Formats
+      </h3>
+      <div style="margin-bottom: 20px;">
+        <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/claude_code', {target:'#converted', indicator:'#convert-spinner'}))">
+          Claude Code
+        </button>
+        <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/codex', {target:'#converted', indicator:'#convert-spinner'}))">
+          Codex
+        </button>
+        <button class="btn ripple" onclick="requireAuth(() => htmx.ajax('GET', '/api/configs/${config.id}/format/gemini', {target:'#converted', indicator:'#convert-spinner'}))">
+          Gemini
+        </button>
+        <span id="convert-spinner" class="htmx-indicator">
+          <span class="spinner"></span>
+        </span>
+      </div>
+
+      <div id="converted" class="fade-in"></div>
+    `}
 
     <h3>Actions</h3>
     <div style="margin-bottom: 20px;">
@@ -407,6 +480,7 @@ export function configCreateView(c?: any): string {
               <option value="agent_definition">Agent Definition</option>
               <option value="mcp_config">MCP Config</option>
               <option value="skill">Skill</option>
+              <option value="workflow">Workflow</option>
             </select>
             <span class="form-error-message"></span>
           </div>
@@ -501,6 +575,7 @@ export function configEditView(config: Config, c?: any): string {
               <option value="agent_definition" ${config.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
               <option value="mcp_config" ${config.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
               <option value="skill" ${config.type === 'skill' ? 'selected' : ''}>Skill</option>
+              <option value="workflow" ${config.type === 'workflow' ? 'selected' : ''}>Workflow</option>
             </select>
             <span class="form-error-message"></span>
           </div>
