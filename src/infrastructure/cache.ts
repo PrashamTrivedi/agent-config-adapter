@@ -18,8 +18,11 @@ export class CacheService {
   }
 
   async delete(id: string): Promise<void> {
-    // Delete all format variations
-    const formats = ['claude_code', 'codex', 'gemini'];
+    // Delete all variations. 'full' covers extension/marketplace snapshots
+    // (cached under `${prefix}:${id}` with the 'full' format); without it,
+    // invalidate() silently leaves the `:full` key stale (e.g. extension
+    // detail showing 0 configs after associations change).
+    const formats = ['claude_code', 'codex', 'gemini', 'full'];
     await Promise.all([
       this.kv.delete(this.getKey(id)),
       ...formats.map(format => this.kv.delete(this.getKey(id, format)))
