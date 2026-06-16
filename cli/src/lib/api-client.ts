@@ -28,7 +28,8 @@ export class ApiClient {
   async sync(
     configs: LocalConfigInput[],
     types?: ConfigType[],
-    dryRun: boolean = false
+    dryRun: boolean = false,
+    localKeys?: Array<{ name: string; type: ConfigType }>
   ): Promise<SyncResponse> {
     const body: Record<string, any> = {
       configs,
@@ -36,6 +37,9 @@ export class ApiClient {
     };
     if (types && types.length > 0) {
       body.types = types;
+    }
+    if (localKeys) {
+      body.local_keys = localKeys;
     }
 
     const response = await fetch(`${this.baseUrl}/api/sync`, {

@@ -12,5 +12,5 @@
       "@domain/*": ["../src/domain/*"]
     }
   },
-  "include": ["src/**/*.ts", "../src/domain/types.ts"]
+  "include": ["src/**/*.ts"]
 }

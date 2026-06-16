@@ -29,6 +29,7 @@ Sync Flags:
   --global       Sync from ~/.claude/ (global configs)
   --project      Sync from ./.claude/ (project configs)
   --dry-run      Preview changes without applying
+  --force        Ignore local memory; reconcile fully against the server
   --types <t>    Filter config types (comma-separated: slash_command,agent_definition,skill)
   --delete       Allow deletion of remote configs with no local match
   --verbose      Show detailed output
@@ -37,8 +38,8 @@ Download Flags:
   --global       Install to ~/.claude/ (global)
   --project      Install to ./.claude/ (project, default)
   --path <dir>   Install to custom directory
-  --id <uuid>    Download specific extension by ID (non-interactive)
-  --name <str>   Search and download by name (non-interactive)
+  --id <uuids>   Download extension(s) by ID (comma-separated, non-interactive)
+  --name <strs>  Search and download by name (comma-separated, non-interactive)
   --verbose      Show detailed output
 
 Global Flags:
@@ -108,6 +109,7 @@ async function main(): Promise<void> {
         global: !!flags.global,
         project: !!flags.project,
         dryRun: !!flags['dry-run'],
+        force: !!flags.force || !!flags.full,
         types,
         server: flags.server as string | undefined,
         verbose: !!flags.verbose,
@@ -119,9 +121,15 @@ async function main(): Promise<void> {
     }
 
     case 'download': {
+      const splitList = (v: unknown): string[] | undefined => {
+        if (typeof v !== 'string') return undefined;
+        const items = v.split(',').map((s) => s.trim()).filter(Boolean);
+        return items.length > 0 ? items : undefined;
+      };
+
       const downloadFlags: DownloadFlags = {
-        id: flags.id as string | undefined,
-        name: flags.name as string | undefined,
+        ids: splitList(flags.id),
+        names: splitList(flags.name),
         global: !!flags.global,
         project: !!flags.project || (!flags.global && !flags.path),
         path: flags.path as string | undefined,

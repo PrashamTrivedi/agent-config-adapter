@@ -3,7 +3,7 @@
  * ANSI colors and structured display helpers
  */
 
-import type { SyncResponse, SyncResultItem, ConfigType, Extension } from './types';
+import type { SyncResponse, SyncResultItem, ConfigType, Extension, DownloadResult } from './types';
 
 // ANSI color codes
 const c = {
@@ -203,5 +203,73 @@ export async function promptNumber(message: string, min: number, max: number): P
       return num;
     }
     warn(`Please enter a number between ${min} and ${max}.`);
+  }
+}
+
+/**
+ * Parse a multi-select input string of 1-based indices into a sorted, unique
+ * list. Accepts comma/space separated numbers and ranges, e.g. "1,3,5",
+ * "1-3", "2 4 6", or "all". Out-of-range/invalid tokens are ignored.
+ * Exported for testing.
+ */
+export function parseMultiSelect(input: string, max: number): number[] {
+  const trimmed = input.trim().toLowerCase();
+  if (trimmed === 'all' || trimmed === '*') {
+    return Array.from({ length: max }, (_, i) => i + 1);
+  }
+
+  const selected = new Set<number>();
+  for (const token of trimmed.split(/[\s,]+/).filter(Boolean)) {
+    const rangeMatch = token.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      const start = parseInt(rangeMatch[1], 10);
+      const end = parseInt(rangeMatch[2], 10);
+      const [lo, hi] = start <= end ? [start, end] : [end, start];
+      for (let i = lo; i <= hi; i++) {
+        if (i >= 1 && i <= max) selected.add(i);
+      }
+    } else {
+      const num = parseInt(token, 10);
+      if (!isNaN(num) && num >= 1 && num <= max) selected.add(num);
+    }
+  }
+
+  return Array.from(selected).sort((a, b) => a - b);
+}
+
+export async function promptMultiSelect(message: string, max: number): Promise<number[]> {
+  while (true) {
+    const input = await prompt(
+      `${message} ${c.dim}[e.g. 1,3 or 1-${max} or "all"]${c.reset}`
+    );
+    const choices = parseMultiSelect(input, max);
+    if (choices.length > 0) {
+      return choices;
+    }
+    warn(`Please select at least one item between 1 and ${max}.`);
+  }
+}
+
+export function displayBatchSummary(results: DownloadResult[]): void {
+  const ok = results.filter((r) => r.ok);
+  const failed = results.filter((r) => !r.ok);
+
+  header('Download Summary');
+  console.log('');
+
+  for (const r of ok) {
+    const count = r.written !== undefined ? ` ${c.dim}(${r.written} file(s))${c.reset}` : '';
+    console.log(`  ${c.green}✓${c.reset} ${c.bold}${r.name}${c.reset}${count}`);
+  }
+  for (const r of failed) {
+    console.log(`  ${c.red}✗${c.reset} ${c.bold}${r.name}${c.reset} ${c.red}${r.error ?? 'failed'}${c.reset}`);
+  }
+
+  console.log('');
+  const summary = `${ok.length} installed, ${failed.length} failed`;
+  if (failed.length === 0) {
+    success(summary);
+  } else {
+    warn(summary);
   }
 }

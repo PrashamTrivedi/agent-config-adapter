@@ -1,6 +1,9 @@
 /**
  * Download command
- * Downloads extensions from server and installs as Claude Code configs
+ * Downloads one or more extensions from the server and installs them as Claude
+ * Code configs. Multiple extensions (via --id a,b / --name x,y / interactive
+ * multi-select) are fetched in parallel with a concurrency cap; each reports
+ * its own success/failure and one failure never aborts the others.
  */
 
 import { homedir } from 'os';
@@ -10,7 +13,9 @@ import { unzipSync } from 'fflate';
 import { getServerUrl, getApiKey } from '../lib/config';
 import { ApiClient, ApiError } from '../lib/api-client';
 import * as display from '../lib/display';
-import type { DownloadFlags, Extension } from '../lib/types';
+import type { DownloadFlags, DownloadResult, Extension } from '../lib/types';
+
+const MAX_CONCURRENT_DOWNLOADS = 4;
 
 export async function downloadCommand(flags: DownloadFlags): Promise<void> {
   const serverUrl = getServerUrl(flags.server);
@@ -20,90 +25,142 @@ export async function downloadCommand(flags: DownloadFlags): Promise<void> {
   display.info(`Server: ${serverUrl}`);
 
   try {
-    let extension: Extension;
+    const extensions = await client.listExtensions();
+    const selected = await selectExtensions(flags, extensions);
 
-    if (flags.id) {
-      // Non-interactive: download by ID
-      display.info(`Fetching extension ${flags.id}...`);
-      const extensions = await client.listExtensions();
-      const found = extensions.find((e) => e.id === flags.id);
-      if (!found) {
-        display.error(`Extension not found: ${flags.id}`);
-        process.exit(1);
-      }
-      extension = found;
-    } else if (flags.name) {
-      // Non-interactive: search by name
-      display.info(`Searching for "${flags.name}"...`);
-      const extensions = await client.listExtensions();
-      const query = flags.name.toLowerCase();
-      const matches = extensions.filter(
-        (e) => e.name.toLowerCase().includes(query)
-      );
-
-      if (matches.length === 0) {
-        display.error(`No extensions matching "${flags.name}"`);
-        process.exit(1);
-      }
-
-      if (matches.length > 1) {
-        display.warn(`Multiple extensions match "${flags.name}":`);
-        display.displayExtensionList(matches);
-        display.error('Be more specific or use --id to select one.');
-        process.exit(1);
-      }
-
-      extension = matches[0];
-    } else {
-      // Interactive: list and prompt
-      display.info('Fetching extensions...');
-      const extensions = await client.listExtensions();
-
-      if (extensions.length === 0) {
-        display.info('No extensions available on this server.');
-        return;
-      }
-
-      display.displayExtensionList(extensions);
-      const choice = await display.promptNumber('Select extension:', 1, extensions.length);
-      extension = extensions[choice - 1];
+    if (selected.length === 0) {
+      display.info('Nothing selected to download.');
+      return;
     }
 
-    display.info(`Selected: ${extension.name} v${extension.version}`);
-
-    // Resolve target directory
+    // Resolve target directory once — applies to the whole batch.
     const targetDir = resolveTargetDir(flags);
     display.info(`Target: ${targetDir}`);
+    display.info(`Downloading ${selected.length} extension(s) (max ${MAX_CONCURRENT_DOWNLOADS} in parallel)...`);
 
-    // Download ZIP
-    display.info('Downloading...');
-    const zipData = await client.downloadPluginZip(extension.id);
-
-    // Extract and write files
-    const written = extractAndWrite(zipData, targetDir, flags.verbose);
+    const results = await downloadAll(client, selected, targetDir, flags.verbose);
 
     console.log('');
-    display.success(`Installed ${written.length} file(s) from "${extension.name}"`);
-    for (const file of written) {
-      display.verbose(`  ${file}`, true);
-    }
+    display.displayBatchSummary(results);
 
-    if (written.length > 0 && !flags.verbose) {
-      display.info('Use --verbose to see file details.');
+    const anyFailed = results.some((r) => !r.ok);
+    if (anyFailed) {
+      process.exit(1);
     }
   } catch (err) {
     if (err instanceof ApiError) {
-      if (err.status === 404) {
-        display.error('Extension not found.');
-      } else {
-        display.error(`Server error (${err.status}): ${err.message}`);
-      }
+      display.error(`Server error (${err.status}): ${err.message}`);
     } else if (err instanceof Error && err.message.includes('fetch')) {
       display.error(`Could not connect to server: ${serverUrl}`);
     } else {
       display.error(`Unexpected error: ${err}`);
     }
     process.exit(1);
+  }
+}
+
+/**
+ * Resolve the set of extensions to download from flags (ids/names) or, when
+ * none are given, an interactive multi-select prompt.
+ */
+async function selectExtensions(flags: DownloadFlags, extensions: Extension[]): Promise<Extension[]> {
+  const hasIds = flags.ids && flags.ids.length > 0;
+  const hasNames = flags.names && flags.names.length > 0;
+
+  if (hasIds || hasNames) {
+    const selected: Extension[] = [];
+    const seen = new Set<string>();
+
+    for (const id of flags.ids ?? []) {
+      const found = extensions.find((e) => e.id === id);
+      if (!found) {
+        display.error(`Extension not found: ${id}`);
+        process.exit(1);
+      }
+      if (!seen.has(found.id)) {
+        seen.add(found.id);
+        selected.push(found);
+      }
+    }
+
+    for (const name of flags.names ?? []) {
+      const query = name.toLowerCase();
+      const matches = extensions.filter((e) => e.name.toLowerCase().includes(query));
+      if (matches.length === 0) {
+        display.error(`No extensions matching "${name}"`);
+        process.exit(1);
+      }
+      if (matches.length > 1) {
+        display.warn(`Multiple extensions match "${name}":`);
+        display.displayExtensionList(matches);
+        display.error('Be more specific or use --id to select one.');
+        process.exit(1);
+      }
+      if (!seen.has(matches[0].id)) {
+        seen.add(matches[0].id);
+        selected.push(matches[0]);
+      }
+    }
+
+    return selected;
+  }
+
+  // Interactive: list and multi-select
+  if (extensions.length === 0) {
+    display.info('No extensions available on this server.');
+    return [];
+  }
+
+  display.displayExtensionList(extensions);
+  const choices = await display.promptMultiSelect('Select extension(s):', extensions.length);
+  return choices.map((i) => extensions[i - 1]);
+}
+
+/**
+ * Download a batch of extensions with a fixed concurrency limit. Results are
+ * returned in the same order as `extensions`.
+ */
+async function downloadAll(
+  client: ApiClient,
+  extensions: Extension[],
+  targetDir: string,
+  verbose: boolean
+): Promise<DownloadResult[]> {
+  const results: DownloadResult[] = new Array(extensions.length);
+  let next = 0;
+
+  async function worker(): Promise<void> {
+    while (true) {
+      const index = next++;
+      if (index >= extensions.length) return;
+      results[index] = await downloadOne(client, extensions[index], targetDir, verbose);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(MAX_CONCURRENT_DOWNLOADS, extensions.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+
+  return results;
+}
+
+/** Download and install a single extension, capturing its own success/failure. */
+async function downloadOne(
+  client: ApiClient,
+  extension: Extension,
+  targetDir: string,
+  verbose: boolean
+): Promise<DownloadResult> {
+  try {
+    const zipData = await client.downloadPluginZip(extension.id);
+    const written = extractAndWrite(zipData, targetDir, verbose);
+    return { name: extension.name, ok: true, written: written.length };
+  } catch (err) {
+    const message =
+      err instanceof ApiError ? `${err.status}: ${err.message}` : err instanceof Error ? err.message : String(err);
+    return { name: extension.name, ok: false, error: message };
   }
 }
 

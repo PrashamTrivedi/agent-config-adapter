@@ -53,10 +53,27 @@ export interface CLIConfig {
   last_sync?: string;
 }
 
+/**
+ * Per-machine memory of what was last synced, so unchanged configs can be
+ * skipped. Keyed by `${serverUrl}::${scope}::${absDir}` so scopes, servers,
+ * and project directories never collide.
+ */
+export interface SyncStateEntry {
+  lastSync: string;
+  // key = `${type}:${name}` → content hash (folds in skill companion files)
+  configs: Record<string, string>;
+}
+
+export interface SyncStateFile {
+  version: number;
+  entries: Record<string, SyncStateEntry>;
+}
+
 export interface SyncFlags {
   global: boolean;
   project: boolean;
   dryRun: boolean;
+  force: boolean;
   types?: ConfigType[];
   server?: string;
   verbose: boolean;
@@ -74,11 +91,19 @@ export interface Extension {
 }
 
 export interface DownloadFlags {
-  id?: string;
-  name?: string;
+  // Comma-separated ids/names are parsed into these arrays.
+  ids?: string[];
+  names?: string[];
   global: boolean;
   project: boolean;
   path?: string;
   server?: string;
   verbose: boolean;
+}
+
+export interface DownloadResult {
+  name: string;
+  ok: boolean;
+  written?: number;
+  error?: string;
 }
