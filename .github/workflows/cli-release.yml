@@ -65,6 +65,17 @@ jobs:
       - name: Install dependencies
         run: cd cli && bun install
 
+      # Bump the version in source BEFORE compiling so the embedded VERSION
+      # matches the release tag. (The release job re-applies the same bump for
+      # the commit; sed is idempotent.) Without this, binaries ship the
+      # previous version string because build ran before the bump.
+      - name: Set version in source
+        env:
+          NEXT_VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          sed -i "s/\"version\": \".*\"/\"version\": \"${NEXT_VERSION}\"/" cli/package.json
+          sed -i "s/const VERSION = '.*'/const VERSION = '${NEXT_VERSION}'/" cli/src/index.ts
+
       - name: Build binaries
         run: cd cli && bun run build
 

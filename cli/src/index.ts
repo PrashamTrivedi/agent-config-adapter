@@ -30,7 +30,7 @@ Sync Flags:
   --project      Sync from ./.claude/ (project configs)
   --dry-run      Preview changes without applying
   --force        Ignore local memory; reconcile fully against the server
-  --types <t>    Filter config types (comma-separated: slash_command,agent_definition,skill)
+  --types <t>    Filter config types (comma-separated: slash_command,agent_definition,skill,workflow)
   --delete       Allow deletion of remote configs with no local match
   --verbose      Show detailed output
 
