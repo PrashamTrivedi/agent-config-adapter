@@ -61,7 +61,8 @@ export class SyncService {
     localConfigs: LocalConfigInput[],
     userId: string,
     types?: ConfigType[],
-    dryRun: boolean = false
+    dryRun: boolean = false,
+    localKeys?: Array<{ name: string; type: ConfigType }>
   ): Promise<SyncResult> {
     const result: SyncResult = {
       created: [],
@@ -84,93 +85,35 @@ export class SyncService {
       remoteMap.set(`${config.name}:${config.type}`, config);
     }
 
-    // Track which remote configs were matched
+    // Track which remote configs were matched by a sent local config
     const matchedRemoteKeys = new Set<string>();
 
-    // Process each local config
-    for (const localConfig of filteredLocalConfigs) {
-      const key = `${localConfig.name}:${localConfig.type}`;
-      const remoteConfig = remoteMap.get(key);
+    // Process each local config in parallel — each is an independent write,
+    // so a batch of N changes resolves in ~1 round-trip rather than N.
+    const outcomes = await Promise.all(
+      filteredLocalConfigs.map((localConfig) =>
+        this.applyLocalConfig(localConfig, remoteMap, userId, dryRun)
+      )
+    );
 
-      if (!remoteConfig) {
-        // Create new config
-        if (!dryRun) {
-          const created = await this.createConfig(localConfig, userId);
-          result.created.push({
-            name: created.name,
-            type: created.type,
-            id: created.id,
-          });
-        } else {
-          result.created.push({
-            name: localConfig.name,
-            type: localConfig.type,
-            id: 'dry-run',
-          });
-        }
-      } else {
-        matchedRemoteKeys.add(key);
-
-        // Check if content differs
-        if (this.contentDiffers(localConfig.content, remoteConfig.content)) {
-          // Update existing config
-          if (!dryRun) {
-            const updated = await this.updateConfig(remoteConfig.id, localConfig);
-            if (updated) {
-              result.updated.push({
-                name: updated.name,
-                type: updated.type,
-                id: updated.id,
-              });
-            }
-          } else {
-            result.updated.push({
-              name: localConfig.name,
-              type: localConfig.type,
-              id: remoteConfig.id,
-            });
-          }
-        } else {
-          // Content is the same, but check companion files for skills
-          if (localConfig.type === 'skill' && localConfig.companionFiles) {
-            const filesChanged = await this.companionFilesChanged(
-              remoteConfig.id,
-              localConfig.companionFiles
-            );
-            if (filesChanged) {
-              if (!dryRun) {
-                await this.syncCompanionFiles(remoteConfig.id, localConfig.companionFiles);
-                result.updated.push({
-                  name: remoteConfig.name,
-                  type: remoteConfig.type,
-                  id: remoteConfig.id,
-                });
-              } else {
-                result.updated.push({
-                  name: localConfig.name,
-                  type: localConfig.type,
-                  id: remoteConfig.id,
-                });
-              }
-            } else {
-              result.unchanged.push({
-                name: localConfig.name,
-                type: localConfig.type,
-              });
-            }
-          } else {
-            result.unchanged.push({
-              name: localConfig.name,
-              type: localConfig.type,
-            });
-          }
-        }
-      }
+    for (const outcome of outcomes) {
+      if (outcome.matchedKey) matchedRemoteKeys.add(outcome.matchedKey);
+      if (outcome.bucket === 'created') result.created.push(outcome.item!);
+      else if (outcome.bucket === 'updated') result.updated.push(outcome.item!);
+      else if (outcome.bucket === 'unchanged') result.unchanged.push(outcome.item!);
     }
 
-    // Find deletion candidates (remote-only configs)
+    // Deletion candidates = remote configs with no local match.
+    // When `localKeys` (the full local identity set) is supplied, the request
+    // may carry only changed configs, so compare against that full set instead
+    // of only the configs that were actually sent.
+    const localKeySet = localKeys
+      ? new Set(localKeys.map((k) => `${k.name}:${k.type}`))
+      : null;
+
     for (const [key, config] of remoteMap) {
-      if (!matchedRemoteKeys.has(key)) {
+      const stillPresent = localKeySet ? localKeySet.has(key) : matchedRemoteKeys.has(key);
+      if (!stillPresent) {
         result.deletionCandidates.push({
           name: config.name,
           type: config.type,
@@ -180,6 +123,57 @@ export class SyncService {
     }
 
     return result;
+  }
+
+  /**
+   * Apply a single local config against the remote map, returning how it should
+   * be bucketed. Performs the create/update/companion-sync write unless dryRun.
+   */
+  private async applyLocalConfig(
+    localConfig: LocalConfigInput,
+    remoteMap: Map<string, Config>,
+    userId: string,
+    dryRun: boolean
+  ): Promise<{
+    bucket: 'created' | 'updated' | 'unchanged' | 'skipped';
+    matchedKey?: string;
+    item?: SyncResultItem | { name: string; type: ConfigType };
+  }> {
+    const key = `${localConfig.name}:${localConfig.type}`;
+    const remoteConfig = remoteMap.get(key);
+
+    if (!remoteConfig) {
+      if (!dryRun) {
+        const created = await this.createConfig(localConfig, userId);
+        return { bucket: 'created', item: { name: created.name, type: created.type, id: created.id } };
+      }
+      return { bucket: 'created', item: { name: localConfig.name, type: localConfig.type, id: 'dry-run' } };
+    }
+
+    // Matched remote config
+    if (this.contentDiffers(localConfig.content, remoteConfig.content)) {
+      if (!dryRun) {
+        const updated = await this.updateConfig(remoteConfig.id, localConfig);
+        if (updated) {
+          return { bucket: 'updated', matchedKey: key, item: { name: updated.name, type: updated.type, id: updated.id } };
+        }
+        return { bucket: 'skipped', matchedKey: key };
+      }
+      return { bucket: 'updated', matchedKey: key, item: { name: localConfig.name, type: localConfig.type, id: remoteConfig.id } };
+    }
+
+    // SKILL.md content is identical — for skills, check companion files
+    if (localConfig.type === 'skill' && localConfig.companionFiles) {
+      const filesChanged = await this.companionFilesChanged(remoteConfig.id, localConfig.companionFiles);
+      if (filesChanged) {
+        if (!dryRun) {
+          await this.syncCompanionFiles(remoteConfig.id, localConfig.companionFiles);
+        }
+        return { bucket: 'updated', matchedKey: key, item: { name: remoteConfig.name, type: remoteConfig.type, id: remoteConfig.id } };
+      }
+    }
+
+    return { bucket: 'unchanged', matchedKey: key, item: { name: localConfig.name, type: localConfig.type } };
   }
 
   /**
@@ -212,15 +206,20 @@ export class SyncService {
   }
 
   private async getRemoteConfigs(userId: string, types?: ConfigType[]): Promise<Config[]> {
-    // Get all configs for the user
-    const allConfigs = await this.configRepo.findAll();
+    // Query by user_id directly so this scales with the user's config count,
+    // not the size of the whole configs table.
+    return this.configRepo.findByUserId(userId, types);
+  }
 
-    // Filter by user_id and optionally by types
-    return allConfigs.filter((c) => {
-      const ownerMatch = c.user_id === userId;
-      const typeMatch = !types || types.includes(c.type);
-      return ownerMatch && typeMatch;
-    });
+  /**
+   * SHA-256 hex digest of raw bytes. Used to detect companion-file content
+   * changes (path-match alone is not enough).
+   */
+  private async hashBytes(bytes: Uint8Array): Promise<string> {
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   private contentDiffers(localContent: string, remoteContent: string): boolean {
@@ -272,16 +271,17 @@ export class SyncService {
       return true;
     }
 
-    // Check if all local files exist remotely (by path)
-    const remotePaths = new Set(remoteFiles.map((f) => f.file_path));
+    const remoteByPath = new Map(remoteFiles.map((f) => [f.file_path, f]));
+
+    // Compare each local file's content hash against the stored hash.
     for (const localFile of localFiles) {
-      if (!remotePaths.has(localFile.path)) {
-        return true;
-      }
+      const remote = remoteByPath.get(localFile.path);
+      if (!remote) return true; // path added/renamed locally
+      if (!remote.file_hash) return true; // legacy row without a hash — re-sync to backfill
+      const localHash = await this.hashBytes(this.decodeBase64(localFile.content));
+      if (localHash !== remote.file_hash) return true; // content changed
     }
 
-    // For now, assume content may differ if paths match
-    // Full content comparison would require downloading from R2
     return false;
   }
 
@@ -296,42 +296,52 @@ export class SyncService {
     // Track which paths we've processed
     const processedPaths = new Set<string>();
 
-    // Upload or update each local file
-    for (const localFile of localFiles) {
-      processedPaths.add(localFile.path);
+    // Upload/update each local file in parallel. Unchanged files (matching
+    // hash) are skipped entirely — no R2 write, no DB write.
+    await Promise.all(
+      localFiles.map(async (localFile) => {
+        processedPaths.add(localFile.path);
 
-      // Decode base64 content
-      const contentBytes = this.decodeBase64(localFile.content);
-      const r2Key = `skills/${skillId}/files/${localFile.path}`;
-      const mimeType = localFile.mimeType || this.guessMimeType(localFile.path);
+        const contentBytes = this.decodeBase64(localFile.content);
+        const hash = await this.hashBytes(contentBytes);
+        const existing = existingPaths.get(localFile.path);
 
-      // Upload to R2
-      await this.r2.put(r2Key, contentBytes, {
-        httpMetadata: {
-          contentType: mimeType,
-        },
-      });
+        // Skip files whose content is unchanged
+        if (existing && existing.file_hash === hash) {
+          return;
+        }
 
-      const existing = existingPaths.get(localFile.path);
-      if (!existing) {
-        // Create new file record
-        await this.skillFilesRepo.create({
-          skill_id: skillId,
-          file_path: localFile.path,
-          r2_key: r2Key,
-          file_size: contentBytes.byteLength,
-          mime_type: mimeType,
+        const r2Key = `skills/${skillId}/files/${localFile.path}`;
+        const mimeType = localFile.mimeType || this.guessMimeType(localFile.path);
+
+        await this.r2.put(r2Key, contentBytes, {
+          httpMetadata: { contentType: mimeType },
         });
-      }
-    }
 
-    // Delete files that exist remotely but not locally
-    for (const [path, file] of existingPaths) {
-      if (!processedPaths.has(path)) {
-        await this.r2.delete(file.r2_key);
-        await this.skillFilesRepo.delete(file.id);
-      }
-    }
+        if (!existing) {
+          await this.skillFilesRepo.create({
+            skill_id: skillId,
+            file_path: localFile.path,
+            r2_key: r2Key,
+            file_size: contentBytes.byteLength,
+            mime_type: mimeType,
+            file_hash: hash,
+          });
+        } else {
+          await this.skillFilesRepo.updateHash(existing.id, hash, contentBytes.byteLength);
+        }
+      })
+    );
+
+    // Delete files that exist remotely but not locally (in parallel)
+    await Promise.all(
+      Array.from(existingPaths.entries()).map(async ([path, file]) => {
+        if (!processedPaths.has(path)) {
+          await this.r2.delete(file.r2_key);
+          await this.skillFilesRepo.delete(file.id);
+        }
+      })
+    );
   }
 
   private async deleteCompanionFiles(skillId: string): Promise<void> {

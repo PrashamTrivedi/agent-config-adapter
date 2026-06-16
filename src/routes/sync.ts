@@ -29,6 +29,7 @@ syncRouter.post('/', async (c) => {
     configs: LocalConfigInput[];
     types?: ConfigType[];
     dry_run?: boolean;
+    local_keys?: Array<{ name: string; type: ConfigType }>;
   }>();
 
   if (!body.configs || !Array.isArray(body.configs)) {
@@ -44,7 +45,8 @@ syncRouter.post('/', async (c) => {
     body.configs,
     userId,
     body.types,
-    body.dry_run ?? false
+    body.dry_run ?? false,
+    body.local_keys
   );
 
   return c.json({

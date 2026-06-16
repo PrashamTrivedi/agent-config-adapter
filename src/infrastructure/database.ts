@@ -1,4 +1,4 @@
-import { Config, CreateConfigInput, UpdateConfigInput, SlashCommandAnalysis } from '../domain/types';
+import { Config, ConfigType, CreateConfigInput, UpdateConfigInput, SlashCommandAnalysis } from '../domain/types';
 import { nanoid } from 'nanoid';
 
 export class ConfigRepository {
@@ -132,6 +132,37 @@ export class ConfigRepository {
       : await this.db.prepare(query).bind(name, type).first<Config>();
 
     return result || null;
+  }
+
+  /**
+   * Find all configs owned by a specific user, optionally filtered by type.
+   * Queries with `WHERE user_id = ?` so sync scales with the user's config
+   * count instead of scanning the whole table.
+   */
+  async findByUserId(userId: string, types?: ConfigType[]): Promise<Config[]> {
+    const conditions = ['c.user_id = ?'];
+    const values: any[] = [userId];
+
+    if (types && types.length > 0) {
+      const placeholders = types.map(() => '?').join(', ');
+      conditions.push(`c.type IN (${placeholders})`);
+      values.push(...types);
+    }
+
+    const query = `
+      SELECT c.*, u.name AS owner_name
+      FROM configs c
+      LEFT JOIN "user" u ON c.user_id = u.id
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY c.created_at DESC
+    `;
+
+    const result = await this.db
+      .prepare(query)
+      .bind(...values)
+      .all<Config>();
+
+    return result.results || [];
   }
 
   async findAll(filters?: {

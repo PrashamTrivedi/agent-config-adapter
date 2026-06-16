@@ -209,4 +209,143 @@ describe('SyncService', () => {
       expect(result.created[0].type).toBe('slash_command');
     });
   });
+
+  // --- New: incremental sync + companion-hash behavior ---
+
+  async function sha256OfText(text: string): Promise<string> {
+    const bytes = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  /** Mock D1 that routes SELECTs to canned config / skill_file rows. */
+  function routingMockDb(routes: { configs?: any[]; skillFiles?: any[] }): D1Database {
+    const resultsFor = (query: string) => {
+      if (query.includes('FROM configs')) return routes.configs ?? [];
+      if (query.includes('FROM skill_files')) return routes.skillFiles ?? [];
+      return [];
+    };
+    const stmt = (query: string) => ({
+      bind: () => ({
+        run: async () => ({ success: true, meta: { changes: 1 } }),
+        first: async () => null,
+        all: async () => ({ results: resultsFor(query), success: true, meta: {} }),
+      }),
+      run: async () => ({ success: true, meta: { changes: 1 } }),
+      first: async () => null,
+      all: async () => ({ results: resultsFor(query), success: true, meta: {} }),
+    });
+    return { prepare: vi.fn(stmt), batch: vi.fn(), dump: vi.fn(), exec: vi.fn() } as unknown as D1Database;
+  }
+
+  function makeService(routes: { configs?: any[]; skillFiles?: any[] }) {
+    return new SyncService({ DB: routingMockDb(routes), EXTENSION_FILES: createMockR2Bucket() });
+  }
+
+  const remoteSkill = {
+    id: 'skill-1',
+    name: 'my-skill',
+    type: 'skill',
+    original_format: 'claude_code',
+    content: 'SKILL body',
+    user_id: 'user-123',
+    created_at: '2024-01-01T00:00:00.000Z',
+    updated_at: '2024-01-01T00:00:00.000Z',
+  };
+
+  describe('companion file change detection (hash-based)', () => {
+    it('flags a skill as updated when a companion file content changes', async () => {
+      const svc = makeService({
+        configs: [remoteSkill],
+        skillFiles: [
+          { id: 'f1', skill_id: 'skill-1', file_path: 'helper.py', r2_key: 'k', file_hash: 'stalehash' },
+        ],
+      });
+
+      const result = await svc.syncConfigs(
+        [{ name: 'my-skill', type: 'skill', content: 'SKILL body', companionFiles: [{ path: 'helper.py', content: 'print(2)' }] }],
+        'user-123',
+        undefined,
+        true // dry run — detection only
+      );
+
+      expect(result.updated.map((u) => u.name)).toContain('my-skill');
+      expect(result.unchanged.length).toBe(0);
+    });
+
+    it('treats a skill as unchanged when companion hash matches', async () => {
+      const hash = await sha256OfText('print(1)');
+      const svc = makeService({
+        configs: [remoteSkill],
+        skillFiles: [
+          { id: 'f1', skill_id: 'skill-1', file_path: 'helper.py', r2_key: 'k', file_hash: hash },
+        ],
+      });
+
+      const result = await svc.syncConfigs(
+        [{ name: 'my-skill', type: 'skill', content: 'SKILL body', companionFiles: [{ path: 'helper.py', content: 'print(1)' }] }],
+        'user-123',
+        undefined,
+        true
+      );
+
+      expect(result.unchanged.map((u) => u.name)).toContain('my-skill');
+      expect(result.updated.length).toBe(0);
+    });
+
+    it('flags as updated when a legacy companion row has no stored hash', async () => {
+      const svc = makeService({
+        configs: [remoteSkill],
+        skillFiles: [
+          { id: 'f1', skill_id: 'skill-1', file_path: 'helper.py', r2_key: 'k', file_hash: null },
+        ],
+      });
+
+      const result = await svc.syncConfigs(
+        [{ name: 'my-skill', type: 'skill', content: 'SKILL body', companionFiles: [{ path: 'helper.py', content: 'print(1)' }] }],
+        'user-123',
+        undefined,
+        true
+      );
+
+      expect(result.updated.map((u) => u.name)).toContain('my-skill');
+    });
+  });
+
+  describe('deletion candidates with localKeys (incremental sync)', () => {
+    const remoteA = { id: 'a', name: 'cmd-a', type: 'slash_command', original_format: 'claude_code', content: 'old A', user_id: 'user-123', created_at: '2024-01-01T00:00:00.000Z', updated_at: '2024-01-01T00:00:00.000Z' };
+    const remoteB = { id: 'b', name: 'cmd-b', type: 'slash_command', original_format: 'claude_code', content: 'B', user_id: 'user-123', created_at: '2024-01-01T00:00:00.000Z', updated_at: '2024-01-01T00:00:00.000Z' };
+
+    it('does not flag a remote config as deletion candidate when it is in localKeys', async () => {
+      const svc = makeService({ configs: [remoteA, remoteB] });
+
+      // Only the changed config (cmd-a) is sent, but localKeys lists both.
+      const result = await svc.syncConfigs(
+        [{ name: 'cmd-a', type: 'slash_command', content: 'new A' }],
+        'user-123',
+        undefined,
+        true,
+        [{ name: 'cmd-a', type: 'slash_command' }, { name: 'cmd-b', type: 'slash_command' }]
+      );
+
+      expect(result.deletionCandidates.length).toBe(0);
+      expect(result.updated.map((u) => u.name)).toContain('cmd-a');
+    });
+
+    it('flags remote-only configs as deletion candidates when absent from localKeys', async () => {
+      const svc = makeService({ configs: [remoteA, remoteB] });
+
+      const result = await svc.syncConfigs(
+        [{ name: 'cmd-a', type: 'slash_command', content: 'new A' }],
+        'user-123',
+        undefined,
+        true,
+        [{ name: 'cmd-a', type: 'slash_command' }] // cmd-b no longer exists locally
+      );
+
+      expect(result.deletionCandidates.map((d) => d.name)).toContain('cmd-b');
+    });
+  });
 });

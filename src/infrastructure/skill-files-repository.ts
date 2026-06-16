@@ -10,8 +10,8 @@ export class SkillFilesRepository {
 
     await this.db
       .prepare(
-        `INSERT INTO skill_files (id, skill_id, file_path, r2_key, file_size, mime_type, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO skill_files (id, skill_id, file_path, r2_key, file_size, mime_type, file_hash, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         id,
@@ -20,6 +20,7 @@ export class SkillFilesRepository {
         input.r2_key,
         input.file_size || null,
         input.mime_type || null,
+        input.file_hash || null,
         now
       )
       .run();
@@ -31,8 +32,20 @@ export class SkillFilesRepository {
       r2_key: input.r2_key,
       file_size: input.file_size || null,
       mime_type: input.mime_type || null,
+      file_hash: input.file_hash || null,
       created_at: now,
     };
+  }
+
+  /**
+   * Update the stored content hash (and size) for an existing companion file.
+   * Used when a file's path is unchanged but its content changed.
+   */
+  async updateHash(id: string, file_hash: string, file_size?: number): Promise<void> {
+    await this.db
+      .prepare('UPDATE skill_files SET file_hash = ?, file_size = ? WHERE id = ?')
+      .bind(file_hash, file_size ?? null, id)
+      .run();
   }
 
   async findById(id: string): Promise<SkillFile | null> {

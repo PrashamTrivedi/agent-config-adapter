@@ -44,6 +44,43 @@ describe('ConfigRepository', () => {
     });
   });
 
+  describe('findByUserId', () => {
+    it('should query by user_id and return the user\'s configs', async () => {
+      const rows = [
+        { id: '1', name: 'a', type: 'slash_command', original_format: 'claude_code', content: 'x', user_id: 'user-1', created_at: 't', updated_at: 't' },
+      ];
+      mockDb.prepare = vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          all: vi.fn().mockResolvedValue({ results: rows, success: true, meta: {} }),
+        }),
+      });
+      repo = new ConfigRepository(mockDb);
+
+      const result = await repo.findByUserId('user-1');
+
+      expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('c.user_id = ?'));
+      expect(result).toEqual(rows);
+    });
+
+    it('should add a type IN (...) filter when types are provided', async () => {
+      const bindSpy = vi.fn().mockReturnValue({
+        all: vi.fn().mockResolvedValue({ results: [], success: true, meta: {} }),
+      });
+      mockDb.prepare = vi.fn().mockReturnValue({ bind: bindSpy });
+      repo = new ConfigRepository(mockDb);
+
+      await repo.findByUserId('user-1', ['slash_command', 'skill']);
+
+      expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('c.type IN (?, ?)'));
+      expect(bindSpy).toHaveBeenCalledWith('user-1', 'slash_command', 'skill');
+    });
+
+    it('should return empty array when no results', async () => {
+      const result = await repo.findByUserId('nobody');
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('findById', () => {
     it('should return null when config not found', async () => {
       const config = await repo.findById('non-existent-id');

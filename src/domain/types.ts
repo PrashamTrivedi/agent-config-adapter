@@ -91,6 +91,7 @@ export interface SkillFile {
   r2_key: string;
   file_size: number | null;
   mime_type: string | null;
+  file_hash: string | null;
   created_at: string;
 }
 
@@ -112,6 +113,7 @@ export interface CreateSkillFileInput {
   r2_key: string;
   file_size?: number;
   mime_type?: string;
+  file_hash?: string;
 }
 
 export interface SkillZipStructure {
