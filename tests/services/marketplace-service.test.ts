@@ -229,8 +229,8 @@ describe('MarketplaceService', () => {
     it('should invalidate marketplace and manifest caches', async () => {
       await service.invalidateMarketplaceCache('mkt-123');
 
-      // Base cache invalidation deletes 4 keys (base + 3 formats),
-      // plus 1 manifest cache deletion = 5 total
+      // Base cache invalidation deletes 5 keys (base + claude_code/codex/gemini/full),
+      // plus 1 manifest cache deletion
       expect(mockKV.delete).toHaveBeenCalled();
     });
   });

@@ -6,6 +6,12 @@ on:
       - main
     paths:
       - 'cli/**'
+  workflow_dispatch: {}
+
+# Serialize CLI Release runs so two of them can't race each other's version-bump push.
+concurrency:
+  group: cli-release
+  cancel-in-progress: false
 
 jobs:
   check-version:
@@ -59,6 +65,17 @@ jobs:
       - name: Install dependencies
         run: cd cli && bun install
 
+      # Bump the version in source BEFORE compiling so the embedded VERSION
+      # matches the release tag. (The release job re-applies the same bump for
+      # the commit; sed is idempotent.) Without this, binaries ship the
+      # previous version string because build ran before the bump.
+      - name: Set version in source
+        env:
+          NEXT_VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          sed -i "s/\"version\": \".*\"/\"version\": \"${NEXT_VERSION}\"/" cli/package.json
+          sed -i "s/const VERSION = '.*'/const VERSION = '${NEXT_VERSION}'/" cli/src/index.ts
+
       - name: Build binaries
         run: cd cli && bun run build
 
@@ -103,6 +120,10 @@ jobs:
           git add cli/package.json cli/src/index.ts
           if ! git diff --staged --quiet; then
             git commit -m "🔖 chore: Bump CLI version to ${NEXT_VERSION} [skip ci]"
+            # Another workflow (e.g. the coverage-badge push) may have advanced main
+            # between checkout and now. Rebase onto the latest before pushing so the
+            # version bump doesn't fail with a non-fast-forward rejection.
+            git pull --rebase origin main
             git push
           else
             echo "Version already at ${NEXT_VERSION}, skipping commit"
