@@ -60,6 +60,10 @@ export function scanDirectory(basePath: string): ScanResult {
   const skillsDir = join(basePath, 'skills');
   scanSkillsDir(skillsDir, configs, warnings, visitedDirs);
 
+  // Scan workflows (Claude Code only; single .js files)
+  const workflowsDir = join(basePath, 'workflows');
+  scanConfigDir(workflowsDir, 'workflow', configs, warnings, visitedDirs, '', '.js');
+
   return { configs, warnings };
 }
 
@@ -73,7 +77,8 @@ function scanConfigDir(
   configs: LocalConfigInput[],
   warnings: ScanWarning[],
   visitedDirs: Set<string>,
-  namePrefix: string = ''
+  namePrefix: string = '',
+  fileExt: string = '.md'
 ): void {
   if (!dirExists(dirPath)) return;
 
@@ -113,11 +118,11 @@ function scanConfigDir(
 
     if (stat.isDirectory()) {
       const subPrefix = namePrefix ? `${namePrefix}:${entry}` : entry;
-      scanConfigDir(fullPath, type, configs, warnings, visitedDirs, subPrefix);
-    } else if (stat.isFile() && extname(entry).toLowerCase() === '.md') {
+      scanConfigDir(fullPath, type, configs, warnings, visitedDirs, subPrefix, fileExt);
+    } else if (stat.isFile() && extname(entry).toLowerCase() === fileExt) {
       const name = namePrefix
-        ? `${namePrefix}:${basename(entry, '.md')}`
-        : basename(entry, '.md');
+        ? `${namePrefix}:${basename(entry, fileExt)}`
+        : basename(entry, fileExt);
 
       try {
         const content = readFileSync(fullPath, 'utf-8');

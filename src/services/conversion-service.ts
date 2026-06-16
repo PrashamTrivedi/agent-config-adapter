@@ -115,6 +115,14 @@ export class ConversionService {
       );
     }
 
+    // Workflows are Claude Code only. Requesting any other format is unavailable.
+    // (A claude_code target falls through to the same-format passthrough below.)
+    if (config.type === 'workflow' && targetFormat !== 'claude_code') {
+      throw new Error(
+        'Workflows are only available in Claude Code format and cannot be converted to other formats.'
+      );
+    }
+
     // If source and target format are the same, return original content
     if (config.original_format === targetFormat) {
       return {

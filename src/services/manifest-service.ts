@@ -109,6 +109,15 @@ export class ManifestService {
       });
     }
 
+    // Extract workflows (Claude Code only; list specific workflow files)
+    const workflows = extension.configs.filter((c) => c.type === 'workflow');
+    if (workflows.length > 0) {
+      manifest.workflows = workflows.map((workflow) => {
+        const workflowName = this.sanitizeCommandName(workflow.name);
+        return `./workflows/${workflowName}.js`;
+      });
+    }
+
     return manifest;
   }
 
@@ -334,6 +343,7 @@ export class ManifestService {
       agent_definition: 0,
       mcp_config: 0,
       skill: 0,
+      workflow: 0,
     };
 
     for (const config of configs) {

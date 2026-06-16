@@ -68,6 +68,16 @@ describe('ManifestService', () => {
     updated_at: '2024-01-01',
   };
 
+  const sampleWorkflow: Config = {
+    id: 'wf-1',
+    name: 'Test Workflow',
+    type: 'workflow',
+    original_format: 'claude_code',
+    content: 'export const meta = { name: "test-workflow" }',
+    created_at: '2024-01-01',
+    updated_at: '2024-01-01',
+  };
+
   describe('generateGeminiManifest', () => {
     it('should generate basic Gemini manifest with name and version', async () => {
       const extension: ExtensionWithConfigs = {
@@ -84,6 +94,23 @@ describe('ManifestService', () => {
       expect(manifest.name).toBe('Test Extension');
       expect(manifest.version).toBe('1.0.0');
       expect(manifest.mcpServers).toBeUndefined();
+      expect(manifest.commands).toBeUndefined();
+      expect(manifest.skills).toBeUndefined();
+    });
+
+    it('should omit workflows from the Gemini manifest entirely', async () => {
+      const extension: ExtensionWithConfigs = {
+        id: 'ext-1',
+        name: 'Test Extension',
+        version: '1.0.0',
+        configs: [sampleWorkflow],
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      const manifest = await service.generateGeminiManifest(extension);
+
+      expect((manifest as Record<string, unknown>).workflows).toBeUndefined();
       expect(manifest.commands).toBeUndefined();
       expect(manifest.skills).toBeUndefined();
     });
@@ -315,6 +342,22 @@ describe('ManifestService', () => {
       const manifest = await service.generateClaudeCodePluginManifest(extension);
 
       expect(manifest.skills).toBeUndefined();
+    });
+
+    it('should include workflow files', async () => {
+      const extension: ExtensionWithConfigs = {
+        id: 'ext-1',
+        name: 'Test Extension',
+        version: '1.0.0',
+        configs: [sampleWorkflow],
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+
+      const manifest = await service.generateClaudeCodePluginManifest(extension);
+
+      expect(manifest.workflows).toBeDefined();
+      expect(manifest.workflows).toContain('./workflows/test-workflow.js');
     });
 
     it('should include all config types', async () => {

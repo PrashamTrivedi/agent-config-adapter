@@ -316,6 +316,7 @@ export function extensionCreateView(
                 <option value="slash_command" ${activeFilters.type === 'slash_command' ? 'selected' : ''}>Slash Command</option>
                 <option value="agent_definition" ${activeFilters.type === 'agent_definition' ? 'selected' : ''}>Agent Definition</option>
                 <option value="mcp_config" ${activeFilters.type === 'mcp_config' ? 'selected' : ''}>MCP Config</option>
+                <option value="workflow" ${activeFilters.type === 'workflow' ? 'selected' : ''}>Workflow</option>
               </select>
             </div>
 

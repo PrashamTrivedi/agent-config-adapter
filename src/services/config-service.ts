@@ -4,6 +4,7 @@ import { ExtensionRepository } from '../infrastructure/extension-repository';
 import { FileGenerationService } from './file-generation-service';
 import { Config, CreateConfigInput, UpdateConfigInput } from '../domain/types';
 import { SlashCommandAnalyzerService } from './slash-command-analyzer-service';
+import { WorkflowAnalyzerService } from './workflow-analyzer-service';
 
 export interface ConfigServiceEnv {
   DB: D1Database;
@@ -19,6 +20,7 @@ export class ConfigService {
   private repo: ConfigRepository;
   private cache: CacheService;
   private analyzer?: SlashCommandAnalyzerService;
+  private workflowAnalyzer: WorkflowAnalyzerService;
   private extensionRepo: ExtensionRepository;
   private fileGenService?: FileGenerationService;
 
@@ -26,6 +28,8 @@ export class ConfigService {
     this.repo = new ConfigRepository(env.DB);
     this.cache = new CacheService(env.CONFIG_CACHE);
     this.analyzer = analyzer;
+    // Workflow metadata extraction is local & dependency-free (no AI, no env).
+    this.workflowAnalyzer = new WorkflowAnalyzerService();
     this.extensionRepo = new ExtensionRepository(env.DB);
     if (env.EXTENSION_FILES) {
       this.fileGenService = new FileGenerationService({
@@ -101,7 +105,13 @@ export class ConfigService {
       }
     }
 
-    return await this.repo.create(input, analysis);
+    // Extract workflow metadata (tolerant: never throws, flags unreadable blocks)
+    let workflowMetadata = undefined;
+    if (input.type === 'workflow') {
+      workflowMetadata = this.workflowAnalyzer.analyze(input.content);
+    }
+
+    return await this.repo.create(input, analysis, workflowMetadata);
   }
 
   /**
@@ -128,7 +138,13 @@ export class ConfigService {
       }
     }
 
-    const updated = await this.repo.update(id, input, analysis);
+    // Re-extract workflow metadata if content changed for a workflow
+    let workflowMetadata = undefined;
+    if (input.content && existing.type === 'workflow') {
+      workflowMetadata = this.workflowAnalyzer.analyze(input.content);
+    }
+
+    const updated = await this.repo.update(id, input, analysis, workflowMetadata);
 
     if (updated) {
       // Invalidate cache when config is updated

@@ -333,7 +333,7 @@ export function createMCPServer(
       {
         configs: z.array(z.object({
           name: z.string().describe('Config name'),
-          type: z.enum(['slash_command', 'agent_definition', 'skill']).describe('Config type'),
+          type: z.enum(['slash_command', 'agent_definition', 'skill', 'workflow']).describe('Config type'),
           content: z.string().describe('Config content (SKILL.md content for skills)'),
           companionFiles: z.array(z.object({
             path: z.string().describe('File path relative to skill directory'),
@@ -341,7 +341,7 @@ export function createMCPServer(
             mimeType: z.string().optional().describe('MIME type of the file')
           })).optional().describe('Companion files for skills')
         })).describe('Array of local configs to sync'),
-        types: z.array(z.enum(['slash_command', 'agent_definition', 'skill'])).optional().describe('Filter sync to specific types'),
+        types: z.array(z.enum(['slash_command', 'agent_definition', 'skill', 'workflow'])).optional().describe('Filter sync to specific types'),
         dry_run: z.boolean().optional().describe('Preview changes without applying')
       },
       async ({ configs, types, dry_run }) => {
@@ -729,6 +729,13 @@ Scan the following directories for configs:
 - All other files in the directory are companion files
 - Skip symlinked directories
 
+### Workflows
+- Path: \`{config_dir}/workflows/*.js\`
+- Type: \`workflow\`
+- Each \`.js\` file is one workflow (Claude Code only)
+- File name (without .js) becomes the config name
+- Skip symlinks
+
 For each file found, read its content using the Read tool.
 
 ## Step 4: Preview and Confirm
@@ -740,6 +747,7 @@ Found configurations to sync:
 - Slash Commands: {count} [list names]
 - Agent Definitions: {count} [list names]
 - Skills: {count} [list names with companion file counts]
+- Workflows: {count} [list names]
 
 Source: {global or project: project-name}
 \`\`\`
@@ -759,7 +767,7 @@ Call the \`sync_local_configs\` tool with \`dry_run: true\` first:
   "configs": [
     {
       "name": "config-name",
-      "type": "slash_command|agent_definition|skill",
+      "type": "slash_command|agent_definition|skill|workflow",
       "content": "file content here",
       "companionFiles": [
         {"path": "relative/path.md", "content": "base64 or text content"}

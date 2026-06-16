@@ -1,12 +1,62 @@
-import { Config, ConfigType, CreateConfigInput, UpdateConfigInput, SlashCommandAnalysis } from '../domain/types';
+import { Config, ConfigType, CreateConfigInput, UpdateConfigInput, SlashCommandAnalysis, WorkflowMetadata } from '../domain/types';
 import { nanoid } from 'nanoid';
 
 export class ConfigRepository {
   constructor(private db: D1Database) {}
 
-  async create(input: CreateConfigInput, analysis?: SlashCommandAnalysis): Promise<Config> {
+  async create(
+    input: CreateConfigInput,
+    analysis?: SlashCommandAnalysis,
+    workflowMetadata?: WorkflowMetadata
+  ): Promise<Config> {
     const id = nanoid();
     const now = new Date().toISOString();
+
+    // If workflow metadata is provided, include the workflow columns
+    if (workflowMetadata) {
+      const phasesJson = workflowMetadata.phases.length > 0
+        ? JSON.stringify(workflowMetadata.phases)
+        : null;
+
+      await this.db
+        .prepare(
+          `INSERT INTO configs (
+            id, name, type, original_format, content,
+            workflow_description, workflow_phases, workflow_when_to_use, metadata_unreadable,
+            user_id, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          id,
+          input.name,
+          input.type,
+          input.original_format,
+          input.content,
+          workflowMetadata.description || null,
+          phasesJson,
+          workflowMetadata.whenToUse || null,
+          workflowMetadata.metadataUnreadable ? 1 : 0,
+          input.user_id || null,
+          now,
+          now
+        )
+        .run();
+
+      return {
+        id,
+        name: input.name,
+        type: input.type,
+        original_format: input.original_format,
+        content: input.content,
+        created_at: now,
+        updated_at: now,
+        user_id: input.user_id || null,
+        workflow_description: workflowMetadata.description || null,
+        workflow_phases: phasesJson || undefined,
+        workflow_when_to_use: workflowMetadata.whenToUse || null,
+        metadata_unreadable: workflowMetadata.metadataUnreadable,
+      };
+    }
 
     // If analysis is provided (for slash commands), include metadata
     if (analysis) {
@@ -219,7 +269,12 @@ export class ConfigRepository {
     return result.results || [];
   }
 
-  async update(id: string, input: UpdateConfigInput, analysis?: SlashCommandAnalysis): Promise<Config | null> {
+  async update(
+    id: string,
+    input: UpdateConfigInput,
+    analysis?: SlashCommandAnalysis,
+    workflowMetadata?: WorkflowMetadata
+  ): Promise<Config | null> {
     const existing = await this.findById(id);
     if (!existing) return null;
 
@@ -255,6 +310,18 @@ export class ConfigRepository {
       values.push(analysis.skillReferences.length > 0 ? JSON.stringify(analysis.skillReferences) : null);
       updates.push('analysis_version = ?');
       values.push('1.0');
+    }
+
+    // If workflow metadata is provided, update the workflow columns
+    if (workflowMetadata) {
+      updates.push('workflow_description = ?');
+      values.push(workflowMetadata.description || null);
+      updates.push('workflow_phases = ?');
+      values.push(workflowMetadata.phases.length > 0 ? JSON.stringify(workflowMetadata.phases) : null);
+      updates.push('workflow_when_to_use = ?');
+      values.push(workflowMetadata.whenToUse || null);
+      updates.push('metadata_unreadable = ?');
+      values.push(workflowMetadata.metadataUnreadable ? 1 : 0);
     }
 
     if (updates.length === 0) return existing;

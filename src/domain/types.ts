@@ -1,6 +1,6 @@
 // Domain types for agent configurations
 
-export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config' | 'skill';
+export type ConfigType = 'slash_command' | 'agent_definition' | 'mcp_config' | 'skill' | 'workflow';
 export type AgentFormat = 'claude_code' | 'codex' | 'gemini';
 
 export interface Config {
@@ -19,6 +19,11 @@ export interface Config {
   agent_references?: string;  // JSON array stored as string
   skill_references?: string;  // JSON array stored as string
   analysis_version?: string;
+  // Workflow metadata (Claude Code workflows only; extracted from `export const meta`)
+  workflow_description?: string | null;
+  workflow_phases?: string;  // JSON array of {title, detail} stored as string
+  workflow_when_to_use?: string | null;
+  metadata_unreadable?: boolean;  // True if the meta block could not be parsed
 }
 
 export interface CreateConfigInput {
@@ -81,6 +86,22 @@ export interface CodexSkill {
   name: string;
   description: string;
   instructions: string;  // Combined content
+}
+
+// Workflow types (Claude Code only)
+// A workflow is a single self-contained JS file beginning with a pure
+// `export const meta = { name, description, whenToUse, phases: [{title, detail}] }`
+// object literal, followed by the orchestration logic.
+export interface WorkflowPhase {
+  title: string;
+  detail?: string;
+}
+
+export interface WorkflowMetadata {
+  description?: string;
+  phases: WorkflowPhase[];
+  whenToUse?: string;
+  metadataUnreadable: boolean;  // True when the meta block could not be parsed
 }
 
 // Skill file management types
@@ -274,6 +295,7 @@ export interface ClaudeCodePluginManifest {
   commands?: string[];
   agents?: string[];
   skills?: string[];
+  workflows?: string[];  // Claude Code only; relative paths to ./workflows/*.js
   mcpServers?: Record<string, MCPServerConfig>;
   source?: string | {
     type: 'git' | 'local';

@@ -190,6 +190,17 @@ export class FileGenerationService {
       }
     }
 
+    // Generate workflow files (Claude Code only; delivered as-is)
+    const workflowConfigs = extension.configs.filter((c) => c.type === 'workflow');
+    for (const config of workflowConfigs) {
+      const workflowName = this.sanitizeFileName(config.name);
+      files.push({
+        path: `workflows/${workflowName}.js`,
+        content: this.generateWorkflowFile(config),
+        mimeType: 'text/javascript',
+      });
+    }
+
     // Generate consolidated MCP config
     const mcpConfigs = extension.configs.filter((c) => c.type === 'mcp_config');
     if (mcpConfigs.length > 0) {
@@ -315,6 +326,14 @@ export class FileGenerationService {
   private generateSkillFile(config: Config): string {
     // Skill content is already in proper format (YAML frontmatter + markdown)
     // Skills are format-specific and not converted between formats
+    return config.content;
+  }
+
+  /**
+   * Generate workflow file from workflow config (Claude Code only)
+   * Workflows are NOT converted - content (the JS orchestration file) is used as-is
+   */
+  private generateWorkflowFile(config: Config): string {
     return config.content;
   }
 
