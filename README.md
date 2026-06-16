@@ -83,21 +83,44 @@ extensions as local configs. Built with Bun, distributed as standalone binaries
 | `aca login`  | Authenticate with the server                         |
 | `aca status` | Show current auth status, server URL, and value sources |
 
+### Sync Command
+
+`aca sync` is incremental. It remembers the content hashes of what it last
+synced (per machine, per scope, per server, in `~/.config/aca/sync-state.json`)
+and only uploads configs that are new or modified — for skills this includes any
+companion file change (text or binary). When nothing has changed it prints
+"up to date" instantly, with **no server round-trip**.
+
+```bash
+# Sync only changed configs (preview → confirm → apply)
+aca sync --project
+aca sync --global
+aca sync --global --project
+
+# Preview without applying
+aca sync --project --dry-run
+
+# Ignore local memory and reconcile fully against the server
+# (use when the server was changed elsewhere, e.g. another machine or the web UI)
+aca sync --project --force
+```
+
 ### Download Command
 
 The `download` command lists extensions from the server and downloads them as
 local Claude Code configurations. It extracts the plugin ZIP and skips internal
-`.claude-plugin/` metadata.
+`.claude-plugin/` metadata. Multiple extensions are fetched in parallel; each
+reports its own success/failure and one failure never aborts the others.
 
 ```bash
-# Interactive: lists extensions, prompts for selection
+# Interactive: lists extensions, multi-select (e.g. "1,3" or "1-3" or "all")
 aca download
 
-# Non-interactive: download by extension ID
-aca download --id <uuid>
+# Non-interactive: one or more extension IDs (comma-separated)
+aca download --id <uuid1>,<uuid2>
 
-# Non-interactive: search by name
-aca download --name "my-extension"
+# Non-interactive: search by name(s) (comma-separated)
+aca download --name "my-extension","another-extension"
 
 # Install to global config (~/.claude/)
 aca download --global
