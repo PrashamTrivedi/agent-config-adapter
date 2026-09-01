@@ -6,6 +6,7 @@ import {
   Scripts,
 } from '@tanstack/react-router';
 import { ToastProvider } from '@/components/ui/toast';
+import { ButtonLink } from '@/components/ui/button-link';
 import { Shell } from '@/components/layout/shell';
 import type { RouterContext } from '@/router';
 import appCss from '@/styles.css?url';
@@ -35,13 +36,17 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   }),
   component: RootComponent,
   notFoundComponent: () => (
-    <Shell>
-      <div className="py-24 text-center">
-        <p className="text-sm uppercase tracking-[0.2em] text-cyan">404</p>
-        <h1 className="mt-3 font-display text-4xl font-semibold">Page not found</h1>
-        <p className="mt-3 text-fog">That route doesn’t exist yet. Try the catalog instead.</p>
+    <div className="py-24 text-center">
+      <p className="text-sm uppercase tracking-[0.2em] text-cyan">404</p>
+      <h1 className="mt-3 font-display text-4xl font-semibold">Page not found</h1>
+      <p className="mt-3 text-fog">That route doesn’t exist yet. Try the catalog instead.</p>
+      <div className="mt-8 flex justify-center gap-3">
+        <ButtonLink href="/configs">Browse configs</ButtonLink>
+        <ButtonLink href="/" variant="secondary">
+          Back home
+        </ButtonLink>
       </div>
-    </Shell>
+    </div>
   ),
 });
 

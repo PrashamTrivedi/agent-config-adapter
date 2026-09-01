@@ -8,6 +8,7 @@ const variants = {
     'bg-ink-4 text-snow border border-line hover:border-line-strong hover:bg-ink-3',
   ghost: 'text-fog hover:text-snow hover:bg-ink-4',
   danger: 'bg-rose/90 text-ink hover:bg-rose',
+  github: 'bg-[#24292e] text-white hover:bg-[#2f363d] border border-white/10',
 };
 
 const sizes = {
