@@ -60,6 +60,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
+    "postinstall": "node ./scripts/maybe-vite-build.mjs",
     "cf-typegen": "wrangler types",
     "test": "vitest",
     "test:watch": "vitest --watch",
