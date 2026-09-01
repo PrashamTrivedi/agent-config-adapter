@@ -1,12 +1,6 @@
 import { Hono } from 'hono';
-import { ExtensionService, ManifestService, ConfigService } from '../services';
+import { ExtensionService, ManifestService } from '../services';
 import { CreateExtensionInput, UpdateExtensionInput } from '../domain/types';
-import {
-  extensionListView,
-  extensionDetailView,
-  extensionCreateView,
-  extensionEditView,
-} from '../views/extensions';
 
 type Bindings = {
   DB: D1Database;
@@ -20,77 +14,12 @@ type Bindings = {
 
 export const extensionsRouter = new Hono<{ Bindings: Bindings }>();
 
-// Show create extension form
-extensionsRouter.get('/new', async (c) => {
-  const configService = new ConfigService(c.env);
-
-  // Extract filter query parameters
-  const type = c.req.query('type');
-  const format = c.req.query('format');
-  const search = c.req.query('search');
-
-  //Build filters object
-  const filters: {
-    type?: string;
-    originalFormat?: string;
-    searchName?: string;
-  } = {};
-
-  if (type) filters.type = type;
-  if (format) filters.originalFormat = format;
-  if (search) filters.searchName = search;
-
-  const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-  const view = extensionCreateView(availableConfigs, { type, format, search }, c);
-  return c.html(view);
-});
-
-// Show edit extension form
-extensionsRouter.get('/:id/edit', async (c) => {
-  const id = c.req.param('id');
-  const extensionService = new ExtensionService(c.env);
-  const configService = new ConfigService(c.env);
-
-  const extension = await extensionService.getExtensionWithConfigs(id);
-  if (!extension) {
-    return c.json({ error: 'Extension not found' }, 404);
-  }
-
-  // Extract filter query parameters
-  const type = c.req.query('type');
-  const format = c.req.query('format');
-  const search = c.req.query('search');
-
-  // Build filters object
-  const filters: {
-    type?: string;
-    originalFormat?: string;
-    searchName?: string;
-  } = {};
-
-  if (type) filters.type = type;
-  if (format) filters.originalFormat = format;
-  if (search) filters.searchName = search;
-
-  const availableConfigs = await configService.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-  const view = extensionEditView(extension, availableConfigs, { type, format, search }, c);
-  return c.html(view);
-});
-
 // List all extensions
 extensionsRouter.get('/', async (c) => {
   const service = new ExtensionService(c.env);
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    const extensions = await service.listExtensions();
-    return c.json({ extensions });
-  }
-
-  // For HTML views, get extensions with configs
-  const extensions = await service.listExtensionsWithConfigs();
-  const view = extensionListView(extensions, c);
-  return c.html(view);
+  const extensions = await service.listExtensions();
+  return c.json({ extensions });
 });
 
 // Get single extension
@@ -103,13 +32,7 @@ extensionsRouter.get('/:id', async (c) => {
     return c.json({ error: 'Extension not found' }, 404);
   }
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ extension });
-  }
-
-  const view = extensionDetailView(extension, c);
-  return c.html(view);
+  return c.json({ extension });
 });
 
 // Get extension manifest in specific format
@@ -237,14 +160,6 @@ extensionsRouter.delete('/:id', async (c) => {
 
   if (!success) {
     return c.json({ error: 'Extension not found' }, 404);
-  }
-
-  // Check if request expects HTML redirect
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('text/html')) {
-    const allExtensions = await service.listExtensionsWithConfigs();
-    const view = extensionListView(allExtensions, c);
-    return c.html(view);
   }
 
   return c.json({ success: true });

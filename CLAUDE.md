@@ -4,13 +4,13 @@
 
 Agent Config Adapter - Universal configuration adapter for AI coding agents. Stores configurations (slash commands, agent definitions, MCP configs, skills) and converts between Claude Code, Codex, and Gemini formats.
 
-**Tech Stack**: Cloudflare Workers, Hono, D1, KV, R2, AI Gateway (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
+**Tech Stack**: Cloudflare Workers, Hono, D1, KV, R2, TanStack Start, AI Gateway (OpenAI GPT-5-Mini, Gemini 2.5 Flash)
 
 ## Development Commands
 
 ```bash
 npm install
-npm run dev        # http://localhost:8787
+npm run dev        # http://localhost:9090 (TanStack Start + Hono APIs)
 npm test           # Run all tests
 npm run lint
 
@@ -40,9 +40,9 @@ src/infrastructure/  D1, KV, R2, AI services
 src/services/      Business logic (shared by REST + MCP)
 src/middleware/    Request middleware (email gating)
 src/adapters/      Format converters
-src/routes/        Hono REST handlers
+src/routes/        Hono REST handlers (JSON)
 src/mcp/           MCP server
-src/views/         HTMX templates
+app/               TanStack Start frontend (React + Tailwind)
 cli/               Standalone CLI tool (Bun) - sync, download, login, status
 ```
 

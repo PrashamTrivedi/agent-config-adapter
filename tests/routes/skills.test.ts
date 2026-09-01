@@ -51,7 +51,7 @@ describe('Skills Routes', () => {
       expect(Array.isArray(data.skills)).toBe(true);
     });
 
-    it('should return HTML when Accept header is not JSON', async () => {
+    it('should return JSON even when Accept header is HTML', async () => {
       const mockSkills = [
         {
           id: 'skill-1',
@@ -76,65 +76,9 @@ describe('Skills Routes', () => {
 
       const res = await app.request(req);
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
-    });
-  });
-
-  describe('GET /new', () => {
-    it('should return HTML form for creating new skill', async () => {
-      const req = new Request('http://localhost/new');
-
-      const res = await app.request(req);
-      expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
-    });
-  });
-
-  describe('GET /:id/edit', () => {
-    it('should return HTML form for editing skill', async () => {
-      const mockSkill = {
-        id: 'skill-1',
-        name: 'Test Skill',
-        type: 'skill',
-        original_format: 'claude_code',
-        content: '# Test',
-        created_at: '2024-01-01',
-        updated_at: '2024-01-01',
-      };
-
-      mockDb.prepare = vi.fn((query: string) => {
-        if (query.includes('FROM configs')) {
-          return {
-            bind: vi.fn().mockReturnValue({
-              first: vi.fn().mockResolvedValue(mockSkill),
-            }),
-          };
-        }
-        return {
-          bind: vi.fn().mockReturnValue({
-            all: vi.fn().mockResolvedValue({ results: [] }),
-          }),
-        };
-      });
-
-      const req = new Request('http://localhost/skill-1/edit');
-
-      const res = await app.request(req);
-      expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
-    });
-
-    it('should return 404 for non-existent skill', async () => {
-      mockDb.prepare = vi.fn().mockReturnValue({
-        bind: vi.fn().mockReturnValue({
-          first: vi.fn().mockResolvedValue(null),
-        }),
-      });
-
-      const req = new Request('http://localhost/nonexistent/edit');
-
-      const res = await app.request(req);
-      expect(res.status).toBe(404);
+      expect(res.headers.get('content-type')).toContain('application/json');
+      const data = await res.json();
+      expect(data.skills).toBeDefined();
     });
   });
 
@@ -192,7 +136,7 @@ describe('Skills Routes', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should return HTML when Accept header is not JSON', async () => {
+    it('should return JSON when Accept header is HTML', async () => {
       const mockSkill = {
         id: 'skill-1',
         name: 'Test Skill',
@@ -224,7 +168,7 @@ describe('Skills Routes', () => {
 
       const res = await app.request(req);
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
+      expect(res.headers.get('content-type')).toContain('application/json');
     });
   });
 

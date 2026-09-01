@@ -1,12 +1,6 @@
 # HTTP Routes
 
-Hono route handlers for REST API and HTML views.
-
-## Route Patterns
-
-- `/api/*`: JSON responses
-- `/*` (no `/api`): HTML views
-- Same logic, different presentation
+Hono route handlers for REST JSON APIs. HTML is served by the TanStack Start app in `app/`.
 
 ## API Endpoints
 
@@ -73,7 +67,7 @@ POST   /api/marketplaces/:id/invalidate                 Invalidate cache
 
 ### Plugins
 ```
-GET    /plugins/:extensionId/:format                    Browse files
+GET    /plugins/:extensionId/:format                    Browse files (JSON; HTML via Start)
 GET    /plugins/:extensionId/:format/download           Download ZIP
 GET    /plugins/:extensionId/gemini/definition          Gemini JSON (recommended)
 GET    /plugins/:extensionId/:format/*                  Serve file
@@ -84,7 +78,7 @@ GET    /plugins/marketplaces/:marketplaceId/download    Marketplace ZIP
 
 ### Subscriptions
 ```
-GET    /subscriptions/form                 Subscription form HTML
+GET    /subscriptions/form                 Subscription form (TanStack Start)
 POST   /api/subscriptions/subscribe        Subscribe email
 GET    /api/subscriptions/verify/:email    Check subscription
 ```
@@ -96,9 +90,8 @@ POST   /api/analytics/track                Track event
 
 ### Authentication
 ```
-GET    /auth/login                         Login page (GitHub OAuth, Email OTP)
-GET    /auth/logout                        Logout page
-POST   /auth/logout                        Execute logout
+GET    /auth/login                         Login page (TanStack Start)
+GET    /auth/logout                        Logout page (TanStack Start)
 POST   /api/auth/*                         Better Auth endpoints
 ```
 
@@ -121,5 +114,4 @@ Error responses include `subscription_url` for user guidance.
 - **plugins.ts**: Plugin downloads
 - **files.ts**: Companion file operations
 - **subscriptions.ts**: Email subscription
-- **profile.ts**: User profile
-- **onboarding.ts**: Onboarding flow
+- **profile.ts**: User profile JSON + API keys

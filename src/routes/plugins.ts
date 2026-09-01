@@ -5,7 +5,6 @@ import {
   ZipGenerationService,
   MarketplaceService,
 } from '../services';
-import { pluginBrowserView } from '../views/plugin-browser';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
 
@@ -456,16 +455,7 @@ pluginsRouter.get('/:extensionId/:format', async (c) => {
     // Get file list
     const files = await fileGenService.getGeneratedFiles(extensionId, format);
 
-    // Check if requesting JSON or HTML
-    const accept = c.req.header('Accept') || '';
-    if (accept.includes('application/json')) {
-      return c.json({ extension, format, files });
-    }
-
-    // Return HTML file browser view
-    const baseUrl = new URL(c.req.url).origin;
-    const view = pluginBrowserView(extension, format, files, baseUrl, c);
-    return c.html(view);
+    return c.json({ extension, format, files });
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }

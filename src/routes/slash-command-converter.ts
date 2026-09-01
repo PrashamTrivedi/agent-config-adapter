@@ -5,13 +5,6 @@ import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-
 import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provider-factory';
 import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
 import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
-import {
-  slashCommandConverterView,
-  slashCommandConverterDropdownPartial,
-  slashCommandConverterFormPartial,
-  slashCommandConversionResultPartial,
-  slashCommandNeedsInputPartial,
-} from '../views/slash-command-converter';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
 
@@ -35,80 +28,6 @@ type Bindings = {
 };
 
 export const slashCommandConverterRouter = new Hono<{ Bindings: Bindings }>();
-
-// GET /slash-commands/convert
-// Main converter UI page with search support
-slashCommandConverterRouter.get('/convert', async (c) => {
-  const configService = new ConfigService(c.env);
-  const analytics = new AnalyticsService(c.env.ANALYTICS);
-
-  // Track slash command converter page view
-  await analytics.trackPageView(c.req.raw);
-
-  // Get search query
-  const search = c.req.query('search');
-
-  // Build filters
-  const filters: { type: string; searchName?: string } = {
-    type: 'slash_command'
-  };
-
-  if (search) {
-    filters.searchName = search;
-  }
-
-  // Get all slash commands with filters
-  const configs = await configService.listConfigs(filters);
-
-  // Check if this is an HTMX request (partial update)
-  const isHtmxRequest = c.req.header('HX-Request') === 'true';
-
-  if (isHtmxRequest) {
-    // Return just the dropdown options
-    return c.html(slashCommandConverterDropdownPartial(configs, search));
-  }
-
-  return c.html(slashCommandConverterView(configs, search, c));
-});
-
-// GET /slash-commands/converter-form
-// HTMX partial: Load dynamic form for selected command
-slashCommandConverterRouter.get('/converter-form', async (c) => {
-  const configId = c.req.query('configId');
-
-  if (!configId) {
-    return c.html('<p>Please select a command</p>');
-  }
-
-  // Initialize provider factory for multi-provider support
-  const gatewayToken = c.env.AI_GATEWAY_TOKEN;
-  if (!gatewayToken) {
-    return c.html('<p style="color: var(--danger);">AI Gateway not configured</p>');
-  }
-
-  const factory = new ProviderFactory({
-    ACCOUNT_ID: c.env.ACCOUNT_ID,
-    GATEWAY_ID: c.env.GATEWAY_ID,
-    GATEWAY_TOKEN: gatewayToken,
-    AI_PROVIDER: c.env.AI_PROVIDER,
-    OPENAI_REASONING_MODE: c.env.OPENAI_REASONING_MODE,
-    GEMINI_THINKING_BUDGET: c.env.GEMINI_THINKING_BUDGET ? parseInt(c.env.GEMINI_THINKING_BUDGET) : undefined,
-    OPENAI_API_KEY: c.env.OPENAI_API_KEY, // For local dev
-    GEMINI_API_KEY: c.env.GEMINI_API_KEY, // For local dev
-  });
-
-  const provider = factory.createProvider();
-  const analyzer = new SlashCommandAnalyzerService(provider);
-  const configService = new ConfigService(c.env, analyzer);
-
-  const config = await configService.getConfig(configId);
-
-  if (!config || config.type !== 'slash_command') {
-    return c.html('<p style="color: var(--danger);">Slash command not found</p>');
-  }
-
-  return c.html(slashCommandConverterFormPartial(config));
-});
 
 // POST /api/slash-commands/:id/convert
 // Convert a slash command config using pre-computed metadata
@@ -180,14 +99,7 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
       userArguments,
     });
 
-    // Check if request wants HTML (from HTMX) or JSON (from API)
-    const accept = c.req.header('Accept') || '';
-    const wantsHtml = accept.includes('text/html') || c.req.header('HX-Request') === 'true';
-
     if (result.needsUserInput) {
-      if (wantsHtml) {
-        return c.html(slashCommandNeedsInputPartial(result.analysis), 400);
-      }
       return c.json(
         {
           message: 'User input required',
@@ -199,10 +111,6 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
       );
     }
 
-    if (wantsHtml) {
-      return c.html(slashCommandConversionResultPartial(result.convertedContent, result.analysis));
-    }
-
     return c.json({
       convertedContent: result.convertedContent,
       needsUserInput: result.needsUserInput,
@@ -210,12 +118,6 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
     });
   } catch (error) {
     console.error('Conversion failed:', error);
-    if (c.req.header('HX-Request') === 'true') {
-      return c.html(
-        '<p style="color: var(--danger);">Conversion failed. Please try again.</p>',
-        500
-      );
-    }
     return c.json({ error: 'Conversion failed' }, 500);
   }
 });
@@ -224,9 +126,11 @@ slashCommandConverterRouter.post('/:id/convert', async (c) => {
 // List all slash commands with metadata
 slashCommandConverterRouter.get('/', async (c) => {
   const configService = new ConfigService(c.env);
-
-  // Filter for slash_command type
-  const configs = await configService.listConfigs({ type: 'slash_command' });
+  const search = c.req.query('search');
+  const configs = await configService.listConfigs({
+    type: 'slash_command',
+    searchName: search || undefined,
+  });
 
   const accept = c.req.header('Accept') || '';
   if (accept.includes('application/json')) {

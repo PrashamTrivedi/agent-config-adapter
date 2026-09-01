@@ -1,12 +1,6 @@
 import { Hono } from 'hono';
 import { MarketplaceService, ManifestService, ExtensionService } from '../services';
 import { CreateMarketplaceInput, UpdateMarketplaceInput } from '../domain/types';
-import {
-  marketplaceListView,
-  marketplaceDetailView,
-  marketplaceCreateView,
-  marketplaceEditView,
-} from '../views/marketplaces';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
 
@@ -23,30 +17,6 @@ type Bindings = {
 
 export const marketplacesRouter = new Hono<{ Bindings: Bindings }>();
 
-// Show create marketplace form
-marketplacesRouter.get('/new', async (c) => {
-  const extensionService = new ExtensionService(c.env);
-  const availableExtensions = await extensionService.listExtensionsWithConfigs();
-  const view = marketplaceCreateView(availableExtensions, c);
-  return c.html(view);
-});
-
-// Show edit marketplace form
-marketplacesRouter.get('/:id/edit', async (c) => {
-  const id = c.req.param('id');
-  const marketplaceService = new MarketplaceService(c.env);
-  const extensionService = new ExtensionService(c.env);
-
-  const marketplace = await marketplaceService.getMarketplaceWithExtensions(id);
-  if (!marketplace) {
-    return c.json({ error: 'Marketplace not found' }, 404);
-  }
-
-  const availableExtensions = await extensionService.listExtensionsWithConfigs();
-  const view = marketplaceEditView(marketplace, availableExtensions, c);
-  return c.html(view);
-});
-
 // List all marketplaces
 marketplacesRouter.get('/', async (c) => {
   const service = new MarketplaceService(c.env);
@@ -55,16 +25,8 @@ marketplacesRouter.get('/', async (c) => {
   // Track marketplace browse event
   await analytics.trackPageView(c.req.raw);
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    const marketplaces = await service.listMarketplaces();
-    return c.json({ marketplaces });
-  }
-
-  // For HTML views, get marketplaces with extensions
-  const marketplaces = await service.listMarketplacesWithExtensions();
-  const view = marketplaceListView(marketplaces, c);
-  return c.html(view);
+  const marketplaces = await service.listMarketplaces();
+  return c.json({ marketplaces });
 });
 
 // Get single marketplace
@@ -81,17 +43,7 @@ marketplacesRouter.get('/:id', async (c) => {
   // Track marketplace view event
   await analytics.trackEvent(c.req.raw, 'marketplace_browse');
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ marketplace });
-  }
-
-  // Extract origin from request URL for server-side rendering
-  const url = new URL(c.req.url);
-  const origin = `${url.protocol}//${url.host}`;
-
-  const view = marketplaceDetailView(marketplace, origin, c);
-  return c.html(view);
+  return c.json({ marketplace });
 });
 
 // Get marketplace manifest (Claude Code format only)
@@ -217,14 +169,6 @@ marketplacesRouter.delete('/:id', async (c) => {
 
   if (!success) {
     return c.json({ error: 'Marketplace not found' }, 404);
-  }
-
-  // Check if request expects HTML redirect
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('text/html')) {
-    const allMarketplaces = await service.listMarketplacesWithExtensions();
-    const view = marketplaceListView(allMarketplaces, c);
-    return c.html(view);
   }
 
   return c.json({ success: true });

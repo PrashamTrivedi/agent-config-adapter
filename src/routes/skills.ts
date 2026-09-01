@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { SkillsService } from '../services/skills-service';
 import { CreateConfigInput, UpdateConfigInput } from '../domain/types';
-import { skillsListView, skillDetailView, skillCreateView, skillEditView } from '../views/skills';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset } from '../domain/types';
 
@@ -23,31 +22,7 @@ skillsRouter.get('/', async (c) => {
   await analytics.trackPageView(c.req.raw);
 
   const skills = await service.listSkills();
-
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ skills });
-  }
-
-  return c.html(skillsListView(skills, c));
-});
-
-// Create new skill form (UI)
-skillsRouter.get('/new', async (c) => {
-  return c.html(skillCreateView(c));
-});
-
-// Edit skill form (UI)
-skillsRouter.get('/:id/edit', async (c) => {
-  const id = c.req.param('id');
-  const service = new SkillsService(c.env);
-  const skill = await service.getSkillWithFiles(id);
-
-  if (!skill) {
-    return c.json({ error: 'Skill not found' }, 404);
-  }
-
-  return c.html(skillEditView(skill, c));
+  return c.json({ skills });
 });
 
 // Get skill with all files
@@ -68,12 +43,7 @@ skillsRouter.get('/:id', async (c) => {
     configFormat: skill.original_format,
   });
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ skill });
-  }
-
-  return c.html(skillDetailView(skill, c));
+  return c.json({ skill });
 });
 
 // Create new skill (JSON or form)
