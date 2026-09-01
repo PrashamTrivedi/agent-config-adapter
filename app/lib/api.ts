@@ -41,6 +41,29 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+export function handleWriteError(
+  err: unknown,
+  options: {
+    onUnauthenticated?: () => void;
+    toast: (message: string, tone?: 'success' | 'error' | 'info') => void;
+    fallback?: string;
+  }
+) {
+  if (err instanceof ApiError && err.status === 401) {
+    options.onUnauthenticated?.();
+    return;
+  }
+  if (err instanceof ApiError && err.status === 403) {
+    const generic = !err.message || err.message.toLowerCase() === 'forbidden';
+    options.toast(
+      generic ? 'You do not have permission to modify this resource.' : err.message,
+      'error'
+    );
+    return;
+  }
+  options.toast(err instanceof Error ? err.message : options.fallback || 'Request failed', 'error');
+}
+
 export function getSession() {
   return api<SessionPayload | null>('/api/auth/get-session');
 }

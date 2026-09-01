@@ -98,9 +98,9 @@ app.post('/api/analytics/track', async (c) => {
   }
 });
 
-app.get('/api/mcp/info', (c) => {
-  return c.json(buildMcpInfo(c.req.url, !!c.get('userId')));
-});
+// Start UI fetches JSON here. `/mcp/info` below is the same payload for MCP
+// clients; worker.ts only sends `/mcp/info` to Hono when Accept includes JSON.
+app.get('/api/mcp/info', (c) => c.json(buildMcpInfo(c.req.url, !!c.get('userId'))));
 
 // Plugin file serving / downloads / JSON browse
 app.route('/plugins', pluginsRouter);
@@ -208,12 +208,10 @@ app.post('/mcp/admin', async (c) => {
 
 // MCP Server info endpoint
 // JSON only. Browser UI lives at the TanStack Start /mcp/info route.
-app.get('/mcp/info', (c) => {
-  return c.json(buildMcpInfo(c.req.url, !!c.get('userId')));
-});
+app.get('/mcp/info', (c) => c.json(buildMcpInfo(c.req.url, !!c.get('userId'))));
 
 function buildMcpInfo(requestUrl: string, isAuthenticated: boolean) {
-  const endpointUrl = requestUrl.replace('/mcp/info', '') + '/mcp';
+  const endpointUrl = `${new URL(requestUrl).origin}/mcp`;
   if (isAuthenticated) {
     return {
       name: 'agent-config-adapter',

@@ -43,6 +43,7 @@ src/adapters/      Format converters
 src/routes/        Hono REST handlers (JSON)
 src/mcp/           MCP server
 app/               TanStack Start frontend (React + Tailwind)
+                   Commit app/routeTree.gen.ts — Cloudflare/Vite builds use the committed tree
 cli/               Standalone CLI tool (Bun) - sync, download, login, status
 ```
 

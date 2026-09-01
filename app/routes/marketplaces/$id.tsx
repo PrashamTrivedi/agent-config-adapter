@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { api, ApiError } from '@/lib/api';
+import { api, handleWriteError } from '@/lib/api';
 import type { MarketplaceWithExtensions } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
@@ -29,10 +29,12 @@ function MarketplaceDetailPage() {
       toast('Marketplace deleted', 'success');
       navigate({ to: '/marketplaces' });
     },
-    onError: (err) => {
-      if (err instanceof ApiError && err.status === 401) requireAuth(() => undefined);
-      else toast(err instanceof Error ? err.message : 'Delete failed', 'error');
-    },
+    onError: (err) =>
+      handleWriteError(err, {
+        onUnauthenticated: () => requireAuth(() => undefined),
+        toast,
+        fallback: 'Delete failed',
+      }),
   });
 
   if (isLoading) return <Skeleton className="h-72" />;

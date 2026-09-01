@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api, handleWriteError } from '@/lib/api';
 import type { Config } from '@/lib/types';
 import { FormatBadge, TypeBadge } from '@/components/badges';
 import { Button } from '@/components/ui/button';
@@ -53,8 +53,10 @@ function ConfigDetailPage() {
   });
 
   function handleErr(err: unknown) {
-    if (err instanceof ApiError && err.status === 401) requireAuth(() => undefined);
-    else toast(err instanceof Error ? err.message : 'Request failed', 'error');
+    handleWriteError(err, {
+      onUnauthenticated: () => requireAuth(() => undefined),
+      toast,
+    });
   }
 
   if (isLoading) return <Skeleton className="h-80" />;

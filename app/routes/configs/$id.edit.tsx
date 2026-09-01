@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api, handleWriteError } from '@/lib/api';
 import type { Config } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
@@ -47,10 +47,12 @@ function EditConfigPage() {
       toast('Saved', 'success');
       navigate({ to: '/configs/$id', params: { id } });
     },
-    onError: (err) => {
-      if (err instanceof ApiError && err.status === 401) requireAuth(() => undefined);
-      else toast(err instanceof Error ? err.message : 'Save failed', 'error');
-    },
+    onError: (err) =>
+      handleWriteError(err, {
+        onUnauthenticated: () => requireAuth(() => undefined),
+        toast,
+        fallback: 'Save failed',
+      }),
   });
 
   if (isLoading) return <Skeleton className="h-80" />;

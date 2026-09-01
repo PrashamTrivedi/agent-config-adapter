@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Trash2 } from 'lucide-react';
-import { api, ApiError } from '@/lib/api';
+import { api, handleWriteError } from '@/lib/api';
 import type { SkillWithFiles } from '@/lib/types';
 import { FormatBadge } from '@/components/badges';
 import { Button } from '@/components/ui/button';
@@ -48,8 +48,10 @@ function SkillDetailPage() {
   });
 
   function handleErr(err: unknown) {
-    if (err instanceof ApiError && err.status === 401) requireAuth(() => undefined);
-    else toast(err instanceof Error ? err.message : 'Request failed', 'error');
+    handleWriteError(err, {
+      onUnauthenticated: () => requireAuth(() => undefined),
+      toast,
+    });
   }
 
   if (isLoading) return <Skeleton className="h-80" />;

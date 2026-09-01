@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { api, ApiError } from '@/lib/api';
+import { api, handleWriteError } from '@/lib/api';
 import type { ExtensionWithConfigs } from '@/lib/types';
 import { ConfigCard } from '@/components/config-card';
 import { Button } from '@/components/ui/button';
@@ -30,10 +30,12 @@ function ExtensionDetailPage() {
       toast('Extension deleted', 'success');
       navigate({ to: '/extensions' });
     },
-    onError: (err) => {
-      if (err instanceof ApiError && err.status === 401) requireAuth(() => undefined);
-      else toast(err instanceof Error ? err.message : 'Delete failed', 'error');
-    },
+    onError: (err) =>
+      handleWriteError(err, {
+        onUnauthenticated: () => requireAuth(() => undefined),
+        toast,
+        fallback: 'Delete failed',
+      }),
   });
 
   if (isLoading) return <Skeleton className="h-72" />;
