@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-ink: #060910;
+  --color-ink-2: #0b1220;
+  --color-ink-3: #101a2c;
+  --color-ink-4: #172338;
+  --color-line: #1c2a42;
+  --color-line-strong: #2b3d5c;
+  --color-cyan: #22d3ee;
+  --color-cyan-dim: #0891b2;
+  --color-violet: #a78bfa;
+  --color-amber: #fbbf24;
+  --color-teal: #2dd4bf;
+  --color-rose: #fb7185;
+  --color-claude: #e67e22;
+  --color-gemini: #a78bfa;
+  --color-codex: #22d3ee;
+  --color-fog: #94a3b8;
+  --color-mist: #64748b;
+  --color-snow: #f1f5f9;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-snow);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.28);
+}
+
+.bg-grid {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34, 211, 238, 0.12), transparent 50%),
+    radial-gradient(ellipse 70% 40% at 90% 0%, rgba(167, 139, 250, 0.1), transparent 50%),
+    linear-gradient(rgba(34, 211, 238, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 72px 72px, 72px 72px;
+}
+
+.glass {
+  background: rgba(11, 18, 32, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #22d3ee 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.28), 0 18px 40px rgba(0, 0, 0, 0.35);
+}

@@ -5,13 +5,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Wrangler
+# Wrangler / Vite
 .wrangler/
 .mf/
 worker/
-
-# Build outputs
 dist/
+
+.output/
+.tanstack/
 .cache/
 .parcel-cache/
 

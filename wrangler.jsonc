@@ -1,7 +1,7 @@
 {
   // Production configuration for agent-config-adapter
   "name": "agent-config-adapter",
-  "main": "src/index.ts",
+  "main": "src/worker.ts",
   "compatibility_date": "2025-11-17",
   "compatibility_flags": [
     "nodejs_compat"

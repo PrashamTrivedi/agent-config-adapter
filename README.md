@@ -906,8 +906,8 @@ Use **Cloudflare Workers Builds** for automatic deployment on every push:
 2. Click "Create Application" > "Connect to Git"
 3. Connect your GitHub account and select this repository
 4. Configure build settings:
-   - **Build command**: `npm install`
-   - **Build output directory**: Leave empty (Worker script)
+   - **Build command**: `npm run build`
+   - **Deploy command**: `npx wrangler deploy` (preview branches: `npx wrangler versions upload`)
    - **Root directory**: `/`
 5. Add environment variables (if needed)
 6. Click "Save and Deploy"

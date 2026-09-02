@@ -149,7 +149,7 @@ class PassthroughAdapter implements FormatAdapter {
   }
 }
 
-export { FormatAdapter } from './types';
+export type { FormatAdapter } from './types';
 export { SlashCommandAdapter } from './slash-command-adapter';
 export { MCPConfigAdapter } from './mcp-config-adapter';
 export type { AIConversionResult } from '../infrastructure/ai/types';

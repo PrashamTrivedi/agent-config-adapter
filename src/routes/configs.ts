@@ -1,10 +1,8 @@
 import { Hono } from 'hono';
 import { ConfigService, ConversionService } from '../services';
 import { AgentFormat, CreateConfigInput } from '../domain/types';
-import { configListView, configListContainerPartial, configDetailView, configCreateView, configEditView } from '../views/configs';
 import { ProviderFactory, type ProviderType } from '../infrastructure/ai/provider-factory';
 import type { OpenAIReasoningMode } from '../infrastructure/ai/openai-provider';
-import type { GeminiThinkingBudget } from '../infrastructure/ai/gemini-provider';
 import { SlashCommandAnalyzerService } from '../services/slash-command-analyzer-service';
 import { requireOwnership, getIdFromParams } from '../middleware/ownership';
 import { requireAuth } from '../auth/session-middleware';
@@ -56,46 +54,7 @@ configsRouter.get('/', async (c) => {
   if (search) filters.searchName = search;
 
   const configs = await service.listConfigs(Object.keys(filters).length > 0 ? filters : undefined);
-
-  // Check if this is an HTMX request (partial update)
-  const isHtmxRequest = c.req.header('HX-Request') === 'true';
-  const hasActiveFilters = !!(type || format || search);
-
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ configs });
-  }
-
-  // Return partial HTML for HTMX requests
-  if (isHtmxRequest) {
-    return c.html(configListContainerPartial(configs, hasActiveFilters));
-  }
-
-  // Return full HTML page for initial page load
-  return c.html(configListView(configs, { type, format, search }, c));
-});
-
-// Route for creating new config (form) - MUST be before /:id route
-configsRouter.get('/new', async (c) => {
-  return c.html(configCreateView(c));
-});
-
-// Route for editing config (form) - MUST be before /:id route
-configsRouter.get('/:id/edit', async (c) => {
-  const id = c.req.param('id');
-  const service = new ConfigService(c.env);
-  const config = await service.getConfig(id);
-
-  if (!config) {
-    return c.json({ error: 'Config not found' }, 404);
-  }
-
-  // Redirect skills to their specialized editor
-  if (config.type === 'skill') {
-    return c.redirect(`/skills/${id}/edit`);
-  }
-
-  return c.html(configEditView(config, c));
+  return c.json({ configs });
 });
 
 // Get single config
@@ -121,12 +80,7 @@ configsRouter.get('/:id', async (c) => {
     configName: config.name,
   });
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ config });
-  }
-
-  return c.html(configDetailView(config, c));
+  return c.json({ config });
 });
 
 // Get config in specific format
@@ -233,13 +187,7 @@ configsRouter.put('/:id', requireAuth, requireOwnership('config', getIdFromParam
     return c.json({ error: 'Config not found' }, 404);
   }
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ config });
-  }
-
-  // Redirect to detail view after edit
-  return c.redirect(`/configs/${id}`);
+  return c.json({ config });
 });
 
 // Manual cache invalidation (requires authentication and ownership)
@@ -248,13 +196,7 @@ configsRouter.post('/:id/invalidate', requireAuth, requireOwnership('config', ge
   const service = new ConfigService(c.env);
   await service.invalidateCache(id);
 
-  const accept = c.req.header('Accept') || '';
-  if (accept.includes('application/json')) {
-    return c.json({ success: true, message: 'Cache invalidated' });
-  }
-
-  // For HTMX: return success message
-  return c.html('<p style="color: #4caf50; font-size: 0.875em;">✓ Cache invalidated successfully. Conversions will be re-processed.</p>');
+  return c.json({ success: true, message: 'Cache invalidated' });
 });
 
 // Refresh analysis for slash commands (requires authentication and ownership)
@@ -298,21 +240,6 @@ configsRouter.post('/:id/refresh-analysis', requireAuth, requireOwnership('confi
     // Update config with fresh analysis
     await configService.updateConfig(id, { content: config.content });
 
-    // Check if request wants HTML (from HTMX) or JSON (from API)
-    const accept = c.req.header('Accept') || '';
-    const wantsHtml = accept.includes('text/html') || c.req.header('HX-Request') === 'true';
-
-    if (wantsHtml) {
-      return c.html(`
-        <p style="color: #4caf50; font-size: 0.875em;">
-          ✓ Analysis refreshed successfully.
-          Detected: ${analysis.hasArguments ? 'Arguments required' : 'No arguments'},
-          ${analysis.agentReferences.length} agent(s),
-          ${analysis.skillReferences.length} skill(s)
-        </p>
-      `);
-    }
-
     return c.json({
       success: true,
       message: 'Analysis refreshed',
@@ -320,17 +247,6 @@ configsRouter.post('/:id/refresh-analysis', requireAuth, requireOwnership('confi
     });
   } catch (error) {
     console.error('Analysis refresh failed:', error);
-
-    const accept = c.req.header('Accept') || '';
-    const wantsHtml = accept.includes('text/html') || c.req.header('HX-Request') === 'true';
-
-    if (wantsHtml) {
-      return c.html(
-        '<p style="color: var(--danger);">Analysis refresh failed. Please try again.</p>',
-        500
-      );
-    }
-
     return c.json({ error: 'Analysis refresh failed' }, 500);
   }
 });

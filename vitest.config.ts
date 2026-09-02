@@ -18,6 +18,8 @@ export default defineConfig({
         'tests/',
         '**/*.test.ts',
         'src/index.ts',
+        'src/worker.ts',
+        'app/',
         'src/routes/plugins.ts', // Exclude download routes (as requested)
         'src/routes/files.ts', // Exclude download routes (as requested)
         'src/infrastructure/ai-converter.ts', // Exclude AI Gateway (as requested)

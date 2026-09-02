@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { SubscriptionService } from '../services/subscription-service';
 import { EmailService } from '../services/email-service';
-import { subscriptionFormView } from '../views/subscriptions';
 import { AnalyticsService } from '../services/analytics-service';
 import type { AnalyticsEngineDataset, ReferralSource } from '../domain/types';
 
@@ -21,15 +20,6 @@ function isValidEmail(email: string): boolean {
 }
 
 export const subscriptionsRouter = new Hono<{ Bindings: Bindings }>();
-
-/**
- * GET /subscriptions/form
- * Show subscription form (HTML view)
- */
-subscriptionsRouter.get('/form', async (c) => {
-  const returnUrl = c.req.query('return');
-  return c.html(subscriptionFormView(returnUrl, c));
-});
 
 /**
  * Valid referral sources
