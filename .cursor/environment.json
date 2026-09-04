@@ -1,15 +1,11 @@
 {
   // Cursor Cloud Agent environment (https://cursor.com/docs/cloud-agent/setup)
-  // Runtime: bun+npm. Bun is installed in `install` when this repo uses it.
-  // Secrets cannot live in this file — add names below in the Cursor dashboard Secrets tab.
-  // ACCOUNT_ID, GATEWAY_ID, AI_GATEWAY_TOKEN, AI_PROVIDER, OPENAI_API_KEY, GEMINI_API_KEY, EMAIL_API_KEY, MCP_ADMIN_TOKEN_HASH, BETTER_AUTH_SECRET, BETTER_AUTH_URL, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, JWT_SECRET
+  // Runtime: npm via ghcr.io/prashamtrivedi/cursor-dev-setup:v1.0.0 (skills/commands baked in).
   "name": "agent-config-adapter",
-  "install": "export BUN_INSTALL=\"$HOME/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; command -v bun >/dev/null 2>&1 || curl -fsSL https://bun.sh/install | bash; export PATH=\"$HOME/.bun/bin:$PATH\" && npm ci || npm install && (cd cli && bun install)",
-  "start": "export BUN_INSTALL=\"$HOME/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; npx wrangler d1 migrations apply agent-config-adapter --local && npm run dev",
-  "ports": [
-    {
-      "name": "worker",
-      "port": 9090
-    }
-  ]
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "/opt/prasham-cursor/bin/materialize-cursor-harness.sh && (npm ci || npm install)",
+  "start": "npm run dev"
 }
