@@ -104,12 +104,14 @@ describe('CacheService', () => {
       expect(await mockKV.get('config:test-id:claude_code')).toBeNull();
       expect(await mockKV.get('config:test-id:codex')).toBeNull();
       expect(await mockKV.get('config:test-id:gemini')).toBeNull();
+      // 'full' variant powers extension/marketplace detail caches; must be cleared
+      expect(await mockKV.get('config:test-id:full')).toBeNull();
     });
 
     it('should call KV delete for each format', async () => {
       await cache.delete('test-id');
 
-      expect(mockKV.delete).toHaveBeenCalledTimes(4); // base + 3 formats
+      expect(mockKV.delete).toHaveBeenCalledTimes(5); // base + claude_code/codex/gemini/full
     });
 
     it('should not throw error when deleting non-existent keys', async () => {

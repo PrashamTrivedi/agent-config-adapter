@@ -226,8 +226,8 @@ describe('ExtensionService', () => {
     it('should invalidate extension and manifest caches', async () => {
       await service.invalidateExtensionCache('ext-123');
 
-      // Base cache invalidation deletes 4 keys (base + 3 formats),
-      // plus 2 manifest cache deletions = 6 total
+      // Base cache invalidation deletes 5 keys (base + claude_code/codex/gemini/full),
+      // plus 2 manifest cache deletions
       expect(mockKV.delete).toHaveBeenCalled();
     });
   });
