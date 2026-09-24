@@ -2,6 +2,10 @@ import { zipSync, strToU8 } from 'fflate';
 import { ExtensionWithConfigs } from '../domain/types';
 import { FileGenerationService } from './file-generation-service';
 import { ManifestService } from './manifest-service';
+import { mapWithConcurrency } from './concurrency';
+
+// Workers allow 6 simultaneous open connections; extra requests queue, so stay near that.
+const R2_CONCURRENCY = 6;
 
 export interface ZipGenerationServiceEnv {
   DB: D1Database;
@@ -24,6 +28,17 @@ export class ZipGenerationService {
   }
 
   /**
+   * Fetch file bytes from R2 in parallel (order preserved; null when missing).
+   * Reads raw bytes so binary files (images etc.) survive the round-trip.
+   */
+  private fetchFiles(files: Array<{ r2Key: string }>): Promise<Array<Uint8Array | null>> {
+    return mapWithConcurrency(files, R2_CONCURRENCY, async (file) => {
+      const object = await this.r2.get(file.r2Key);
+      return object ? new Uint8Array(await object.arrayBuffer()) : null;
+    });
+  }
+
+  /**
    * Generate a ZIP archive containing all plugin files
    * Returns Uint8Array ready to be streamed to client
    */
@@ -43,14 +58,11 @@ export class ZipGenerationService {
     // Build file map for fflate
     const fileMap: Record<string, Uint8Array> = {};
 
-    // Fetch each file from R2 and add to ZIP
-    for (const file of generatedFiles) {
-      const object = await this.r2.get(file.r2Key);
-      if (object) {
-        const content = await object.text();
-        fileMap[file.path] = strToU8(content);
-      }
-    }
+    const contents = await this.fetchFiles(generatedFiles);
+    generatedFiles.forEach((file, i) => {
+      const content = contents[i];
+      if (content) fileMap[file.path] = content;
+    });
 
     // Generate ZIP synchronously (fflate's zipSync is fast for small files)
     const zipped = zipSync(fileMap, {
@@ -115,27 +127,14 @@ export class ZipGenerationService {
 
         // Fetch each file and add to ZIP with plugin directory prefix
         const pluginDirName = this.sanitizeDirectoryName(extension.name);
+        const contents = await this.fetchFiles(generatedFiles);
         for (let j = 0; j < generatedFiles.length; j++) {
           const file = generatedFiles[j];
-          console.log(
-            `[ZipGeneration] Fetching file ${j + 1}/${generatedFiles.length} from R2`,
-            {
-              extensionId: extension.id,
-              filePath: file.path,
-              r2Key: file.r2Key,
-            }
-          );
-
-          const object = await this.r2.get(file.r2Key);
-          if (object) {
-            const content = await object.text();
+          const content = contents[j];
+          if (content) {
             const zipPath = `plugins/${pluginDirName}/${file.path}`;
-            fileMap[zipPath] = strToU8(content);
+            fileMap[zipPath] = content;
             totalFilesAdded++;
-            console.log('[ZipGeneration] File added to ZIP', {
-              zipPath,
-              sizeBytes: content.length,
-            });
           } else {
             console.warn('[ZipGeneration] File not found in R2', {
               extensionId: extension.id,

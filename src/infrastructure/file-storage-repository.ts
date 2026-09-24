@@ -11,7 +11,13 @@ export class FileStorageRepository {
     await this.db
       .prepare(
         `INSERT INTO extension_files (id, extension_id, file_path, r2_key, file_size, mime_type, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(extension_id, file_path) DO UPDATE SET
+           id = excluded.id,
+           r2_key = excluded.r2_key,
+           file_size = excluded.file_size,
+           mime_type = excluded.mime_type,
+           created_at = excluded.created_at`
       )
       .bind(
         id,

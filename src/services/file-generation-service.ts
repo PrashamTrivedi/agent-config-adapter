@@ -2,6 +2,9 @@ import { Config, ExtensionWithConfigs } from '../domain/types';
 import { FileStorageRepository } from '../infrastructure/file-storage-repository';
 import { SkillFilesRepository } from '../infrastructure/skill-files-repository';
 import { ManifestService } from './manifest-service';
+import { mapWithConcurrency } from './concurrency';
+
+const R2_CONCURRENCY = 6;
 
 export interface FileGenerationServiceEnv {
   DB: D1Database;
@@ -67,9 +70,8 @@ export class FileGenerationService {
 
     const fileMap = new Map<string, string>();
 
-    // Upload each file to R2
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    // Upload files to R2 in parallel (bounded)
+    await mapWithConcurrency(files, R2_CONCURRENCY, async (file, i) => {
       const r2Key = `extensions/${extension.id}/${format}/${file.path}`;
 
       console.log(`[FileGeneration] Uploading file ${i + 1}/${files.length} to R2`, {
@@ -109,7 +111,7 @@ export class FileGenerationService {
         });
         throw error;
       }
-    }
+    });
 
     console.log('[FileGeneration] All files uploaded successfully', {
       extensionId: extension.id,
