@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.3",
-    "@cloudflare/workers-types": "^4.20251011.0",
+    "@cloudflare/workers-types": "^5.20260924.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.18",
@@ -50,7 +50,7 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.3",
     "workerd": "^1.20251004.0",
-    "wrangler": "^4.128.0"
+    "wrangler": "^4.138.0"
   },
   "scripts": {
     "dev": "vite dev --port 9090",
